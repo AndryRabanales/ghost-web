@@ -5,8 +5,7 @@ export default function MessageList() {
   const [messages, setMessages] = useState([]);
 
   useEffect(() => {
-    // cambia el puerto si tu Fastify está en 3001
-    fetch("http://localhost:3001/messages")
+    fetch("https://ghost-api-2qmr.onrender.com/messages")
       .then((res) => res.json())
       .then((data) => setMessages(data))
       .catch((err) => console.error(err));
