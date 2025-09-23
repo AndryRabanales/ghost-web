@@ -1,12 +1,11 @@
-import MessageForm from "./components/MessageForm";
-import MessageList from "./components/MessageList";
+"use client";
+import App from "./App";
 
 export default function Page() {
   return (
     <main>
       <h1>NGL de andry el crack</h1>
-      <MessageForm />
-      <MessageList />
+      <App />
     </main>
   );
 }

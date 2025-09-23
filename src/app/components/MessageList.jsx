@@ -1,26 +1,60 @@
 "use client";
-import { useEffect, useState } from "react";
+import React from 'react';
 
-export default function MessageList() {
-  const [messages, setMessages] = useState([]);
-
-  useEffect(() => {
-    fetch("https://ghost-api-2qmr.onrender.com/messages")
-      .then((res) => res.json())
-      .then((data) => setMessages(data))
-      .catch((err) => console.error(err));
-  }, []);
+export default function MessageList({ messages, onStatusChange }) {
+  if (!messages || messages.length === 0) {
+    return <p>No hay predicciones todavía en esta ronda.</p>;
+  }
 
   return (
-    <div style={{ maxWidth: 600, margin: "2rem auto", fontFamily: "sans-serif" }}>
-      <h2>Mensajes recibidos</h2>
-      <ul>
-        {messages.map((m) => (
-          <li key={m.id}>
-            <strong>{new Date(m.createdAt).toLocaleString()}:</strong> {m.content}
-          </li>
-        ))}
-      </ul>
+    <div>
+      <h2 style={{ marginBottom: '15px' }}>Predicciones recibidas</h2>
+      {messages.map((msg) => (
+        <div
+          key={msg.id}
+          style={{
+            border: '1px solid #ccc',
+            padding: '10px',
+            marginBottom: '10px',
+            borderRadius: '5px',
+          }}
+        >
+          <p style={{ margin: 0 }}>
+            <strong>{new Date(msg.createdAt).toLocaleString()}:</strong>{' '}
+            {msg.content}
+          </p>
+          <p style={{ margin: '5px 0' }}>Estado: {msg.status}</p>
+
+          {/* Botones para cambiar estado */}
+          <button
+            onClick={() => onStatusChange(msg.id, 'FULFILLED')}
+            style={{
+              padding: '5px 10px',
+              marginRight: '10px',
+              backgroundColor: '#4CAF50',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '3px',
+              cursor: 'pointer',
+            }}
+          >
+            ✅ Cumplida
+          </button>
+          <button
+            onClick={() => onStatusChange(msg.id, 'NOT_FULFILLED')}
+            style={{
+              padding: '5px 10px',
+              backgroundColor: '#f44336',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '3px',
+              cursor: 'pointer',
+            }}
+          >
+            ❌ No cumplida
+          </button>
+        </div>
+      ))}
     </div>
   );
 }

@@ -1,43 +1,57 @@
 "use client";
-import { useState } from "react";
+import React, { useState } from 'react';
 
-export default function MessageForm() {
-  const [content, setContent] = useState("");
-  const [status, setStatus] = useState(null);
+const API = 'https://ghost-api-2qmr.onrender.com';
+
+export default function MessageForm({ roundId, onMessageSent }) {
+  const [content, setContent] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!content.trim()) return;
+
     try {
-      const res = await fetch("https://ghost-api-2qmr.onrender.com/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content }),
+      // 👇 ahora envía también el roundId
+      const res = await fetch(`${API}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content,
+          userId: 'anon', // puedes poner null o el userId real
+          roundId,        // 👈 ronda activa
+        }),
       });
-      const data = await res.json();
-      setStatus(`Mensaje enviado con id ${data.id}`);
-      setContent("");
+
+      if (!res.ok) throw new Error('Error al enviar mensaje');
+
+      setContent('');
+      if (onMessageSent) onMessageSent();
     } catch (err) {
       console.error(err);
-      setStatus("Error al enviar");
     }
   };
 
   return (
-    <div style={{ maxWidth: 400, margin: "2rem auto", fontFamily: "sans-serif" }}>
-      <h2>Enviar mensaje anónimo</h2>
-      <form onSubmit={handleSubmit}>
-        <textarea
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          placeholder="Escribe tu mensaje aquí"
-          rows={4}
-          style={{ width: "100%", padding: "0.5rem" }}
-        />
-        <button type="submit" style={{ marginTop: "1rem", padding: "0.5rem 1rem" }}>
-          Enviar
-        </button>
-      </form>
-      {status && <p>{status}</p>}
-    </div>
+    <form onSubmit={handleSubmit} style={{ marginBottom: '20px' }}>
+      <textarea
+        value={content}
+        onChange={(e) => setContent(e.target.value)}
+        placeholder="Escribe tu predicción aquí..."
+        style={{ width: '100%', height: '80px', padding: '10px' }}
+      />
+      <button
+        type="submit"
+        style={{
+          marginTop: '10px',
+          padding: '10px 20px',
+          backgroundColor: '#4CAF50',
+          color: '#fff',
+          border: 'none',
+          cursor: 'pointer',
+        }}
+      >
+        Enviar predicción
+      </button>
+    </form>
   );
 }
