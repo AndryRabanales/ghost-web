@@ -1,7 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { v4 as uuidv4 } from "uuid"; // npm install uuid
-import MessageForm from "@/components/MessageForm";
+import { v4 as uuidv4 } from "uuid";
 import MessageList from "@/components/MessageList";
 import CreateRoundButton from "@/components/CreateRoundButton";
 
@@ -23,7 +22,7 @@ export default function Dashboard() {
     setCreatorId(stored);
   }, []);
 
-  // Cuando ya tengo creatorId, cargar ronda
+  // Cargar ronda actual
   useEffect(() => {
     if (creatorId) getCurrentRound(creatorId);
   }, [creatorId]);
@@ -43,11 +42,21 @@ export default function Dashboard() {
     }
   };
 
+  // Cargar mensajes visibles + bloqueados
   const fetchMessages = async (rid) => {
     try {
       const res = await fetch(`${API}/messages/${rid}`);
       const data = await res.json();
-      setMessages(data);
+
+      const unlocked = data.visible || [];
+      const locked = data.locked || [];
+
+      const combined = [
+        ...unlocked.map((m) => ({ ...m, isLocked: false })),
+        ...locked.map((m) => ({ ...m, isLocked: true })),
+      ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+      setMessages(combined);
     } catch (err) {
       console.error(err);
     }
@@ -84,15 +93,23 @@ export default function Dashboard() {
     <div style={{ maxWidth: 600, margin: "0 auto", padding: 20 }}>
       <p>
         Tu link público:{" "}
-        <a href={`/u/${creatorId}`}>{window.location.origin}/u/{creatorId}</a>
+        <a href={`/u/${creatorId}`}>
+          {typeof window !== "undefined"
+            ? `${window.location.origin}/u/${creatorId}`
+            : `/u/${creatorId}`}
+        </a>
       </p>
-      <CreateRoundButton creatorId={creatorId} onRoundCreated={handleRoundCreated} />
+
+      <CreateRoundButton
+        creatorId={creatorId}
+        onRoundCreated={handleRoundCreated}
+      />
 
       {roundId ? (
-        <>
-          
-          <MessageList messages={messages} onStatusChange={handleStatusChange} />
-        </>
+        <MessageList
+          messages={messages}
+          onStatusChange={handleStatusChange}
+        />
       ) : (
         <p style={{ padding: 20, textAlign: "center" }}>
           No hay ronda activa actualmente. Pulsa el botón para crear una nueva.

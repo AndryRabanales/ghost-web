@@ -1,21 +1,28 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import MessageForm from "@/components/MessageForm";
+import { v4 as uuidv4 } from "uuid";
 import MessageList from "@/components/MessageList";
 import CreateRoundButton from "@/components/CreateRoundButton";
 
 const API = "https://ghost-api-2qmr.onrender.com";
 
-export default function DashboardPage() {
-  const params = useParams();
-  const creatorId = params?.creatorId;
-
+export default function Dashboard() {
   const [messages, setMessages] = useState([]);
   const [roundId, setRoundId] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [creatorId, setCreatorId] = useState(null);
 
-  // Obtener ronda actual cuando hay creatorId
+  // Generar o recuperar creatorId único
+  useEffect(() => {
+    let stored = localStorage.getItem("creatorId");
+    if (!stored) {
+      stored = uuidv4();
+      localStorage.setItem("creatorId", stored);
+    }
+    setCreatorId(stored);
+  }, []);
+
+  // Cargar ronda actual
   useEffect(() => {
     if (creatorId) getCurrentRound(creatorId);
   }, [creatorId]);
@@ -24,7 +31,6 @@ export default function DashboardPage() {
     setLoading(true);
     try {
       const res = await fetch(`${API}/rounds/current/${id}`);
-      if (!res.ok) throw new Error("Error al obtener ronda actual");
       const round = await res.json();
       if (round?.id) setRoundId(round.id);
       else setRoundId(null);
@@ -36,12 +42,22 @@ export default function DashboardPage() {
     }
   };
 
+  // Cargar mensajes (visibles + bloqueados)
   const fetchMessages = async (rid) => {
     try {
       const res = await fetch(`${API}/messages/${rid}`);
-      if (!res.ok) throw new Error("Error al obtener mensajes");
       const data = await res.json();
-      setMessages(data);
+
+      const unlocked = data.visible || [];
+      const locked = data.locked || [];
+
+      // combinamos ambos con flag isLocked
+      const combined = [
+        ...unlocked.map((m) => ({ ...m, isLocked: false })),
+        ...locked.map((m) => ({ ...m, isLocked: true })),
+      ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+      setMessages(combined);
     } catch (err) {
       console.error(err);
     }
@@ -72,13 +88,12 @@ export default function DashboardPage() {
     }
   };
 
-  if (loading) return <p style={{ padding: 20 }}>Cargando…</p>;
+  if (loading || !creatorId) return <p style={{ padding: 20 }}>Cargando…</p>;
 
   return (
     <div style={{ maxWidth: 600, margin: "0 auto", padding: 20 }}>
-      <h1>Dashboard de {creatorId}</h1>
       <p>
-        Tu link público para predicciones:{" "}
+        Tu link público:{" "}
         <a href={`/u/${creatorId}`}>
           {typeof window !== "undefined"
             ? `${window.location.origin}/u/${creatorId}`
@@ -86,12 +101,16 @@ export default function DashboardPage() {
         </a>
       </p>
 
-      <CreateRoundButton creatorId={creatorId} onRoundCreated={handleRoundCreated} />
+      <CreateRoundButton
+        creatorId={creatorId}
+        onRoundCreated={handleRoundCreated}
+      />
 
       {roundId ? (
-        <>
-          <MessageList messages={messages} onStatusChange={handleStatusChange} />
-        </>
+        <MessageList
+          messages={messages}
+          onStatusChange={handleStatusChange}
+        />
       ) : (
         <p style={{ padding: 20, textAlign: "center" }}>
           No hay ronda activa actualmente. Pulsa el botón para crear una nueva.

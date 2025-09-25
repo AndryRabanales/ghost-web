@@ -1,58 +1,48 @@
 "use client";
-import React from 'react';
+import React from "react";
 
 export default function MessageList({ messages, onStatusChange }) {
   if (!messages || messages.length === 0) {
-    return <p>No hay predicciones todavía en esta ronda.</p>;
+    return <p style={{ padding: 20 }}>No hay predicciones aún.</p>;
   }
 
   return (
-    <div>
-      <h2 style={{ marginBottom: '15px' }}>Predicciones recibidas</h2>
+    <div style={{ marginTop: 20 }}>
       {messages.map((msg) => (
         <div
           key={msg.id}
           style={{
-            border: '1px solid #ccc',
-            padding: '10px',
-            marginBottom: '10px',
-            borderRadius: '5px',
+            border: "1px solid #ccc",
+            padding: 10,
+            marginBottom: 10,
+            borderRadius: 5,
           }}
         >
-          <p style={{ margin: 0 }}>
-            <strong>{new Date(msg.createdAt).toLocaleString()}:</strong>{' '}
-            {msg.content}
-          </p>
-          <p style={{ margin: '5px 0' }}>Estado: {msg.status}</p>
-
-          {/* Botones para cambiar estado */}
-          <button
-            onClick={() => onStatusChange(msg.id, 'FULFILLED')}
-            style={{
-              padding: '5px 10px',
-              marginRight: '10px',
-              backgroundColor: '#4CAF50',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '3px',
-              cursor: 'pointer',
-            }}
-          >
-            ✅ Cumplida
-          </button>
-          <button
-            onClick={() => onStatusChange(msg.id, 'NOT_FULFILLED')}
-            style={{
-              padding: '5px 10px',
-              backgroundColor: '#f44336',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '3px',
-              cursor: 'pointer',
-            }}
-          >
-            ❌ No cumplida
-          </button>
+          <strong>{new Date(msg.createdAt).toLocaleString()}: </strong>
+          {msg.isLocked ? (
+            <span style={{ color: "gray" }}>
+              🔒 Mensaje secreto (se desbloquea en 24h)
+            </span>
+          ) : (
+            <span>{msg.content}</span>
+          )}
+          <div>Estado: {msg.status}</div>
+          {!msg.isLocked && (
+            <>
+              <button
+                onClick={() => onStatusChange(msg.id, "FULFILLED")}
+                style={{ background: "green", color: "white", marginRight: 5 }}
+              >
+                ✔ Cumplida
+              </button>
+              <button
+                onClick={() => onStatusChange(msg.id, "NOT_FULFILLED")}
+                style={{ background: "red", color: "white" }}
+              >
+                ✖ No cumplida
+              </button>
+            </>
+          )}
         </div>
       ))}
     </div>
