@@ -12,7 +12,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [creatorId, setCreatorId] = useState(null);
 
-  // Generar o recuperar creatorId único
+  // Generar o recuperar creatorId único en localStorage
   useEffect(() => {
     let stored = localStorage.getItem("creatorId");
     if (!stored) {
@@ -42,21 +42,12 @@ export default function Dashboard() {
     }
   };
 
-  // Cargar mensajes visibles + bloqueados
+  // Cargar mensajes de la ronda actual
   const fetchMessages = async (rid) => {
     try {
       const res = await fetch(`${API}/messages/${rid}`);
       const data = await res.json();
-
-      const unlocked = data.visible || [];
-      const locked = data.locked || [];
-
-      const combined = [
-        ...unlocked.map((m) => ({ ...m, isLocked: false })),
-        ...locked.map((m) => ({ ...m, isLocked: true })),
-      ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-      setMessages(combined);
+      setMessages(data);
     } catch (err) {
       console.error(err);
     }
