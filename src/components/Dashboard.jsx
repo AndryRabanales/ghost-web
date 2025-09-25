@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import MessageList from "@/components/MessageList";
 
-const API = "https://ghost-api-2qmr.onrender.com";
+const API = "https://ghost-api-2qmr.onrender.com"; // 👈 backend de Render
 
 export default function Dashboard() {
   const [messages, setMessages] = useState([]);
