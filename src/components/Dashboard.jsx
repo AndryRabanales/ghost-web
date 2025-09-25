@@ -8,21 +8,11 @@ export default function Dashboard() {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Cargar todos los mensajes
   const fetchMessages = async () => {
     try {
       const res = await fetch(`${API}/messages`);
       const data = await res.json();
-      // Si tu API devuelve directamente un array:
       setMessages(data);
-      // Si en tu API tienes visible/locked separados, podrías combinarlos aquí:
-      // const unlocked = data.visible || [];
-      // const locked = data.locked || [];
-      // const combined = [
-      //   ...unlocked.map((m) => ({ ...m, isLocked: false })),
-      //   ...locked.map((m) => ({ ...m, isLocked: true })),
-      // ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-      // setMessages(combined);
     } catch (err) {
       console.error(err);
     } finally {

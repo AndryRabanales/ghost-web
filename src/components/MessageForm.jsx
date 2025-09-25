@@ -12,20 +12,19 @@ export default function MessageForm({ onMessageSent }) {
     if (!content.trim()) return;
 
     try {
-      // 👇 ahora envía sólo content + alias (sin roundId)
+      // 👇 envía alias junto con el mensaje
       const res = await fetch(`${API}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           content,
-          userId: 'anon', // puedes poner null o el userId real si lo tienes
-          alias,          // 👈 nuevo campo alias
+          userId: 'anon',
+          alias,
         }),
       });
 
       if (!res.ok) throw new Error('Error al enviar mensaje');
 
-      // Limpiamos los campos
       setContent('');
       setAlias('');
 

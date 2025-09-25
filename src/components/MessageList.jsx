@@ -3,7 +3,7 @@ import React from "react";
 
 export default function MessageList({ messages, onStatusChange }) {
   if (!messages || messages.length === 0) {
-    return <p style={{ padding: 20 }}>No hay predicciones aún.</p>;
+    return <p style={{ padding: 20 }}>No hay mensajes aún.</p>;
   }
 
   return (
