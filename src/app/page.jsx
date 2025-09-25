@@ -7,7 +7,6 @@ const API = "https://ghost-api-2qmr.onrender.com";
 
 export default function Dashboard() {
   const [messages, setMessages] = useState([]);
-  const [roundId, setRoundId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [creatorId, setCreatorId] = useState(null);
 
@@ -21,66 +20,45 @@ export default function Dashboard() {
     setCreatorId(stored);
   }, []);
 
-  // Cargar ronda actual
-  useEffect(() => {
-    if (creatorId) getCurrentRound(creatorId);
-  }, [creatorId]);
-
-  const getCurrentRound = async (id) => {
-    setLoading(true);
+  // Cargar todos los mensajes
+  const fetchMessages = async () => {
     try {
-      const res = await fetch(`${API}/rounds/current/${id}`);
-      const round = await res.json();
-      if (round?.id) setRoundId(round.id);
-      else setRoundId(null);
+      const res = await fetch(`${API}/messages`);
+      if (!res.ok) throw new Error(`Error ${res.status}`);
+      const data = await res.json();
+      setMessages(data);
     } catch (err) {
-      console.error(err);
-      setRoundId(null);
+      console.error("Error cargando mensajes:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  // Cargar mensajes de la ronda actual
-  const fetchMessages = async (rid) => {
-    try {
-      const res = await fetch(`${API}/messages/${rid}`);
-      const data = await res.json();
-      setMessages(data);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
   useEffect(() => {
-    if (roundId) fetchMessages(roundId);
-    else setMessages([]);
-  }, [roundId]);
+    if (creatorId) fetchMessages();
+  }, [creatorId]);
 
   const handleStatusChange = async (id, status) => {
     try {
-      await fetch(`${API}/messages/${id}`, {
+      const res = await fetch(`${API}/messages/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
       });
-      if (roundId) fetchMessages(roundId);
+      if (!res.ok) throw new Error(`Error ${res.status}`);
+      fetchMessages();
     } catch (err) {
-      console.error(err);
+      console.error("Error actualizando estado:", err);
     }
   };
 
-  const handleRoundCreated = (round) => {
-    if (round?.id) {
-      setRoundId(round.id);
-      fetchMessages(round.id);
-    }
-  };
-
-  if (loading || !creatorId) return <p style={{ padding: 20 }}>Cargando…</p>;
+  if (loading || !creatorId) {
+    return <p style={{ padding: 20 }}>Cargando…</p>;
+  }
 
   return (
     <div style={{ maxWidth: 600, margin: "0 auto", padding: 20 }}>
+      {/* volvemos a mostrar el link público */}
       <p>
         Tu link público:{" "}
         <a href={`/u/${creatorId}`}>
@@ -90,17 +68,8 @@ export default function Dashboard() {
         </a>
       </p>
 
-
-      {roundId ? (
-        <MessageList
-          messages={messages}
-          onStatusChange={handleStatusChange}
-        />
-      ) : (
-        <p style={{ padding: 20, textAlign: "center" }}>
-          No hay ronda activa actualmente. Pulsa el botón para crear una nueva.
-        </p>
-      )}
+      <h1>Dashboard de mensajes</h1>
+      <MessageList messages={messages} onStatusChange={handleStatusChange} />
     </div>
   );
 }

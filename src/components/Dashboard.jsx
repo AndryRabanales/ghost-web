@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import MessageList from "@/components/MessageList";
 
-const API = "https://ghost-api-2qmr.onrender.com"; // 👈 backend de Render
+const API = "https://ghost-api-2qmr.onrender.com";
 
 export default function Dashboard() {
   const [messages, setMessages] = useState([]);
@@ -11,10 +11,11 @@ export default function Dashboard() {
   const fetchMessages = async () => {
     try {
       const res = await fetch(`${API}/messages`);
+      if (!res.ok) throw new Error(`Error ${res.status}`);
       const data = await res.json();
       setMessages(data);
     } catch (err) {
-      console.error(err);
+      console.error("Error cargando mensajes:", err);
     } finally {
       setLoading(false);
     }
@@ -26,14 +27,15 @@ export default function Dashboard() {
 
   const handleStatusChange = async (id, status) => {
     try {
-      await fetch(`${API}/messages/${id}`, {
+      const res = await fetch(`${API}/messages/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
       });
+      if (!res.ok) throw new Error(`Error ${res.status}`);
       fetchMessages();
     } catch (err) {
-      console.error(err);
+      console.error("Error actualizando estado:", err);
     }
   };
 

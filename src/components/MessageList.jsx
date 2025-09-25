@@ -18,50 +18,44 @@ export default function MessageList({ messages, onStatusChange }) {
             borderRadius: 5,
           }}
         >
-          {/* Fecha */}
-          <strong>{new Date(msg.createdAt).toLocaleString()}</strong>
+          {/* cabecera: fecha + alias si existe */}
+          <div style={{ marginBottom: 6 }}>
+            <strong>{new Date(msg.createdAt).toLocaleString()}</strong>
+            {msg.alias && (
+              <span style={{ marginLeft: 8, fontStyle: "italic", color: "#555" }}>
+                por {msg.alias}
+              </span>
+            )}
+            {!msg.alias && (
+              <span style={{ marginLeft: 8, color: "#888" }}>
+                (anónimo)
+              </span>
+            )}
+          </div>
 
-          {/* Alias opcional */}
-          {msg.alias && (
-            <span
-              style={{
-                marginLeft: 8,
-                fontStyle: "italic",
-                color: "#555",
-              }}
-            >
-              por {msg.alias}
-            </span>
-          )}
+          {/* contenido */}
+          <div style={{ marginBottom: 6 }}>{msg.content}</div>
 
-          {/* Contenido */}
-          <div style={{ marginTop: 6 }}>{msg.content}</div>
-
-          {/* Estado */}
+          {/* estado */}
           <div>Estado: {msg.status}</div>
 
-          {/* Botones de estado */}
-          <button
-            onClick={() => onStatusChange(msg.id, "FULFILLED")}
-            style={{
-              background: "green",
-              color: "white",
-              marginRight: 5,
-              marginTop: 5,
-            }}
-          >
-            ✔ Cumplida
-          </button>
-          <button
-            onClick={() => onStatusChange(msg.id, "NOT_FULFILLED")}
-            style={{
-              background: "red",
-              color: "white",
-              marginTop: 5,
-            }}
-          >
-            ✖ No cumplida
-          </button>
+          {/* acciones */}
+          {onStatusChange && (
+            <div style={{ marginTop: 8 }}>
+              <button
+                onClick={() => onStatusChange(msg.id, "FULFILLED")}
+                style={{ background: "green", color: "white", marginRight: 8 }}
+              >
+                ✔ Cumplida
+              </button>
+              <button
+                onClick={() => onStatusChange(msg.id, "NOT_FULFILLED")}
+                style={{ background: "red", color: "white" }}
+              >
+                ✖ No cumplida
+              </button>
+            </div>
+          )}
         </div>
       ))}
     </div>
