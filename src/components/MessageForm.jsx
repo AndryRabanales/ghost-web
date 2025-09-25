@@ -5,13 +5,14 @@ const API = 'https://ghost-api-2qmr.onrender.com';
 
 export default function MessageForm({ roundId, onMessageSent }) {
   const [content, setContent] = useState('');
+  const [alias, setAlias] = useState(''); // 👈 estado para alias
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!content.trim()) return;
 
     try {
-      // 👇 ahora envía también el roundId
+      // 👇 ahora envía también alias junto con roundId
       const res = await fetch(`${API}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -19,12 +20,16 @@ export default function MessageForm({ roundId, onMessageSent }) {
           content,
           userId: 'anon', // puedes poner null o el userId real
           roundId,        // 👈 ronda activa
+          alias,          // 👈 nuevo campo alias
         }),
       });
 
       if (!res.ok) throw new Error('Error al enviar mensaje');
 
+      // Limpiamos los campos
       setContent('');
+      setAlias('');
+
       if (onMessageSent) onMessageSent();
     } catch (err) {
       console.error(err);
@@ -33,12 +38,29 @@ export default function MessageForm({ roundId, onMessageSent }) {
 
   return (
     <form onSubmit={handleSubmit} style={{ marginBottom: '20px' }}>
+      {/* input para alias */}
+      <input
+        type="text"
+        placeholder="Tu alias (opcional)"
+        value={alias}
+        onChange={(e) => setAlias(e.target.value)}
+        style={{
+          width: '100%',
+          padding: '10px',
+          marginBottom: '12px',
+          borderRadius: '4px',
+          border: '1px solid #ccc',
+        }}
+      />
+
+      {/* textarea para mensaje */}
       <textarea
         value={content}
         onChange={(e) => setContent(e.target.value)}
         placeholder="Escribe tu predicción aquí..."
         style={{ width: '100%', height: '80px', padding: '10px' }}
       />
+
       <button
         type="submit"
         style={{
