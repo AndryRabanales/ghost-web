@@ -19,30 +19,20 @@ export default function MessageList({ messages, onStatusChange }) {
           }}
         >
           <strong>{new Date(msg.createdAt).toLocaleString()}: </strong>
-          {msg.isLocked ? (
-            <span style={{ color: "gray" }}>
-              🔒 Mensaje secreto (se desbloquea en 24h)
-            </span>
-          ) : (
-            <span>{msg.content}</span>
-          )}
+          <span>{msg.content}</span>
           <div>Estado: {msg.status}</div>
-          {!msg.isLocked && (
-            <>
-              <button
-                onClick={() => onStatusChange(msg.id, "FULFILLED")}
-                style={{ background: "green", color: "white", marginRight: 5 }}
-              >
-                ✔ Cumplida
-              </button>
-              <button
-                onClick={() => onStatusChange(msg.id, "NOT_FULFILLED")}
-                style={{ background: "red", color: "white" }}
-              >
-                ✖ No cumplida
-              </button>
-            </>
-          )}
+          <button
+            onClick={() => onStatusChange(msg.id, "FULFILLED")}
+            style={{ background: "green", color: "white", marginRight: 5 }}
+          >
+            ✔ Cumplida
+          </button>
+          <button
+            onClick={() => onStatusChange(msg.id, "NOT_FULFILLED")}
+            style={{ background: "red", color: "white" }}
+          >
+            ✖ No cumplida
+          </button>
         </div>
       ))}
     </div>

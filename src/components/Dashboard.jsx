@@ -1,99 +1,111 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import { v4 as uuidv4 } from "uuid";
+import MessageList from "@/components/MessageList";
+import CreateRoundButton from "@/components/CreateRoundButton";
 
 const API = "https://ghost-api-2qmr.onrender.com";
 
 export default function Dashboard() {
-  const [rounds, setRounds] = useState([]);
-  const [selectedRound, setSelectedRound] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [roundId, setRoundId] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [creatorId, setCreatorId] = useState(null);
 
-  // cargar rondas al montar
+  // Generar o recuperar creatorId único
   useEffect(() => {
-    fetch(`${API}/rounds`)
-      .then((r) => r.json())
-      .then(setRounds)
-      .catch(console.error);
+    let stored = localStorage.getItem("creatorId");
+    if (!stored) {
+      stored = uuidv4();
+      localStorage.setItem("creatorId", stored);
+    }
+    setCreatorId(stored);
   }, []);
 
-  // cargar mensajes cuando cambia la ronda seleccionada
+  // Cargar ronda actual
   useEffect(() => {
-    if (selectedRound) {
-      fetch(`${API}/messages/${selectedRound}`)
-        .then((r) => r.json())
-        .then(setMessages)
-        .catch(console.error);
+    if (creatorId) getCurrentRound(creatorId);
+  }, [creatorId]);
+
+  const getCurrentRound = async (id) => {
+    setLoading(true);
+    try {
+      const res = await fetch(`${API}/rounds/current/${id}`);
+      const round = await res.json();
+      if (round?.id) setRoundId(round.id);
+      else setRoundId(null);
+    } catch (err) {
+      console.error(err);
+      setRoundId(null);
+    } finally {
+      setLoading(false);
     }
-  }, [selectedRound]);
-
-  // crear una ronda nueva
-  const createRound = async () => {
-    const res = await fetch(`${API}/rounds`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ creatorId: "andry" }), // tu id creador
-    });
-    const round = await res.json();
-    setRounds([round, ...rounds]);
   };
 
-  // marcar mensaje
-  const updateStatus = async (id, status) => {
-    const res = await fetch(`${API}/messages/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status }),
-    });
-    const updated = await res.json();
-    setMessages(messages.map((m) => (m.id === id ? updated : m)));
+  // Cargar mensajes (todos sin bloqueo)
+  const fetchMessages = async (rid) => {
+    try {
+      const res = await fetch(`${API}/messages/${rid}`);
+      const data = await res.json();
+      // ahora la API devuelve un array plano de mensajes
+      setMessages(data);
+    } catch (err) {
+      console.error(err);
+    }
   };
+
+  useEffect(() => {
+    if (roundId) fetchMessages(roundId);
+    else setMessages([]);
+  }, [roundId]);
+
+  const handleStatusChange = async (id, status) => {
+    try {
+      await fetch(`${API}/messages/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      if (roundId) fetchMessages(roundId);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleRoundCreated = (round) => {
+    if (round?.id) {
+      setRoundId(round.id);
+      fetchMessages(round.id);
+    }
+  };
+
+  if (loading || !creatorId) return <p style={{ padding: 20 }}>Cargando…</p>;
 
   return (
-    <div style={{ padding: 20 }}>
-      <h1>Dashboard de Predicciones</h1>
+    <div style={{ maxWidth: 600, margin: "0 auto", padding: 20 }}>
+      <p>
+        Tu link público:{" "}
+        <a href={`/u/${creatorId}`}>
+          {typeof window !== "undefined"
+            ? `${window.location.origin}/u/${creatorId}`
+            : `/u/${creatorId}`}
+        </a>
+      </p>
 
-      <button onClick={createRound}>➕ Crear nueva ronda</button>
+      <CreateRoundButton
+        creatorId={creatorId}
+        onRoundCreated={handleRoundCreated}
+      />
 
-      <h2 style={{ marginTop: 20 }}>Rondas</h2>
-      {rounds.map((r) => (
-        <div key={r.id} style={{ marginBottom: 5 }}>
-          <button onClick={() => setSelectedRound(r.id)}>
-            {r.date.slice(0, 10)} - {r.status}
-          </button>
-        </div>
-      ))}
-
-      {selectedRound && (
-        <div style={{ marginTop: 30 }}>
-          <h2>Mensajes de la ronda {selectedRound}</h2>
-          {messages.length === 0 && <p>No hay mensajes en esta ronda.</p>}
-          {messages.map((m) => (
-            <div
-              key={m.id}
-              style={{
-                border: "1px solid #ccc",
-                padding: 10,
-                marginBottom: 10,
-                borderRadius: 5,
-              }}
-            >
-              <p>
-                <strong>{new Date(m.createdAt).toLocaleString()}:</strong>{" "}
-                {m.content}
-              </p>
-              <p>Estado: {m.status}</p>
-              <button onClick={() => updateStatus(m.id, "FULFILLED")}>
-                ✅ Cumplida
-              </button>
-              <button
-                onClick={() => updateStatus(m.id, "NOT_FULFILLED")}
-                style={{ marginLeft: 10 }}
-              >
-                ❌ No cumplida
-              </button>
-            </div>
-          ))}
-        </div>
+      {roundId ? (
+        <MessageList
+          messages={messages}
+          onStatusChange={handleStatusChange}
+        />
+      ) : (
+        <p style={{ padding: 20, textAlign: "center" }}>
+          No hay ronda activa actualmente. Pulsa el botón para crear una nueva.
+        </p>
       )}
     </div>
   );
