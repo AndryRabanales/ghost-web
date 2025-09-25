@@ -2,7 +2,6 @@
 import React, { useEffect, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import MessageList from "@/components/MessageList";
-import CreateRoundButton from "@/components/CreateRoundButton";
 
 const API = "https://ghost-api-2qmr.onrender.com";
 
@@ -91,10 +90,6 @@ export default function Dashboard() {
         </a>
       </p>
 
-      <CreateRoundButton
-        creatorId={creatorId}
-        onRoundCreated={handleRoundCreated}
-      />
 
       {roundId ? (
         <MessageList

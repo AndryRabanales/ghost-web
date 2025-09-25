@@ -1,41 +1,58 @@
 "use client";
-
-import { useParams } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import MessageList from "@/components/MessageList";
-import CreateRoundButton from "@/components/CreateRoundButton";
 
 const API = "https://ghost-api-2qmr.onrender.com";
 
-export default function DashboardCreatorIdPage() {
-  const params = useParams();
-  const creatorId = params?.creatorId;
-
+export default function Dashboard() {
   const [messages, setMessages] = useState([]);
-  const [roundId, setRoundId] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Cargar ronda actual
-  useEffect(() => {
-    if (creatorId) getCurrentRound(creatorId);
-  }, [creatorId]);
-
-  const getCurrentRound = async (id) => {
-    setLoading(true);
+  // Cargar todos los mensajes
+  const fetchMessages = async () => {
     try {
-      const res = await fetch(`${API}/rounds/current/${id}`);
-      const round = await res.json();
-      if (round?.id) setRoundId(round.id);
-      else setRoundId(null);
+      const res = await fetch(`${API}/messages`);
+      const data = await res.json();
+      // Si tu API devuelve directamente un array:
+      setMessages(data);
+      // Si en tu API tienes visible/locked separados, podrías combinarlos aquí:
+      // const unlocked = data.visible || [];
+      // const locked = data.locked || [];
+      // const combined = [
+      //   ...unlocked.map((m) => ({ ...m, isLocked: false })),
+      //   ...locked.map((m) => ({ ...m, isLocked: true })),
+      // ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      // setMessages(combined);
     } catch (err) {
       console.error(err);
-      setRoundId(null);
     } finally {
       setLoading(false);
     }
   };
 
-  // Cargar mensajes
-  const fetchMessages = async (rid) => {
+  useEffect(() => {
+    fetchMessages();
+  }, []);
+
+  const handleStatusChange = async (id, status) => {
     try {
-      const res = await fetch(
+      await fetch(`${API}/messages/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      fetchMessages();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  if (loading) return <p style={{ padding: 20 }}>Cargando…</p>;
+
+  return (
+    <div style={{ maxWidth: 600, margin: "0 auto", padding: 20 }}>
+      <h1>Dashboard de mensajes</h1>
+      <MessageList messages={messages} onStatusChange={handleStatusChange} />
+    </div>
+  );
+}

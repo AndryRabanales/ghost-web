@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 
 const API = 'https://ghost-api-2qmr.onrender.com';
 
-export default function MessageForm({ roundId, onMessageSent }) {
+export default function MessageForm({ onMessageSent }) {
   const [content, setContent] = useState('');
   const [alias, setAlias] = useState(''); // 👈 estado para alias
 
@@ -12,14 +12,13 @@ export default function MessageForm({ roundId, onMessageSent }) {
     if (!content.trim()) return;
 
     try {
-      // 👇 ahora envía también alias junto con roundId
+      // 👇 ahora envía sólo content + alias (sin roundId)
       const res = await fetch(`${API}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           content,
-          userId: 'anon', // puedes poner null o el userId real
-          roundId,        // 👈 ronda activa
+          userId: 'anon', // puedes poner null o el userId real si lo tienes
           alias,          // 👈 nuevo campo alias
         }),
       });
@@ -57,7 +56,7 @@ export default function MessageForm({ roundId, onMessageSent }) {
       <textarea
         value={content}
         onChange={(e) => setContent(e.target.value)}
-        placeholder="Escribe tu predicción aquí..."
+        placeholder="Escribe tu mensaje aquí..."
         style={{ width: '100%', height: '80px', padding: '10px' }}
       />
 
@@ -72,7 +71,7 @@ export default function MessageForm({ roundId, onMessageSent }) {
           cursor: 'pointer',
         }}
       >
-        Enviar predicción
+        Enviar mensaje
       </button>
     </form>
   );
