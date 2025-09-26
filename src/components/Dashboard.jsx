@@ -6,9 +6,8 @@ const API =
   process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
 
 export default function Dashboard() {
-  // si lo usas dentro de /dashboard/[dashboardId] puedes leer params
   const params = useParams();
-  const dashboardId = params?.dashboardId || params?.id; // adapta según tu ruta
+  const dashboardId = params?.dashboardId || params?.id;
 
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
