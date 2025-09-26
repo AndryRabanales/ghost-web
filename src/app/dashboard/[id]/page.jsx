@@ -1,39 +1,30 @@
 "use client";
-import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import MessageList from "@/components/MessageList";
 
-const API = process.env.NEXT_PUBLIC_API || "http://localhost:3001";
+const API = process.env.NEXT_PUBLIC_API;
 
-export default function DashboardPage() {
-  const { id } = useParams();
+export default function Dashboard({ params }) {
+  const { id } = params; // dashboardId
   const [messages, setMessages] = useState([]);
 
   const fetchMessages = async () => {
-    try {
-      const res = await fetch(`${API}/messages?dashboardId=${id}`);
-      const data = await res.json();
-      setMessages(data);
-    } catch (err) {
-      console.error(err);
-    }
+    const res = await fetch(`${API}/messages?dashboardId=${id}`);
+    const data = await res.json();
+    setMessages(data);
   };
 
   useEffect(() => {
-    if (id) fetchMessages();
+    fetchMessages();
   }, [id]);
 
-  const handleStatusChange = async (messageId, status) => {
-    try {
-      await fetch(`${API}/messages/${messageId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
-      });
-      fetchMessages();
-    } catch (err) {
-      console.error("Error actualizando estado:", err);
-    }
+  const handleStatusChange = async (msgId, status) => {
+    await fetch(`${API}/messages/${msgId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    });
+    fetchMessages();
   };
 
   return (

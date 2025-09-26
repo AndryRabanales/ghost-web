@@ -2,42 +2,33 @@
 import React from "react";
 
 export default function MessageList({ messages, onStatusChange }) {
-  if (!messages.length) return <p>No hay mensajes aún</p>;
-
   return (
-    <ul style={{ listStyle: "none", padding: 0 }}>
+    <div>
+      {messages.length === 0 && <p>No hay mensajes todavía.</p>}
       {messages.map((m) => (
-        <li
+        <div
           key={m.id}
           style={{
             border: "1px solid #ccc",
-            borderRadius: "4px",
-            padding: "10px",
-            marginBottom: "10px",
+            padding: 10,
+            marginBottom: 10,
+            borderRadius: 4,
           }}
         >
           <p>
-            <strong>
-              {m.status === "PENDING" ? "🔒 Mensaje bloqueado" : m.content}
-            </strong>
+            <strong>{m.alias || "Anónimo"}:</strong> {m.content}
           </p>
-          {m.alias && <p>Alias: {m.alias}</p>}
-          {m.status === "PENDING" && (
+          <p>Estado: {m.status}</p>
+          {onStatusChange && (
             <button
-              onClick={() => onStatusChange(m.id, "FULFILLED")}
-              style={{
-                padding: "6px 12px",
-                backgroundColor: "#2196F3",
-                color: "#fff",
-                border: "none",
-                cursor: "pointer",
-              }}
+              onClick={() => onStatusChange(m.id, m.status === "PENDING" ? "FULFILLED" : "PENDING")}
+              style={{ marginTop: 5 }}
             >
-              Desbloquear
+              {m.status === "PENDING" ? "Desbloquear" : "Volver a bloquear"}
             </button>
           )}
-        </li>
+        </div>
       ))}
-    </ul>
+    </div>
   );
 }

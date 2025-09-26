@@ -1,37 +1,33 @@
 "use client";
-import { useParams } from "next/navigation";
 import { useState } from "react";
 
-const API = process.env.NEXT_PUBLIC_API || "http://localhost:3001";
+const API = process.env.NEXT_PUBLIC_API;
 
-export default function PublicPage() {
-  const { publicId } = useParams();
+export default function PublicPage({ params }) {
+  const { publicId } = params;
   const [alias, setAlias] = useState("");
   const [content, setContent] = useState("");
-  const [status, setStatus] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    try {
-      const res = await fetch(`${API}/messages`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ publicId, alias, content }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Error enviando mensaje");
-      setStatus("Mensaje enviado ✅");
+    const res = await fetch(`${API}/messages`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content, alias, publicId }),
+    });
+    const data = await res.json();
+    if (res.ok) {
       setAlias("");
       setContent("");
-    } catch (err) {
-      setStatus("Error enviando mensaje");
-      console.error(err);
+      alert("Mensaje enviado");
+    } else {
+      alert(data.error || "Error enviando mensaje");
     }
   };
 
   return (
     <div style={{ maxWidth: 600, margin: "0 auto", padding: 20 }}>
-      <h1>Enviar mensaje</h1>
+      <h1>Envía un mensaje</h1>
       <form onSubmit={handleSubmit}>
         <input
           type="text"
@@ -41,24 +37,25 @@ export default function PublicPage() {
           style={{ width: "100%", padding: 10, marginBottom: 12 }}
         />
         <textarea
-          placeholder="Escribe tu mensaje…"
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          style={{ width: "100%", padding: 10, height: 80 }}
+          placeholder="Escribe tu mensaje..."
+          style={{ width: "100%", height: 80, padding: 10 }}
         />
         <button
           type="submit"
           style={{
+            marginTop: "10px",
             padding: "10px 20px",
             backgroundColor: "#4CAF50",
             color: "#fff",
             border: "none",
+            cursor: "pointer",
           }}
         >
-          Enviar
+          Enviar mensaje
         </button>
       </form>
-      {status && <p>{status}</p>}
     </div>
   );
 }
