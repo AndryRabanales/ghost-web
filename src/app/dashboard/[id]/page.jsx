@@ -6,9 +6,7 @@ import MessageList from "@/components/MessageList";
 const API = process.env.NEXT_PUBLIC_API;
 
 export default function DashboardPage() {
-  const params = useParams();
-  const { dashboardId } = params;
-
+  const { dashboardId } = useParams();
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
 
