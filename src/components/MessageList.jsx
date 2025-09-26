@@ -36,8 +36,7 @@ export default function MessageList({ messages = [], onStatusChange }) {
       )}
       {messages.map((msg) => {
         const isOpen = openIds[msg.id]; // abierto en UI
-        // etiqueta siempre "Leído" si ya está seen, sino "Sin leer"
-        const etiqueta = msg.seen ? "Leído" : "Sin leer";
+
         // colores según estado
         let background = "#f0f0f0"; // gris por defecto
         if (!msg.seen) background = "#f0f0f0"; // sin leer gris
@@ -57,19 +56,30 @@ export default function MessageList({ messages = [], onStatusChange }) {
               cursor: "pointer",
             }}
           >
-            <p
-              style={{
-                fontWeight: "bold",
-                marginBottom: 5,
-                color: msg.seen
-                  ? isOpen
-                    ? "#2e7d32"
-                    : "#555"
-                  : "#333",
-              }}
-            >
-              {etiqueta}
-            </p>
+            {/* Etiqueta: solo mostrar si sin leer o leído-cerrado */}
+            {!msg.seen && (
+              <p
+                style={{
+                  fontWeight: "bold",
+                  marginBottom: 5,
+                  color: "#333",
+                }}
+              >
+                Sin leer
+              </p>
+            )}
+            {msg.seen && !isOpen && (
+              <p
+                style={{
+                  fontWeight: "bold",
+                  marginBottom: 5,
+                  color: "#555",
+                }}
+              >
+                Leído
+              </p>
+            )}
+
             {/* contenido */}
             {!msg.seen && (
               <p style={{ color: "#999", fontStyle: "italic" }}>
