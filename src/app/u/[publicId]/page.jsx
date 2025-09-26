@@ -1,4 +1,4 @@
-import MessageForm from "@/app/components/MessageForm";
+import MessageForm from "@/components/MessageForm";
 
 export default function PublicPage({ params }) {
   return (
