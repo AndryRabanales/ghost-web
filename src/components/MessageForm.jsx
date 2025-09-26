@@ -3,7 +3,7 @@ import React, { useState } from "react";
 
 const API = "https://ghost-api-2qmr.onrender.com";
 
-export default function MessageForm({ onMessageSent }) {
+export default function MessageForm({ creatorId, onMessageSent }) {
   const [content, setContent] = useState("");
   const [alias, setAlias] = useState("");
 
@@ -15,8 +15,14 @@ export default function MessageForm({ onMessageSent }) {
       const res = await fetch(`${API}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content, userId: "anon", alias }),
+        body: JSON.stringify({
+          content,
+          userId: "anon",
+          alias,
+          creatorId, // 👈 mandamos al backend
+        }),
       });
+
       const data = await res.json();
       console.log("Respuesta del servidor:", res.status, data);
 
@@ -24,14 +30,15 @@ export default function MessageForm({ onMessageSent }) {
 
       setContent("");
       setAlias("");
-      onMessageSent?.();
+
+      if (onMessageSent) onMessageSent();
     } catch (err) {
       console.error("Error en handleSubmit:", err);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} style={{ marginBottom: 20 }}>
+    <form onSubmit={handleSubmit} style={{ marginBottom: "20px" }}>
       <input
         type="text"
         placeholder="Tu alias (opcional)"
@@ -39,9 +46,9 @@ export default function MessageForm({ onMessageSent }) {
         onChange={(e) => setAlias(e.target.value)}
         style={{
           width: "100%",
-          padding: 10,
-          marginBottom: 12,
-          borderRadius: 4,
+          padding: "10px",
+          marginBottom: "12px",
+          borderRadius: "4px",
           border: "1px solid #ccc",
         }}
       />
@@ -49,12 +56,12 @@ export default function MessageForm({ onMessageSent }) {
         value={content}
         onChange={(e) => setContent(e.target.value)}
         placeholder="Escribe tu mensaje aquí..."
-        style={{ width: "100%", height: 80, padding: 10 }}
+        style={{ width: "100%", height: "80px", padding: "10px" }}
       />
       <button
         type="submit"
         style={{
-          marginTop: 10,
+          marginTop: "10px",
           padding: "10px 20px",
           backgroundColor: "#4CAF50",
           color: "#fff",
