@@ -1,75 +1,66 @@
 "use client";
-import React, { useEffect, useState } from "react";
-import { v4 as uuidv4 } from "uuid";
-import MessageList from "@/components/MessageList";
+import { useState } from "react";
 
 const API = "https://ghost-api-2qmr.onrender.com";
 
-export default function Dashboard() {
-  const [messages, setMessages] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [creatorId, setCreatorId] = useState(null);
+export default function Home() {
+  const [name, setName] = useState("");
+  const [dashboardUrl, setDashboardUrl] = useState(null);
+  const [publicUrl, setPublicUrl] = useState(null);
 
-  // Generar o recuperar creatorId único en localStorage
-  useEffect(() => {
-    let stored = localStorage.getItem("creatorId");
-    if (!stored) {
-      stored = uuidv4();
-      localStorage.setItem("creatorId", stored);
-    }
-    setCreatorId(stored);
-  }, []);
-
-  // Cargar todos los mensajes
-  const fetchMessages = async () => {
+  const handleCreate = async (e) => {
+    e.preventDefault();
     try {
-      const res = await fetch(`${API}/messages`);
-      if (!res.ok) throw new Error(`Error ${res.status}`);
-      const data = await res.json();
-      setMessages(data);
-    } catch (err) {
-      console.error("Error cargando mensajes:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (creatorId) fetchMessages();
-  }, [creatorId]);
-
-  const handleStatusChange = async (id, status) => {
-    try {
-      const res = await fetch(`${API}/messages/${id}`, {
-        method: "PATCH",
+      const res = await fetch(`${API}/creators`, {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({ name }),
       });
-      if (!res.ok) throw new Error(`Error ${res.status}`);
-      fetchMessages();
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error creando dashboard");
+      setDashboardUrl(data.dashboardUrl);
+      setPublicUrl(data.publicUrl);
     } catch (err) {
-      console.error("Error actualizando estado:", err);
+      console.error(err);
     }
   };
-
-  if (loading || !creatorId) {
-    return <p style={{ padding: 20 }}>Cargando…</p>;
-  }
 
   return (
     <div style={{ maxWidth: 600, margin: "0 auto", padding: 20 }}>
-      {/* volvemos a mostrar el link público */}
-      <p>
-        Tu link público:{" "}
-        <a href={`/u/${creatorId}`}>
-          {typeof window !== "undefined"
-            ? `${window.location.origin}/u/${creatorId}`
-            : `/u/${creatorId}`}
-        </a>
-      </p>
+      <h1>Crear mi Dashboard</h1>
+      <form onSubmit={handleCreate}>
+        <input
+          type="text"
+          placeholder="Tu nombre (opcional)"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          style={{ width: "100%", padding: 10, marginBottom: 12 }}
+        />
+        <button
+          type="submit"
+          style={{
+            padding: "10px 20px",
+            backgroundColor: "#4CAF50",
+            color: "#fff",
+            border: "none",
+          }}
+        >
+          Generar Dashboard
+        </button>
+      </form>
 
-      <h1>Dashboard de mensajes</h1>
-      <MessageList messages={messages} onStatusChange={handleStatusChange} />
+      {dashboardUrl && (
+        <div style={{ marginTop: 20 }}>
+          <p>
+            <strong>Tu dashboard (privado):</strong>{" "}
+            <a href={dashboardUrl}>{dashboardUrl}</a>
+          </p>
+          <p>
+            <strong>Tu link público para recibir mensajes:</strong>{" "}
+            <a href={publicUrl}>{publicUrl}</a>
+          </p>
+        </div>
+      )}
     </div>
   );
 }

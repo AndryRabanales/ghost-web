@@ -3,7 +3,7 @@ import React, { useState } from "react";
 
 const API = "https://ghost-api-2qmr.onrender.com";
 
-export default function MessageForm({ creatorId, onMessageSent }) {
+export default function MessageForm({ publicId, onMessageSent }) {
   const [content, setContent] = useState("");
   const [alias, setAlias] = useState("");
 
@@ -16,10 +16,9 @@ export default function MessageForm({ creatorId, onMessageSent }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          publicId, // 👈 manda publicId
           content,
-          userId: "anon",
           alias,
-          creatorId, // 👈 mandamos al backend
         }),
       });
 
