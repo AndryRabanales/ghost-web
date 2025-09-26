@@ -12,32 +12,37 @@ export default function MessageForm({ publicId }) {
     e.preventDefault();
     if (!content.trim()) return;
 
-    const res = await fetch(`${API}/chats`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ publicId, content, alias }),
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      alert(data.error || 'Error creando chat');
-      return;
+    try {
+      const res = await fetch(`${API}/chats`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ publicId, content, alias }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || 'Error creando chat');
+        return;
+      }
+
+      // Guardar chat en localStorage
+      const stored = JSON.parse(localStorage.getItem('myChats') || '[]');
+      const entry = {
+        anonToken: data.anonToken,
+        chatId: data.chatId,
+        chatUrl: data.chatUrl,
+        preview: content.slice(0, 80),
+        ts: Date.now(),
+      };
+      const next = [entry, ...stored.filter(c => c.chatId !== data.chatId)];
+      localStorage.setItem('myChats', JSON.stringify(next));
+
+      setChatUrl(data.chatUrl);
+      setContent('');
+      setAlias('');
+    } catch (err) {
+      console.error("Error al enviar mensaje:", err);
+      alert("Error al enviar mensaje");
     }
-
-    // Guardar chat en localStorage
-    const stored = JSON.parse(localStorage.getItem('myChats') || '[]');
-    const entry = {
-      anonToken: data.anonToken,
-      chatId: data.chatId,
-      chatUrl: data.chatUrl,
-      preview: content.slice(0, 80),
-      ts: Date.now(),
-    };
-    const next = [entry, ...stored.filter(c => c.chatId !== data.chatId)];
-    localStorage.setItem('myChats', JSON.stringify(next));
-
-    setChatUrl(data.chatUrl);
-    setContent('');
-    setAlias('');
   };
 
   return (
