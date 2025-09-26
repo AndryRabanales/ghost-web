@@ -4,17 +4,17 @@ import React from "react";
 const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
 
 export default function MessageList({ messages = [], onStatusChange }) {
-  const toggleSeen = async (msg) => {
+  const markAsSeen = async (msg) => {
     try {
-      // Alternar seen true/false
-      const newSeen = !msg.seen;
-      await fetch(`${API}/messages/${msg.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ seen: newSeen }),
-      });
-
-      if (onStatusChange) onStatusChange();
+      // solo marcamos como visto si aún no está visto
+      if (!msg.seen) {
+        await fetch(`${API}/messages/${msg.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ seen: true }),
+        });
+        if (onStatusChange) onStatusChange();
+      }
     } catch (err) {
       console.error("Error actualizando estado:", err);
     }
@@ -26,14 +26,12 @@ export default function MessageList({ messages = [], onStatusChange }) {
         <p style={{ textAlign: "center" }}>No hay mensajes aún</p>
       )}
       {messages.map((msg) => {
-        // Estado visible
-        let etiqueta = "Sin leer";
-        if (msg.seen) etiqueta = "Leído";
+        const etiqueta = msg.seen ? "Leído" : "Sin leer";
 
         return (
           <div
             key={msg.id}
-            onClick={() => toggleSeen(msg)}
+            onClick={() => markAsSeen(msg)}
             style={{
               marginBottom: 15,
               padding: 15,
@@ -52,7 +50,6 @@ export default function MessageList({ messages = [], onStatusChange }) {
             >
               {etiqueta}
             </p>
-            {/* Si no está visto, mostramos tapado */}
             {!msg.seen ? (
               <p style={{ color: "#999", fontStyle: "italic" }}>
                 Mensaje bloqueado, haz click para ver
