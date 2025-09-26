@@ -12,10 +12,11 @@ export default function MessageList({ messages, onToggleSeen }) {
         <div
           key={msg.id}
           style={{
-            padding: "10px",
+            padding: "14px",
             border: "1px solid #ccc",
-            borderRadius: "6px",
-            backgroundColor: "#f9f9f9",
+            borderRadius: "8px",
+            backgroundColor: "#fff", // fondo claro
+            color: "#000", // letras negras
             cursor: !msg.seen ? "pointer" : "default",
           }}
           onClick={() => {
@@ -25,11 +26,14 @@ export default function MessageList({ messages, onToggleSeen }) {
           }}
         >
           {!msg.seen ? (
-            <p style={{ color: "#999" }}>🔒 Mensaje bloqueado (haz click para ver)</p>
+            <p style={{ color: "#666", fontWeight: "bold" }}>🔒 Desbloquear</p>
           ) : (
             <>
-              <strong>{msg.alias || "Anónimo"}</strong>
-              <p style={{ marginTop: "4px" }}>{msg.content}</p>
+              <p style={{ margin: 0, fontWeight: "bold" }}>
+                Alias: {msg.alias || "Anónimo"}
+              </p>
+              <p style={{ marginTop: "6px" }}>{msg.content}</p>
+              <p style={{ fontSize: "12px", color: "green" }}>✅ Desbloqueado</p>
             </>
           )}
         </div>
