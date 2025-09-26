@@ -7,10 +7,9 @@ const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com"
 export default function MessageList({ dashboardId }) {
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [openCard, setOpenCard] = useState(null); // id de la card abierta
+  const [openCard, setOpenCard] = useState(null);
   const router = useRouter();
 
-  // cargar chats
   const fetchChats = async () => {
     if (!dashboardId) return;
     setLoading(true);
@@ -30,12 +29,11 @@ export default function MessageList({ dashboardId }) {
     fetchChats();
   }, [dashboardId]);
 
-  // marcar último mensaje como leído
   const markSeen = async (messageId) => {
     try {
       await fetch(`${API}/chat-messages/${messageId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ seen: true }),
       });
     } catch (err) {
@@ -57,14 +55,11 @@ export default function MessageList({ dashboardId }) {
           <div
             key={chat.id}
             onClick={(e) => {
-              // si hace click en la card pero no en el botón
-              if (e.target.tagName !== 'BUTTON') {
+              if (e.target.tagName !== "BUTTON") {
                 if (!isOpen) {
-                  // abrir card y marcar leído si no lo estaba
                   setOpenCard(chat.id);
                   if (!seen && last?.id) markSeen(last.id);
                 } else {
-                  // cerrar card y dejar estado como leído
                   setOpenCard(null);
                 }
               }
@@ -77,18 +72,17 @@ export default function MessageList({ dashboardId }) {
               background: isOpen
                 ? "#ffffff"
                 : seen
-                ? "#e6e6e6" // gris para leído
-                : "#ffe6e6", // rojo para sin leer
+                ? "#e6e6e6"
+                : "#ffe6e6",
               textDecoration: "none",
               color: "#111",
               cursor: "pointer",
             }}
           >
-            {/* si card abierta */}
             {isOpen ? (
               <>
                 <div style={{ fontWeight: 600, marginBottom: 4 }}>
-                  Alias: {last?.alias || 'Anónimo'}
+                  Alias: {last?.alias || "Anónimo"}
                 </div>
                 <div style={{ color: "#444" }}>{last?.content}</div>
                 <button
@@ -105,18 +99,18 @@ export default function MessageList({ dashboardId }) {
                     router.push(`/dashboard/${dashboardId}/chats/${chat.id}`)
                   }
                 >
-                  Responder a {last?.alias || 'Anónimo'}
+                  Responder a {last?.alias || "Anónimo"}
                 </button>
               </>
             ) : (
               <>
                 <div style={{ fontWeight: 600, marginBottom: 4 }}>
-                  {seen ? 'Leído' : 'Sin leer'}
+                  {seen ? "Leído" : "Sin leer"}
                 </div>
                 <div style={{ fontSize: 12, color: "#666" }}>
                   {seen
-                    ? 'Mensaje oculto (Leído). Haz click para desplegar'
-                    : 'Mensaje bloqueado, haz click para ver'}
+                    ? "Mensaje oculto (Leído). Haz click para desplegar"
+                    : "Mensaje bloqueado, haz click para ver"}
                 </div>
               </>
             )}
