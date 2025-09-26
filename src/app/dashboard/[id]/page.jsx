@@ -1,19 +1,20 @@
 "use client";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import MessageList from "@/components/MessageList";
 
-const API = process.env.NEXT_PUBLIC_API; // ya configurado
+const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
 
-export default function DashboardPage() {
+export default function Dashboard() {
   const params = useParams();
-  const { id } = params; // dashboardId
+  const dashboardId = params?.id;
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const fetchMessages = async () => {
+    if (!dashboardId) return;
     try {
-      const res = await fetch(`${API}/messages?dashboardId=${id}`);
+      const res = await fetch(`${API}/messages?dashboardId=${dashboardId}`);
       const data = await res.json();
       setMessages(data);
     } catch (err) {
@@ -24,19 +25,19 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    if (id) fetchMessages();
-  }, [id]);
+    fetchMessages();
+  }, [dashboardId]);
 
-  const handleStatusChange = async (messageId, status) => {
+  const handleToggleSeen = async (id, seen) => {
     try {
-      await fetch(`${API}/messages/${messageId}`, {
+      await fetch(`${API}/messages/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({ seen }),
       });
       fetchMessages();
     } catch (err) {
-      console.error("Error actualizando estado:", err);
+      console.error("Error actualizando visto:", err);
     }
   };
 
@@ -44,8 +45,8 @@ export default function DashboardPage() {
 
   return (
     <div style={{ maxWidth: 600, margin: "0 auto", padding: 20 }}>
-      <h1>Dashboard</h1>
-      <MessageList messages={messages} onStatusChange={handleStatusChange} />
+      <h1>Dashboard de mensajes</h1>
+      <MessageList messages={messages} onToggleSeen={handleToggleSeen} />
     </div>
   );
 }

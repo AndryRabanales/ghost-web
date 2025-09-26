@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-const API = process.env.NEXT_PUBLIC_API || "http://localhost:3001";
+const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
 
 export default function Home() {
   const router = useRouter();
@@ -22,8 +22,7 @@ export default function Home() {
       if (!res.ok) throw new Error(data.error || "Error creando dashboard");
       setDashboardUrl(data.dashboardUrl);
       setPublicUrl(data.publicUrl);
-      // redirigir automáticamente al dashboard privado
-      //router.push(data.dashboardUrl);
+      // Quitar router.push si no quieres redirigir automáticamente
     } catch (err) {
       console.error(err);
     }

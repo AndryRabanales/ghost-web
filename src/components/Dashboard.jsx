@@ -1,29 +1,20 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { v4 as uuidv4 } from "uuid";
+import { useParams } from "next/navigation"; // Para tomar el dashboardId de la URL
 import MessageList from "@/components/MessageList";
 
-const API = "https://ghost-api-2qmr.onrender.com";
+const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
 
 export default function Dashboard() {
+  const params = useParams();
+  const dashboardId = params?.id; // si estás en /dashboard/[id]
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [creatorId, setCreatorId] = useState(null);
 
-  // Generar o recuperar creatorId único en localStorage
-  useEffect(() => {
-    let stored = localStorage.getItem("creatorId");
-    if (!stored) {
-      stored = uuidv4();
-      localStorage.setItem("creatorId", stored);
-    }
-    setCreatorId(stored);
-  }, []);
-
-  // Cargar mensajes sólo de este creatorId
   const fetchMessages = async () => {
+    if (!dashboardId) return;
     try {
-      const res = await fetch(`${API}/messages?creatorId=${creatorId}`);
+      const res = await fetch(`${API}/messages?dashboardId=${dashboardId}`);
       const data = await res.json();
       setMessages(data);
     } catch (err) {
@@ -34,37 +25,28 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    if (creatorId) fetchMessages();
-  }, [creatorId]);
+    fetchMessages();
+  }, [dashboardId]);
 
-  const handleStatusChange = async (id, status) => {
+  const handleToggleSeen = async (id, seen) => {
     try {
       await fetch(`${API}/messages/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({ seen }), // actualizar campo seen en el backend
       });
-      fetchMessages();
+      fetchMessages(); // refrescar lista
     } catch (err) {
-      console.error(err);
+      console.error("Error actualizando visto:", err);
     }
   };
 
-  if (loading || !creatorId) return <p style={{ padding: 20 }}>Cargando…</p>;
+  if (loading) return <p style={{ padding: 20 }}>Cargando…</p>;
 
   return (
     <div style={{ maxWidth: 600, margin: "0 auto", padding: 20 }}>
-      <p>
-        Tu link público:{" "}
-        <a href={`/u/${creatorId}`}>
-          {typeof window !== "undefined"
-            ? `${window.location.origin}/u/${creatorId}`
-            : `/u/${creatorId}`}
-        </a>
-      </p>
-
       <h1>Dashboard de mensajes</h1>
-      <MessageList messages={messages} onStatusChange={handleStatusChange} />
+      <MessageList messages={messages} onToggleSeen={handleToggleSeen} />
     </div>
   );
 }
