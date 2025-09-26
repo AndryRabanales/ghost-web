@@ -3,16 +3,14 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import MessageList from "@/components/MessageList";
 
-const API = process.env.NEXT_PUBLIC_API || "http://localhost:3001";
+const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
 
-export default function Dashboard() {
+export default function DashboardPage() {
   const params = useParams();
-  const dashboardId = params?.dashboardId; // viene de /dashboard/[dashboardId]
-
+  const dashboardId = params?.dashboardId;
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // traer mensajes de ese dashboard
   const fetchMessages = async () => {
     if (!dashboardId) return;
     try {
@@ -30,9 +28,17 @@ export default function Dashboard() {
     fetchMessages();
   }, [dashboardId]);
 
-  // cuando un mensaje se ve/cambia su estado, refrescamos lista
-  const handleStatusChange = () => {
-    fetchMessages();
+  const handleStatusChange = async (id, status) => {
+    try {
+      await fetch(`${API}/messages/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      fetchMessages();
+    } catch (err) {
+      console.error("Error actualizando estado:", err);
+    }
   };
 
   if (loading) return <p style={{ padding: 20 }}>Cargando…</p>;
