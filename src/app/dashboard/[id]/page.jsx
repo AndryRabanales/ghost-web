@@ -3,41 +3,41 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import MessageList from "@/components/MessageList";
 
-const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
+const API = process.env.NEXT_PUBLIC_API || "http://localhost:3001";
 
-export default function Dashboard() {
-  const params = useParams();
-  const dashboardId = params?.id;
+export default function DashboardPage() {
+  const { id } = useParams(); // dashboardId de la URL
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // obtener mensajes del dashboard actual
   const fetchMessages = async () => {
-    if (!dashboardId) return;
     try {
-      const res = await fetch(`${API}/messages?dashboardId=${dashboardId}`);
+      const res = await fetch(`${API}/messages?dashboardId=${id}`);
       const data = await res.json();
       setMessages(data);
     } catch (err) {
-      console.error(err);
+      console.error("Error cargando mensajes:", err);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchMessages();
-  }, [dashboardId]);
+    if (id) fetchMessages();
+  }, [id]);
 
-  const handleToggleSeen = async (id, seen) => {
+  // cambiar estado o visto
+  const handleSeenToggle = async (messageId, seen) => {
     try {
-      await fetch(`${API}/messages/${id}`, {
+      await fetch(`${API}/messages/${messageId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ seen }),
       });
       fetchMessages();
     } catch (err) {
-      console.error("Error actualizando visto:", err);
+      console.error("Error actualizando mensaje:", err);
     }
   };
 
@@ -45,8 +45,8 @@ export default function Dashboard() {
 
   return (
     <div style={{ maxWidth: 600, margin: "0 auto", padding: 20 }}>
-      <h1>Dashboard de mensajes</h1>
-      <MessageList messages={messages} onToggleSeen={handleToggleSeen} />
+      <h1>Mi Dashboard</h1>
+      <MessageList messages={messages} onSeenToggle={handleSeenToggle} />
     </div>
   );
 }

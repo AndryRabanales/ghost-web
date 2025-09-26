@@ -1,56 +1,56 @@
 "use client";
-import React, { useState } from "react";
+import React from "react";
 
-export default function MessageList({ messages, onMarkSeen }) {
-  const [open, setOpen] = useState({});
-
-  if (!messages || messages.length === 0) {
-    return <p>No hay mensajes todavía.</p>;
-  }
-
-  const toggleOpen = (msg) => {
-    // Si no está marcado como visto en BD, lo marcamos
-    if (!msg.seen && onMarkSeen) {
-      onMarkSeen(msg.id);
-    }
-    // toggle en el frontend
-    setOpen((prev) => ({ ...prev, [msg.id]: !prev[msg.id] }));
-  };
+export default function MessageList({ messages, onSeenToggle }) {
+  if (!messages.length) return <p>No hay mensajes todavía.</p>;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+    <div>
       {messages.map((msg) => {
-        const isOpen = open[msg.id]; // estado de apertura en frontend
+        // decidir el texto del botón
+        let buttonText = "";
+        if (!msg.seen) {
+          buttonText = "Sin leer";
+        } else {
+          buttonText = "Visto (clic para bloquear de nuevo)";
+        }
+
         return (
           <div
             key={msg.id}
             style={{
-              padding: "14px",
-              border: "1px solid #ccc",
-              borderRadius: "8px",
-              backgroundColor: "#fff",
-              color: "#000",
-              cursor: "pointer",
+              background: msg.seen ? "#f0f0f0" : "#ddd",
+              padding: 12,
+              borderRadius: 6,
+              marginBottom: 10,
             }}
-            onClick={() => toggleOpen(msg)}
           >
-            {!msg.seen ? (
-              <p style={{ margin: 0, color: "#666", fontWeight: "bold" }}>
-                🔒 Sin leer
-              </p>
-            ) : isOpen ? (
-              <>
-                <p style={{ margin: 0, fontWeight: "bold" }}>
-                  Alias: {msg.alias || "Anónimo"}
-                </p>
-                <p style={{ marginTop: "6px" }}>{msg.content}</p>
-                <p style={{ fontSize: "12px", color: "green" }}>✅ Visto</p>
-              </>
-            ) : (
-              <p style={{ margin: 0, color: "green", fontWeight: "bold" }}>
-                ✅ Visto (clic para volver a tapar)
-              </p>
-            )}
+            <p>
+              <strong>Alias:</strong> {msg.alias || "Anónimo"}
+            </p>
+
+            {/* mensaje tapado si no está visto */}
+            <p>
+              {msg.seen ? (
+                msg.content
+              ) : (
+                <span style={{ color: "#666" }}>🔒 Mensaje bloqueado</span>
+              )}
+            </p>
+
+            <button
+              onClick={() => onSeenToggle(msg.id, !msg.seen)}
+              style={{
+                marginTop: 6,
+                padding: "6px 12px",
+                backgroundColor: msg.seen ? "#aaa" : "#4CAF50",
+                color: "#fff",
+                border: "none",
+                cursor: "pointer",
+              }}
+            >
+              {buttonText}
+            </button>
           </div>
         );
       })}
