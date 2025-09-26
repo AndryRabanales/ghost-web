@@ -8,20 +8,24 @@ export default function MessageList({ dashboardId }) {
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  // cargar lista de chats con último mensaje
+  const fetchChats = async () => {
     if (!dashboardId) return;
     setLoading(true);
-    fetch(`${API}/dashboard/${dashboardId}/chats`)
-      .then((res) => res.json())
-      .then((data) => {
-        setChats(Array.isArray(data) ? data : []);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error(err);
-        setChats([]);
-        setLoading(false);
-      });
+    try {
+      const res = await fetch(`${API}/dashboard/${dashboardId}/chats`);
+      const data = await res.json();
+      setChats(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error(err);
+      setChats([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchChats();
   }, [dashboardId]);
 
   if (loading) return <p>Cargando…</p>;
@@ -31,6 +35,8 @@ export default function MessageList({ dashboardId }) {
     <div style={{ display: "grid", gap: 12 }}>
       {chats.map((chat) => {
         const last = chat.messages?.[0];
+        const seen = last?.seen || false; // asumimos que en ChatMessage hay campo seen
+
         return (
           <a
             key={chat.id}
@@ -40,12 +46,14 @@ export default function MessageList({ dashboardId }) {
               padding: 12,
               border: "1px solid #ddd",
               borderRadius: 8,
-              background: "#fafafa",
+              background: seen ? "#e6ffe6" : "#ffe6e6", // verde si leído, rojo si sin leer
               textDecoration: "none",
               color: "#111",
             }}
           >
-            <div style={{ fontWeight: 600, marginBottom: 4 }}>Chat</div>
+            <div style={{ fontWeight: 600, marginBottom: 4 }}>
+              Chat {seen ? <span style={{ color: "green" }}>Leído</span> : <span style={{ color: "red" }}>Sin leer</span>}
+            </div>
             <div style={{ color: "#444" }}>
               {last ? last.content.slice(0, 80) : "Sin mensajes"}
             </div>
