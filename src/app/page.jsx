@@ -23,7 +23,7 @@ export default function Home() {
       setDashboardUrl(data.dashboardUrl);
       setPublicUrl(data.publicUrl);
       // redirigir automáticamente al dashboard privado
-      router.push(data.dashboardUrl);
+      //router.push(data.dashboardUrl);
     } catch (err) {
       console.error(err);
     }
