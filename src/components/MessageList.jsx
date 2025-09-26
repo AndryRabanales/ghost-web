@@ -1,54 +1,76 @@
 "use client";
-import React, { useState } from "react";
+import React from "react";
 
-export default function MessageList({ messages, onMarkSeen = () => {} }) {
-  // local state para cada mensaje abierto/cerrado
-  const [openIds, setOpenIds] = useState([]);
+const API = process.env.NEXT_PUBLIC_API || "http://localhost:3001";
 
-  const toggleMessage = (msg) => {
-    // si está abierto, ciérralo
-    if (openIds.includes(msg.id)) {
-      // quitarlo del array
-      setOpenIds(openIds.filter((id) => id !== msg.id));
-    } else {
-      // abrirlo
-      setOpenIds([...openIds, msg.id]);
-      if (!msg.seen) {
-        // si aún no está visto en BD, márcalo
-        onMarkSeen(msg.id);
-      }
+/**
+ * messages: array de mensajes [{id, alias, content, seen, createdAt}]
+ * onStatusChange: callback opcional si quieres hacer algo más tras cambiar
+ */
+export default function MessageList({ messages = [], onStatusChange }) {
+  const toggleSeen = async (msg) => {
+    try {
+      // Alternar seen: si estaba false pasa a true, si estaba true pasa a false
+      const newSeen = !msg.seen;
+
+      await fetch(`${API}/messages/${msg.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ seen: newSeen }),
+      });
+
+      if (onStatusChange) onStatusChange();
+    } catch (err) {
+      console.error("Error actualizando estado:", err);
     }
   };
 
   return (
-    <div>
+    <div style={{ marginTop: 20 }}>
+      {messages.length === 0 && (
+        <p style={{ textAlign: "center" }}>No hay mensajes aún</p>
+      )}
       {messages.map((msg) => {
-        const isOpen = openIds.includes(msg.id);
-        const statusText = !msg.seen ? "Sin leer" : isOpen ? "Visto" : "Leído";
+        // Etiqueta según estado
+        let etiqueta = "Sin leer"; // default
+        if (msg.seen) {
+          etiqueta = "Leído";
+        }
 
         return (
           <div
             key={msg.id}
-            onClick={() => toggleMessage(msg)}
+            onClick={() => toggleSeen(msg)}
             style={{
-              marginBottom: "15px",
-              padding: "10px",
+              marginBottom: 15,
+              padding: 15,
               border: "1px solid #ccc",
-              borderRadius: "8px",
-              backgroundColor: isOpen ? "#f8f8f8" : "#e0e0e0",
+              borderRadius: 8,
+              backgroundColor: msg.seen ? "#f5f5f5" : "#eee",
               cursor: "pointer",
             }}
           >
-            <div style={{ fontSize: "12px", color: "#555" }}>{statusText}</div>
-            <div style={{ fontWeight: "bold" }}>
-              Alias: {msg.alias || "Anónimo"}
-            </div>
-            {isOpen ? (
-              <div style={{ color: "#000", marginTop: "4px" }}>{msg.content}</div>
+            <p
+              style={{
+                fontWeight: "bold",
+                marginBottom: 5,
+                color: "#333",
+              }}
+            >
+              {etiqueta}
+            </p>
+            {/* si no está visto, mostramos placeholder tapado */}
+            {!msg.seen ? (
+              <p style={{ color: "#999", fontStyle: "italic" }}>
+                Mensaje bloqueado, haz click para ver
+              </p>
             ) : (
-              <div style={{ color: "#999", marginTop: "4px" }}>
-                (Mensaje oculto)
-              </div>
+              <>
+                <p style={{ margin: 0, color: "#444" }}>
+                  <strong>Alias:</strong> {msg.alias || "Anónimo"}
+                </p>
+                <p style={{ marginTop: 4, color: "#000" }}>{msg.content}</p>
+              </>
             )}
           </div>
         );
