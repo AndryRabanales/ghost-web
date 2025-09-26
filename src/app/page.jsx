@@ -1,9 +1,11 @@
 "use client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
-const API = "https://ghost-api-2qmr.onrender.com";
+const API = "https://ghost-api-2qmr.onrender.com"; // backend en Render
 
 export default function Home() {
+  const router = useRouter();
   const [name, setName] = useState("");
   const [dashboardUrl, setDashboardUrl] = useState(null);
   const [publicUrl, setPublicUrl] = useState(null);
@@ -20,6 +22,8 @@ export default function Home() {
       if (!res.ok) throw new Error(data.error || "Error creando dashboard");
       setDashboardUrl(data.dashboardUrl);
       setPublicUrl(data.publicUrl);
+      // redirigir automáticamente al dashboard
+      router.push(data.dashboardUrl);
     } catch (err) {
       console.error(err);
     }

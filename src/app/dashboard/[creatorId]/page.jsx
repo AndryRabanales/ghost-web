@@ -1,12 +1,11 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
 import MessageList from "@/components/MessageList";
 
 const API = "https://ghost-api-2qmr.onrender.com";
 
-export default function DashboardPage() {
-  const { dashboardId } = useParams();
+export default function Dashboard({ params }) {
+  const { dashboardId } = params;
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -23,7 +22,7 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    if (dashboardId) fetchMessages();
+    fetchMessages();
   }, [dashboardId]);
 
   const handleStatusChange = async (id, status) => {
@@ -43,8 +42,7 @@ export default function DashboardPage() {
 
   return (
     <div style={{ maxWidth: 600, margin: "0 auto", padding: 20 }}>
-      <h1>Tu Dashboard</h1>
-      <p>Este es tu panel privado, solo tú debes tener este link.</p>
+      <h1>Dashboard de mensajes</h1>
       <MessageList messages={messages} onStatusChange={handleStatusChange} />
     </div>
   );

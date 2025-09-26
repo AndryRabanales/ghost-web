@@ -16,20 +16,17 @@ export default function MessageForm({ publicId, onMessageSent }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          publicId, // 👈 manda publicId
           content,
           alias,
+          publicId, // 👈 para que el backend sepa a qué creator pertenece
         }),
       });
 
       const data = await res.json();
-      console.log("Respuesta del servidor:", res.status, data);
-
       if (!res.ok) throw new Error(data.error || "Error al enviar mensaje");
 
       setContent("");
       setAlias("");
-
       if (onMessageSent) onMessageSent();
     } catch (err) {
       console.error("Error en handleSubmit:", err);
