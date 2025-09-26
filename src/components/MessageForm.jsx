@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
 
@@ -7,6 +7,12 @@ export default function MessageForm({ publicId }) {
   const [content, setContent] = useState('');
   const [alias, setAlias] = useState('');
   const [chatUrl, setChatUrl] = useState(null);
+
+  useEffect(() => {
+    // cuando carga el componente, si ya hay un alias guardado, lo usamos
+    const storedAlias = localStorage.getItem(`alias_${publicId}`);
+    if (storedAlias) setAlias(storedAlias);
+  }, [publicId]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -19,11 +25,12 @@ export default function MessageForm({ publicId }) {
       const existing = stored.find(c => c.publicId === publicId);
 
       if (existing) {
-        // si ya existe, mandamos el mensaje a ese chat
+        // si ya existe, mandamos el mensaje a ese chat (enviando alias guardado)
+        const myAlias = alias || localStorage.getItem(`alias_${publicId}`) || '';
         const res = await fetch(`${API}/chats/${existing.anonToken}/${existing.chatId}/messages`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ content, alias }), // enviamos alias también
+          body: JSON.stringify({ content, alias: myAlias }),
         });
         const data = await res.json();
         if (!res.ok) {
@@ -48,6 +55,9 @@ export default function MessageForm({ publicId }) {
           return;
         }
 
+        // guardamos alias en localStorage para siguientes mensajes
+        if (alias) localStorage.setItem(`alias_${publicId}`, alias);
+
         const entry = {
           anonToken: data.anonToken,
           chatId: data.chatId,
@@ -61,7 +71,7 @@ export default function MessageForm({ publicId }) {
 
         setChatUrl(data.chatUrl);
         setContent('');
-        setAlias('');
+        // NO limpiamos alias para que siga usándolo
       }
     } catch (err) {
       console.error("Error al enviar mensaje:", err);
@@ -75,7 +85,10 @@ export default function MessageForm({ publicId }) {
         type="text"
         placeholder="Tu alias (opcional)"
         value={alias}
-        onChange={(e) => setAlias(e.target.value)}
+        onChange={(e) => {
+          setAlias(e.target.value);
+          localStorage.setItem(`alias_${publicId}`, e.target.value);
+        }}
         style={{ width: '100%', padding: '10px', marginBottom: 12 }}
       />
       <textarea
