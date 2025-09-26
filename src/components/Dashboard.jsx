@@ -1,62 +1,73 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import MessageList from "@/components/MessageList";
 
-const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
+const API =
+  process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
 
 export default function Dashboard() {
+  // si lo usas dentro de /dashboard/[dashboardId] puedes leer params
   const params = useParams();
-  const dashboardId = params?.dashboardId; // /dashboard/[dashboardId]
+  const dashboardId = params?.dashboardId || params?.id; // adapta según tu ruta
 
-  const [messages, setMessages] = useState([]);
+  const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchMessages = async () => {
+  const fetchChats = async () => {
     if (!dashboardId) return;
     setLoading(true);
     try {
-      console.log("Cargando mensajes para dashboardId:", dashboardId);
-      const res = await fetch(`${API}/messages?dashboardId=${dashboardId}`);
+      const res = await fetch(`${API}/dashboard/${dashboardId}/chats`);
       const data = await res.json();
-      console.log("Respuesta de API:", res.status, data);
-      if (!res.ok) {
-        throw new Error(data.error || "Error cargando mensajes");
-      }
-      setMessages(data);
+      if (!res.ok) throw new Error(data.error || "Error cargando chats");
+      setChats(data);
     } catch (err) {
-      console.error("Error en fetchMessages:", err);
-      setMessages([]);
+      console.error("Error en fetchChats:", err);
+      setChats([]);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchMessages();
+    fetchChats();
   }, [dashboardId]);
 
-  const handleStatusChange = async (id, status) => {
-    try {
-      const res = await fetch(`${API}/messages/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
-      });
-      const data = await res.json();
-      console.log("Respuesta al actualizar estado:", res.status, data);
-      fetchMessages();
-    } catch (err) {
-      console.error("Error actualizando estado:", err);
-    }
-  };
-
-  if (loading) return <p style={{ padding: 20 }}>Cargando…</p>;
-
   return (
-    <div style={{ maxWidth: 600, margin: "0 auto", padding: 20 }}>
-      <h1>Dashboard de mensajes</h1>
-      <MessageList messages={messages} onStatusChange={handleStatusChange} />
+    <div style={{ maxWidth: 700, margin: "0 auto", padding: 20 }}>
+      <h1>Chats del dashboard</h1>
+      {loading && <p>Cargando…</p>}
+      {!loading && chats.length === 0 && (
+        <p style={{ color: "#666" }}>No hay chats aún.</p>
+      )}
+      <div style={{ display: "grid", gap: 12 }}>
+        {chats.map((chat) => {
+          const last = chat.messages?.[0];
+          return (
+            <a
+              key={chat.id}
+              href={`/dashboard/${dashboardId}/chats/${chat.id}`}
+              style={{
+                display: "block",
+                padding: 12,
+                border: "1px solid #ddd",
+                borderRadius: 8,
+                background: "#fafafa",
+                textDecoration: "none",
+                color: "#111",
+              }}
+            >
+              <div style={{ fontWeight: 600, marginBottom: 4 }}>Chat</div>
+              <div style={{ color: "#444" }}>
+                {last ? last.content.slice(0, 80) : "Sin mensajes"}
+              </div>
+              <div style={{ fontSize: 12, color: "#888", marginTop: 6 }}>
+                {last ? new Date(last.createdAt).toLocaleString() : ""}
+              </div>
+            </a>
+          );
+        })}
+      </div>
     </div>
   );
 }
