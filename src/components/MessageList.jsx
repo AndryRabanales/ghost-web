@@ -1,18 +1,13 @@
 "use client";
 import React from "react";
 
-const API = process.env.NEXT_PUBLIC_API || "http://localhost:3001";
+const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
 
-/**
- * messages: array de mensajes [{id, alias, content, seen, createdAt}]
- * onStatusChange: callback opcional si quieres hacer algo más tras cambiar
- */
 export default function MessageList({ messages = [], onStatusChange }) {
   const toggleSeen = async (msg) => {
     try {
-      // Alternar seen: si estaba false pasa a true, si estaba true pasa a false
+      // Alternar seen true/false
       const newSeen = !msg.seen;
-
       await fetch(`${API}/messages/${msg.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -31,11 +26,9 @@ export default function MessageList({ messages = [], onStatusChange }) {
         <p style={{ textAlign: "center" }}>No hay mensajes aún</p>
       )}
       {messages.map((msg) => {
-        // Etiqueta según estado
-        let etiqueta = "Sin leer"; // default
-        if (msg.seen) {
-          etiqueta = "Leído";
-        }
+        // Estado visible
+        let etiqueta = "Sin leer";
+        if (msg.seen) etiqueta = "Leído";
 
         return (
           <div
@@ -46,7 +39,7 @@ export default function MessageList({ messages = [], onStatusChange }) {
               padding: 15,
               border: "1px solid #ccc",
               borderRadius: 8,
-              backgroundColor: msg.seen ? "#f5f5f5" : "#eee",
+              backgroundColor: msg.seen ? "#e0ffe0" : "#f0f0f0",
               cursor: "pointer",
             }}
           >
@@ -59,7 +52,7 @@ export default function MessageList({ messages = [], onStatusChange }) {
             >
               {etiqueta}
             </p>
-            {/* si no está visto, mostramos placeholder tapado */}
+            {/* Si no está visto, mostramos tapado */}
             {!msg.seen ? (
               <p style={{ color: "#999", fontStyle: "italic" }}>
                 Mensaje bloqueado, haz click para ver

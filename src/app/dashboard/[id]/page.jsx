@@ -1,18 +1,18 @@
 "use client";
-import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import MessageList from "@/components/MessageList";
 
 const API = process.env.NEXT_PUBLIC_API;
 
 export default function DashboardPage() {
-  const { dashboardId } = useParams();
+  const { id } = useParams(); // dashboardId
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const fetchMessages = async () => {
     try {
-      const res = await fetch(`${API}/messages?dashboardId=${dashboardId}`);
+      const res = await fetch(`${API}/messages?dashboardId=${id}`);
       const data = await res.json();
       setMessages(data);
     } catch (err) {
@@ -23,28 +23,20 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    if (dashboardId) fetchMessages();
-  }, [dashboardId]);
+    if (id) fetchMessages();
+  }, [id]);
 
-  const handleStatusChange = async (id, status) => {
-    try {
-      await fetch(`${API}/messages/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
-      });
-      fetchMessages();
-    } catch (err) {
-      console.error(err);
-    }
+  // se llama tras marcar como leído o no leído
+  const handleRefresh = () => {
+    fetchMessages();
   };
 
-  if (loading) return <p style={{ padding: 20 }}>Cargando…</p>;
+  if (loading) return <p style={{ padding: 20 }}>Cargando...</p>;
 
   return (
     <div style={{ maxWidth: 600, margin: "0 auto", padding: 20 }}>
-      <h1>Dashboard</h1>
-      <MessageList messages={messages} onStatusChange={handleStatusChange} />
+      <h1>Tu Dashboard</h1>
+      <MessageList messages={messages} onStatusChange={handleRefresh} />
     </div>
   );
 }
