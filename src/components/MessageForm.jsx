@@ -1,17 +1,23 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from "react";
 
 const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
 
 export default function MessageForm({ publicId }) {
-  const [content, setContent] = useState('');
-  const [alias, setAlias] = useState('');
-  const [chatUrl, setChatUrl] = useState(null);
+  const [content, setContent] = useState("");
+  const [alias, setAlias] = useState("");
+  const [links, setLinks] = useState([]); // chats creados para este publicId
 
+  // Cargar alias guardado y lista de chats (solo de este publicId)
   useEffect(() => {
-    // cuando carga el componente, si ya hay un alias guardado, lo usamos
     const storedAlias = localStorage.getItem(`alias_${publicId}`);
     if (storedAlias) setAlias(storedAlias);
+
+    const stored = JSON.parse(localStorage.getItem("myChats") || "[]");
+    const list = stored
+      .filter((c) => c.publicId === publicId)
+      .sort((a, b) => b.ts - a.ts);
+    setLinks(list);
   }, [publicId]);
 
   const handleSubmit = async (e) => {
@@ -19,60 +25,43 @@ export default function MessageForm({ publicId }) {
     if (!content.trim()) return;
 
     try {
-      // leer chats previos del localStorage
-      const stored = JSON.parse(localStorage.getItem('myChats') || '[]');
-      // buscamos si ya tenemos un chat abierto para este publicId
-      const existing = stored.find(c => c.publicId === publicId);
-
-      if (existing) {
-        // si ya existe, mandamos el mensaje a ese chat (enviando alias guardado)
-        const myAlias = alias || localStorage.getItem(`alias_${publicId}`) || '';
-        const res = await fetch(`${API}/chats/${existing.anonToken}/${existing.chatId}/messages`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ content, alias: myAlias }),
-        });
-        const data = await res.json();
-        if (!res.ok) {
-          alert(data.error || 'Error enviando mensaje');
-          return;
-        }
-        // opcional: actualizar preview del localStorage
-        existing.preview = content.slice(0, 80);
-        existing.ts = Date.now();
-        localStorage.setItem('myChats', JSON.stringify([existing, ...stored.filter(c => c.chatId !== existing.chatId)]));
-        setContent('');
-      } else {
-        // crear chat nuevo
-        const res = await fetch(`${API}/chats`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ publicId, content, alias }),
-        });
-        const data = await res.json();
-        if (!res.ok) {
-          alert(data.error || 'Error creando chat');
-          return;
-        }
-
-        // guardamos alias en localStorage para siguientes mensajes
-        if (alias) localStorage.setItem(`alias_${publicId}`, alias);
-
-        const entry = {
-          anonToken: data.anonToken,
-          chatId: data.chatId,
-          chatUrl: data.chatUrl,
-          preview: content.slice(0, 80),
-          ts: Date.now(),
-          publicId,
-        };
-        const next = [entry, ...stored.filter(c => c.chatId !== data.chatId)];
-        localStorage.setItem('myChats', JSON.stringify(next));
-
-        setChatUrl(data.chatUrl);
-        setContent('');
-        // NO limpiamos alias para que siga usándolo
+      // SIEMPRE crear chat nuevo por envío
+      const res = await fetch(`${API}/chats`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ publicId, content, alias }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || "Error creando chat");
+        return;
       }
+
+      // Guardar/actualizar alias para este publicId
+      if (alias) localStorage.setItem(`alias_${publicId}`, alias);
+
+      // Agregar entrada al storage (no sobrescribe otras, se acumulan)
+      const entry = {
+        anonToken: data.anonToken,
+        chatId: data.chatId,
+        chatUrl: data.chatUrl,
+        preview: content.slice(0, 80),
+        ts: Date.now(),
+        publicId,
+        alias: alias || "Anónimo",
+      };
+      const stored = JSON.parse(localStorage.getItem("myChats") || "[]");
+      const next = [entry, ...stored.filter((c) => c.chatId !== data.chatId)];
+      localStorage.setItem("myChats", JSON.stringify(next));
+
+      // Refrescar lista sólo de este publicId
+      const list = next
+        .filter((c) => c.publicId === publicId)
+        .sort((a, b) => b.ts - a.ts);
+      setLinks(list);
+
+      // Limpiar solo el contenido; dejamos alias para siguientes envíos
+      setContent("");
     } catch (err) {
       console.error("Error al enviar mensaje:", err);
       alert("Error al enviar mensaje");
@@ -80,32 +69,65 @@ export default function MessageForm({ publicId }) {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <input
-        type="text"
-        placeholder="Tu alias (opcional)"
-        value={alias}
-        onChange={(e) => {
-          setAlias(e.target.value);
-          localStorage.setItem(`alias_${publicId}`, e.target.value);
-        }}
-        style={{ width: '100%', padding: '10px', marginBottom: 12 }}
-      />
-      <textarea
-        value={content}
-        onChange={(e) => setContent(e.target.value)}
-        placeholder="Escribe tu mensaje aquí..."
-        style={{ width: '100%', height: 80, padding: 10 }}
-      />
-      <button type="submit" style={{ marginTop: 10 }}>Enviar mensaje</button>
+    <div>
+      <form onSubmit={handleSubmit}>
+        <input
+          type="text"
+          placeholder="Tu alias (opcional)"
+          value={alias}
+          onChange={(e) => {
+            setAlias(e.target.value);
+            localStorage.setItem(`alias_${publicId}`, e.target.value);
+          }}
+          style={{ width: "100%", padding: "10px", marginBottom: 12 }}
+        />
+        <textarea
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          placeholder="Escribe tu mensaje aquí..."
+          style={{ width: "100%", height: 80, padding: 10 }}
+        />
+        <button type="submit" style={{ marginTop: 10 }}>
+          Enviar mensaje
+        </button>
+      </form>
 
-      {chatUrl && (
-        <div style={{ marginTop: 12 }}>
-          <p>✅ Chat abierto. Guarda este link para seguir la conversación:</p>
-          <a href={chatUrl}>{chatUrl}</a>
-          <p>También puedes ver todos tus chats en: <a href="/chats">/chats</a></p>
+      {/* Lista de chats abiertos por este usuario para este publicId */}
+      {links.length > 0 && (
+        <div style={{ marginTop: 16 }}>
+          <h3 style={{ marginBottom: 8 }}>
+            Tus chats abiertos ({links.length})
+          </h3>
+          <div style={{ display: "grid", gap: 8 }}>
+            {links.map((c) => (
+              <a
+                key={c.chatId}
+                href={c.chatUrl}
+                target="_blank"
+                rel="noreferrer"
+                style={{
+                  border: "1px solid #ddd",
+                  borderRadius: 8,
+                  padding: 10,
+                  textDecoration: "none",
+                  color: "#111",
+                  background: "#fafafa",
+                }}
+              >
+                <div style={{ fontWeight: 600 }}>
+                  Chat con {c.alias || "Anónimo"}
+                </div>
+                <div style={{ fontSize: 12, color: "#555", marginTop: 4 }}>
+                  {c.preview || "Mensaje inicial"}
+                </div>
+                <div style={{ fontSize: 11, color: "#888", marginTop: 4 }}>
+                  {new Date(c.ts).toLocaleString()}
+                </div>
+              </a>
+            ))}
+          </div>
         </div>
       )}
-    </form>
+    </div>
   );
 }
