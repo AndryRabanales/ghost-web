@@ -1,13 +1,13 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { useParams } from "next/navigation"; // Para tomar el dashboardId de la URL
+import { useParams } from "next/navigation";
 import MessageList from "@/components/MessageList";
 
 const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
 
 export default function Dashboard() {
   const params = useParams();
-  const dashboardId = params?.id; // si estás en /dashboard/[id]
+  const dashboardId = params?.id;
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -26,16 +26,19 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchMessages();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dashboardId]);
 
-  const handleToggleSeen = async (id, seen) => {
+  // Marcar como leído en BD (solo se usa la primera vez que se abre)
+  const handleMarkSeen = async (id) => {
     try {
       await fetch(`${API}/messages/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ seen }), // actualizar campo seen en el backend
+        body: JSON.stringify({ seen: true }),
       });
-      fetchMessages(); // refrescar lista
+      // refrescar la lista para que el badge cambie a "Leído"
+      fetchMessages();
     } catch (err) {
       console.error("Error actualizando visto:", err);
     }
@@ -44,9 +47,9 @@ export default function Dashboard() {
   if (loading) return <p style={{ padding: 20 }}>Cargando…</p>;
 
   return (
-    <div style={{ maxWidth: 600, margin: "0 auto", padding: 20 }}>
-      <h1>Dashboard de mensajes</h1>
-      <MessageList messages={messages} onToggleSeen={handleToggleSeen} />
+    <div style={{ maxWidth: 700, margin: "0 auto", padding: 20 }}>
+      <h1 style={{ marginBottom: 16 }}>Dashboard de mensajes</h1>
+      <MessageList messages={messages} onMarkSeen={handleMarkSeen} />
     </div>
   );
 }
