@@ -2,11 +2,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-const API = process.env.NEXT_PUBLIC_API;
+const API = process.env.NEXT_PUBLIC_API || "http://localhost:3001";
 
 export default function Home() {
   const router = useRouter();
   const [name, setName] = useState("");
+  const [dashboardUrl, setDashboardUrl] = useState(null);
+  const [publicUrl, setPublicUrl] = useState(null);
 
   const handleCreate = async (e) => {
     e.preventDefault();
@@ -18,6 +20,9 @@ export default function Home() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Error creando dashboard");
+      setDashboardUrl(data.dashboardUrl);
+      setPublicUrl(data.publicUrl);
+      // redirigir automáticamente al dashboard privado
       router.push(data.dashboardUrl);
     } catch (err) {
       console.error(err);
@@ -47,6 +52,19 @@ export default function Home() {
           Generar Dashboard
         </button>
       </form>
+
+      {dashboardUrl && (
+        <div style={{ marginTop: 20 }}>
+          <p>
+            <strong>Tu dashboard (privado):</strong>{" "}
+            <a href={dashboardUrl}>{dashboardUrl}</a>
+          </p>
+          <p>
+            <strong>Tu link público para recibir mensajes:</strong>{" "}
+            <a href={publicUrl}>{publicUrl}</a>
+          </p>
+        </div>
+      )}
     </div>
   );
 }

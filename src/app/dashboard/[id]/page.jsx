@@ -1,14 +1,13 @@
 "use client";
-import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import MessageList from "@/components/MessageList";
 
-const API = process.env.NEXT_PUBLIC_API;
+const API = process.env.NEXT_PUBLIC_API || "http://localhost:3001";
 
 export default function DashboardPage() {
   const { id } = useParams();
   const [messages, setMessages] = useState([]);
-  const [loading, setLoading] = useState(true);
 
   const fetchMessages = async () => {
     try {
@@ -17,8 +16,6 @@ export default function DashboardPage() {
       setMessages(data);
     } catch (err) {
       console.error(err);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -26,9 +23,9 @@ export default function DashboardPage() {
     if (id) fetchMessages();
   }, [id]);
 
-  const handleStatusChange = async (mid, status) => {
+  const handleStatusChange = async (messageId, status) => {
     try {
-      await fetch(`${API}/messages/${mid}`, {
+      await fetch(`${API}/messages/${messageId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
@@ -38,8 +35,6 @@ export default function DashboardPage() {
       console.error("Error actualizando estado:", err);
     }
   };
-
-  if (loading) return <p style={{ padding: 20 }}>Cargando…</p>;
 
   return (
     <div style={{ maxWidth: 600, margin: "0 auto", padding: 20 }}>
