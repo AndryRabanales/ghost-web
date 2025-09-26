@@ -15,14 +15,13 @@ export default function MessageList({ messages, onToggleSeen }) {
             padding: "14px",
             border: "1px solid #ccc",
             borderRadius: "8px",
-            backgroundColor: "#fff", // fondo claro
-            color: "#000", // letras negras
-            cursor: !msg.seen ? "pointer" : "default",
+            backgroundColor: "#fff",
+            color: "#000",
+            cursor: "pointer",
           }}
           onClick={() => {
-            if (!msg.seen) {
-              onToggleSeen(msg.id, true);
-            }
+            // alternar el valor: si está visto, enviamos false; si está oculto, true
+            onToggleSeen(msg.id, !msg.seen);
           }}
         >
           {!msg.seen ? (
