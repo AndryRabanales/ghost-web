@@ -12,7 +12,6 @@ export default function PublicChatPage() {
   const [messages, setMessages] = useState([]);
   const [newMsg, setNewMsg] = useState("");
 
-  // Cargar mensajes del chat
   const fetchMessages = async () => {
     try {
       const res = await fetch(`${API}/chats/${anonToken}/${chatId}`);
@@ -27,7 +26,6 @@ export default function PublicChatPage() {
 
   useEffect(() => {
     fetchMessages();
-    // Auto-refresh cada 5 segundos
     const interval = setInterval(fetchMessages, 5000);
     return () => clearInterval(interval);
   }, [chatId, anonToken]);
@@ -51,20 +49,10 @@ export default function PublicChatPage() {
   return (
     <div style={{ maxWidth: 600, margin: "0 auto", padding: 20 }}>
       <h1>Mi Chat</h1>
-      <div
-        style={{
-          border: "1px solid #ccc",
-          borderRadius: 8,
-          padding: 10,
-          height: 400,
-          overflowY: "auto",
-          marginBottom: 10,
-        }}
-      >
+      <div style={{ border: "1px solid #ccc", borderRadius: 8, padding: 10, height: 400, overflowY: "auto", marginBottom: 10 }}>
         {messages.map((m) => (
           <div key={m.id} style={{ marginBottom: 8 }}>
-            <strong>{m.from === "creator" ? "Respuesta:" : "Tú:"}</strong>{" "}
-            {m.content}
+            <strong>{m.from === "creator" ? "Respuesta:" : "Tú:"}</strong> {m.content}
           </div>
         ))}
       </div>
@@ -76,9 +64,7 @@ export default function PublicChatPage() {
           placeholder="Escribe un mensaje..."
           style={{ width: "100%", padding: 10 }}
         />
-        <button type="submit" style={{ marginTop: 8 }}>
-          Enviar
-        </button>
+        <button type="submit" style={{ marginTop: 8 }}>Enviar</button>
       </form>
     </div>
   );

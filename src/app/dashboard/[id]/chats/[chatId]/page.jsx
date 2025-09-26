@@ -6,8 +6,7 @@ const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com"
 
 export default function ChatPage() {
   const params = useParams();
-  // En tu ruta es /dashboard/[id]/chats/[chatId]
-  const dashboardId = params.id; 
+  const dashboardId = params.id;
   const chatId = params.chatId;
 
   const [messages, setMessages] = useState([]);
@@ -27,7 +26,6 @@ export default function ChatPage() {
 
   useEffect(() => {
     fetchMessages();
-    // Auto-refresh cada 5s
     const interval = setInterval(fetchMessages, 5000);
     return () => clearInterval(interval);
   }, [chatId, dashboardId]);
@@ -35,13 +33,11 @@ export default function ChatPage() {
   const handleSend = async (e) => {
     e.preventDefault();
     if (!newMsg.trim()) return;
-
     await fetch(`${API}/dashboard/chats/${chatId}/messages`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ content: newMsg }),
     });
-
     setNewMsg('');
     fetchMessages();
   };
