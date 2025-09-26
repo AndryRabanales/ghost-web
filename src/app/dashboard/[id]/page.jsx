@@ -1,18 +1,18 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import MessageList from "@/components/MessageList";
 
-const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
+const API = process.env.NEXT_PUBLIC_API;
 
 export default function DashboardPage() {
   const params = useParams();
-  const dashboardId = params?.dashboardId;
+  const { dashboardId } = params;
+
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const fetchMessages = async () => {
-    if (!dashboardId) return;
     try {
       const res = await fetch(`${API}/messages?dashboardId=${dashboardId}`);
       const data = await res.json();
@@ -25,7 +25,7 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    fetchMessages();
+    if (dashboardId) fetchMessages();
   }, [dashboardId]);
 
   const handleStatusChange = async (id, status) => {
@@ -37,7 +37,7 @@ export default function DashboardPage() {
       });
       fetchMessages();
     } catch (err) {
-      console.error("Error actualizando estado:", err);
+      console.error(err);
     }
   };
 
@@ -45,7 +45,7 @@ export default function DashboardPage() {
 
   return (
     <div style={{ maxWidth: 600, margin: "0 auto", padding: 20 }}>
-      <h1>Dashboard de mensajes</h1>
+      <h1>Dashboard</h1>
       <MessageList messages={messages} onStatusChange={handleStatusChange} />
     </div>
   );
