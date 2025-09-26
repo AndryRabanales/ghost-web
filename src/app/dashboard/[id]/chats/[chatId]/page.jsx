@@ -12,10 +12,18 @@ export default function ChatPage() {
   const [chat, setChat] = useState(null);
   const [newMsg, setNewMsg] = useState("");
 
+  // alias fijo del anónimo
+  const [anonAlias, setAnonAlias] = useState("Anónimo");
+
   const fetchChat = async () => {
     try {
       const res = await fetch(`${API}/dashboard/chats/${chatId}`);
       const data = await res.json();
+      if (data && Array.isArray(data.messages)) {
+        // extraemos el alias de cualquier mensaje del anónimo con alias
+        const firstAlias = data.messages.find(m => m.from === "anon" && m.alias)?.alias;
+        if (firstAlias) setAnonAlias(firstAlias);
+      }
       setChat(data);
     } catch (err) {
       console.error(err);
@@ -42,7 +50,7 @@ export default function ChatPage() {
 
   return (
     <div style={{ maxWidth: 600, margin: "0 auto", padding: 20 }}>
-      <h1>Chat con {chat?.messages?.[0]?.alias || "Anónimo"}</h1>
+      <h1>Chat con {anonAlias}</h1>
       <div
         style={{
           border: "1px solid #ccc",
@@ -54,7 +62,9 @@ export default function ChatPage() {
       >
         {chat?.messages?.map((m) => (
           <div key={m.id} style={{ marginBottom: 8 }}>
-            <strong>{m.from === "creator" ? "Tú:" : (m.alias || "Anónimo") + ":"}</strong>{" "}
+            <strong>
+              {m.from === "creator" ? "Tú:" : `${m.alias || anonAlias}:`}
+            </strong>{" "}
             {m.content}
           </div>
         ))}
