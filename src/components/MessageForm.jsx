@@ -6,9 +6,9 @@ const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com"
 export default function MessageForm({ publicId }) {
   const [content, setContent] = useState("");
   const [alias, setAlias] = useState("");
-  const [links, setLinks] = useState([]); // chats creados para este publicId
+  const [links, setLinks] = useState([]);
 
-  // Cargar alias guardado y lista de chats (solo de este publicId)
+  // Cargar alias guardado y lista de chats para este publicId
   useEffect(() => {
     const storedAlias = localStorage.getItem(`alias_${publicId}`);
     if (storedAlias) setAlias(storedAlias);
@@ -20,19 +20,17 @@ export default function MessageForm({ publicId }) {
     setLinks(list);
   }, [publicId]);
 
-  // Polling para ver si hay respuesta del creador en cada chat
+  // Polling cada 5s para detectar respuestas del creador
   useEffect(() => {
     const interval = setInterval(async () => {
       const stored = JSON.parse(localStorage.getItem("myChats") || "[]");
       let updated = [...stored];
-      // revisa cada chat guardado
       for (let i = 0; i < updated.length; i++) {
         const c = updated[i];
         if (c.publicId !== publicId) continue;
         try {
           const res = await fetch(`${API}/chats/${c.anonToken}/${c.chatId}`);
           const data = await res.json();
-          // hay algún mensaje del creador?
           const hasReply = data.messages?.some((m) => m.from === "creator");
           updated[i].hasReply = hasReply;
         } catch (err) {
@@ -44,7 +42,7 @@ export default function MessageForm({ publicId }) {
         .filter((c) => c.publicId === publicId)
         .sort((a, b) => b.ts - a.ts);
       setLinks(list);
-    }, 5000); // cada 5s
+    }, 5000);
     return () => clearInterval(interval);
   }, [publicId]);
 
@@ -53,7 +51,6 @@ export default function MessageForm({ publicId }) {
     if (!content.trim()) return;
 
     try {
-      // SIEMPRE crear chat nuevo por envío
       const res = await fetch(`${API}/chats`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -65,10 +62,8 @@ export default function MessageForm({ publicId }) {
         return;
       }
 
-      // Guardar/actualizar alias para este publicId
       if (alias) localStorage.setItem(`alias_${publicId}`, alias);
 
-      // Agregar entrada al storage (no sobrescribe otras, se acumulan)
       const entry = {
         anonToken: data.anonToken,
         chatId: data.chatId,
@@ -83,13 +78,11 @@ export default function MessageForm({ publicId }) {
       const next = [entry, ...stored.filter((c) => c.chatId !== data.chatId)];
       localStorage.setItem("myChats", JSON.stringify(next));
 
-      // Refrescar lista sólo de este publicId
       const list = next
         .filter((c) => c.publicId === publicId)
         .sort((a, b) => b.ts - a.ts);
       setLinks(list);
 
-      // Limpiar solo el contenido; dejamos alias para siguientes envíos
       setContent("");
     } catch (err) {
       console.error("Error al enviar mensaje:", err);
@@ -121,7 +114,6 @@ export default function MessageForm({ publicId }) {
         </button>
       </form>
 
-      {/* Lista de chats abiertos por este usuario para este publicId */}
       {links.length > 0 && (
         <div style={{ marginTop: 16 }}>
           <h3 style={{ marginBottom: 8 }}>
@@ -167,7 +159,6 @@ export default function MessageForm({ publicId }) {
         </div>
       )}
 
-      {/* CTA para crear dashboard */}
       <div style={{ marginTop: 24, textAlign: "center" }}>
         <p>¿Quieres recibir mensajes anónimos como este?</p>
         <a

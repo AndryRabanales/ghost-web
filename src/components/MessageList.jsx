@@ -2,8 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-const API =
-  process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
+const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
 
 export default function MessageList({ dashboardId }) {
   const [chats, setChats] = useState([]);
@@ -14,7 +13,6 @@ export default function MessageList({ dashboardId }) {
 
   const fetchChats = async () => {
     if (!dashboardId) return;
-    setLoading(true);
     try {
       const res = await fetch(`${API}/dashboard/${dashboardId}/chats`);
       const data = await res.json();
@@ -31,11 +29,10 @@ export default function MessageList({ dashboardId }) {
     fetchChats();
   }, [dashboardId]);
 
-  // Re-fetch al volver a enfocar la ventana (evita “No leído” fantasma)
+  // Polling automático cada 5s para ver nuevos mensajes
   useEffect(() => {
-    const onFocus = () => fetchChats();
-    window.addEventListener("focus", onFocus);
-    return () => window.removeEventListener("focus", onFocus);
+    const int = setInterval(fetchChats, 5000);
+    return () => clearInterval(int);
   }, [dashboardId]);
 
   const markSeen = async (messageId) => {
@@ -50,10 +47,7 @@ export default function MessageList({ dashboardId }) {
     }
   };
 
-  const fetchAliasAndMaybeMark = async (
-    chatId,
-    markLastAnonUnseen = false
-  ) => {
+  const fetchAliasAndMaybeMark = async (chatId, markLastAnonUnseen = false) => {
     try {
       const res = await fetch(`${API}/dashboard/chats/${chatId}`);
       const data = await res.json();
@@ -81,7 +75,7 @@ export default function MessageList({ dashboardId }) {
     <div style={{ display: "grid", gap: 12 }}>
       {chats.map((chat) => {
         const last = chat.messages?.[0];
-        // unread solo si el último es del anon y !seen
+        // “Sin leer” solo si el último es del anónimo y no está visto
         const unread = last?.from === "anon" ? !last?.seen : false;
         const isOpen = openCard === chat.id;
 
@@ -167,9 +161,7 @@ export default function MessageList({ dashboardId }) {
                     cursor: "pointer",
                   }}
                   onClick={() =>
-                    router.push(
-                      `/dashboard/${dashboardId}/chats/${chat.id}`
-                    )
+                    router.push(`/dashboard/${dashboardId}/chats/${chat.id}`)
                   }
                 >
                   Responder a {aliasToShow}

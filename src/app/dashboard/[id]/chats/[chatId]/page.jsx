@@ -2,7 +2,8 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 
-const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
+const API =
+  process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
 
 export default function ChatPage() {
   const params = useParams();
@@ -11,17 +12,21 @@ export default function ChatPage() {
 
   const [chat, setChat] = useState(null);
   const [newMsg, setNewMsg] = useState("");
-
-  // alias fijo del anónimo
   const [anonAlias, setAnonAlias] = useState("Anónimo");
+  const [lastCount, setLastCount] = useState(0);
+
+  // estado para el toast
+  const [toast, setToast] = useState(null);
 
   const fetchChat = async () => {
     try {
       const res = await fetch(`${API}/dashboard/chats/${chatId}`);
       const data = await res.json();
-      if (data && Array.isArray(data.messages)) {
-        // extraemos el alias de cualquier mensaje del anónimo con alias
-        const firstAlias = data.messages.find(m => m.from === "anon" && m.alias)?.alias;
+
+      if (Array.isArray(data.messages)) {
+        const firstAlias = data.messages.find(
+          (m) => m.from === "anon" && m.alias
+        )?.alias;
         if (firstAlias) setAnonAlias(firstAlias);
       }
       setChat(data);
@@ -36,6 +41,36 @@ export default function ChatPage() {
     return () => clearInterval(interval);
   }, [chatId]);
 
+  // marcar automáticamente mensajes del anónimo como vistos
+  useEffect(() => {
+    if (!chat?.messages) return;
+    const unseenAnon = chat.messages.filter(
+      (m) => m.from === "anon" && !m.seen
+    );
+    unseenAnon.forEach((m) => {
+      fetch(`${API}/chat-messages/${m.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ seen: true }),
+      }).catch(console.error);
+    });
+  }, [chat]);
+
+  // mostrar toast cuando llega mensaje nuevo del anónimo
+  useEffect(() => {
+    if (!chat?.messages) return;
+    const count = chat.messages.length;
+    if (count > lastCount) {
+      const lastMsg = chat.messages[chat.messages.length - 1];
+      if (lastMsg.from === "anon") {
+        // mostramos toast con contenido del mensaje
+        setToast(`Nuevo mensaje de ${lastMsg.alias || anonAlias}`);
+        setTimeout(() => setToast(null), 4000); // oculta después de 4 s
+      }
+    }
+    setLastCount(count);
+  }, [chat]);
+
   const handleSend = async (e) => {
     e.preventDefault();
     if (!newMsg.trim()) return;
@@ -49,7 +84,7 @@ export default function ChatPage() {
   };
 
   return (
-    <div style={{ maxWidth: 600, margin: "0 auto", padding: 20 }}>
+    <div style={{ maxWidth: 600, margin: "0 auto", padding: 20, position: "relative" }}>
       <h1>Chat con {anonAlias}</h1>
       <div
         style={{
@@ -81,6 +116,26 @@ export default function ChatPage() {
           Enviar
         </button>
       </form>
+
+      {/* Toast flotante */}
+      {toast && (
+        <div
+          style={{
+            position: "fixed",
+            bottom: 20,
+            right: 20,
+            background: "#333",
+            color: "#fff",
+            padding: "10px 16px",
+            borderRadius: 6,
+            boxShadow: "0 2px 6px rgba(0,0,0,0.3)",
+            zIndex: 9999,
+            fontSize: 14,
+          }}
+        >
+          {toast}
+        </div>
+      )}
     </div>
   );
 }
