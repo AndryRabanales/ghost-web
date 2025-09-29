@@ -21,11 +21,22 @@ export default function PublicChatPage() {
       if (Array.isArray(data.messages)) {
         setMessages(data.messages);
 
-        // cuando hay mensajes del creador, marca en localStorage que ya los viste
+        // buscar el último mensaje del creador para guardarlo como "visto"
+        const creatorMsgs = data.messages.filter((m) => m.from === "creator");
+        const lastCreatorId = creatorMsgs.length
+          ? creatorMsgs[creatorMsgs.length - 1].id
+          : null;
+
+        // actualizar localStorage marcando hasReply=false y avanzando lastSeenCreatorId
         const stored = JSON.parse(localStorage.getItem("myChats") || "[]");
         const next = stored.map((c) =>
           c.chatId === chatId && c.anonToken === anonToken
-            ? { ...c, hasReply: false }
+            ? {
+                ...c,
+                hasReply: false,
+                lastSeenCreatorId:
+                  lastCreatorId ?? c.lastSeenCreatorId ?? null,
+              }
             : c
         );
         localStorage.setItem("myChats", JSON.stringify(next));

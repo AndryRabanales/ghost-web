@@ -9,36 +9,68 @@ export default function MessageForm({ publicId }) {
   const [alias, setAlias] = useState("");
   const [links, setLinks] = useState([]);
 
-  // Cargar alias guardado y lista de chats para este publicId
-  useEffect(() => {
-    const storedAlias = localStorage.getItem(`alias_${publicId}`);
-    if (storedAlias) setAlias(storedAlias);
+  // Helpers
+  const readStore = () =>
+    JSON.parse(localStorage.getItem("myChats") || "[]");
 
-    const stored = JSON.parse(localStorage.getItem("myChats") || "[]");
+  const writeStore = (arr) =>
+    localStorage.setItem("myChats", JSON.stringify(arr));
+
+  const refreshLinksFromStore = () => {
+    const stored = readStore();
     const list = stored
       .filter((c) => c.publicId === publicId)
       .sort((a, b) => b.ts - a.ts);
     setLinks(list);
+  };
+
+  // Cargar alias + lista inicial
+  useEffect(() => {
+    const storedAlias = localStorage.getItem(`alias_${publicId}`);
+    if (storedAlias) setAlias(storedAlias);
+    refreshLinksFromStore();
   }, [publicId]);
 
-  // Polling cada 5s para detectar respuestas del creador
+  // Polling: detectar si hay NUEVOS mensajes del creador
+  // hasReply = (lastCreatorId !== lastSeenCreatorId)
   useEffect(() => {
     const interval = setInterval(async () => {
-      const stored = JSON.parse(localStorage.getItem("myChats") || "[]");
+      const stored = readStore();
       let updated = [...stored];
+
+      // Recorremos solo chats de este publicId
       for (let i = 0; i < updated.length; i++) {
         const c = updated[i];
         if (c.publicId !== publicId) continue;
+
         try {
           const res = await fetch(`${API}/chats/${c.anonToken}/${c.chatId}`);
           const data = await res.json();
-          const hasReply = data.messages?.some((m) => m.from === "creator");
-          updated[i].hasReply = hasReply;
+
+          const msgs = Array.isArray(data.messages) ? data.messages : [];
+          // Buscar último mensaje del creador y tomar su id como "marker"
+          let lastCreatorId = null;
+          for (let k = msgs.length - 1; k >= 0; k--) {
+            if (msgs[k].from === "creator") {
+              lastCreatorId = msgs[k].id || String(k);
+              break;
+            }
+          }
+
+          // Guardamos el último marker del creador conocido
+          updated[i].lastCreatorId = lastCreatorId;
+
+          // hasReply solo si hay un "último del creador" distinto a lo último visto
+          const lastSeen = updated[i].lastSeenCreatorId || null;
+          updated[i].hasReply =
+            lastCreatorId !== null && lastCreatorId !== lastSeen;
         } catch (err) {
           console.error("Error comprobando respuesta:", err);
         }
       }
-      localStorage.setItem("myChats", JSON.stringify(updated));
+
+      writeStore(updated);
+      // Refrescamos solo esta vista
       const list = updated
         .filter((c) => c.publicId === publicId)
         .sort((a, b) => b.ts - a.ts);
@@ -47,20 +79,37 @@ export default function MessageForm({ publicId }) {
     return () => clearInterval(interval);
   }, [publicId]);
 
-  // Nuevo: actualizar lista al volver de un chat (sin esperar polling)
+  // Al volver de otra pestaña (p. ej. del chat), refrescamos lista sin esperar al polling
   useEffect(() => {
     const onVis = () => {
-      if (!document.hidden) {
-        const stored = JSON.parse(localStorage.getItem("myChats") || "[]");
-        const list = stored
-          .filter((c) => c.publicId === publicId)
-          .sort((a, b) => b.ts - a.ts);
-        setLinks(list);
-      }
+      if (!document.hidden) refreshLinksFromStore();
     };
     document.addEventListener("visibilitychange", onVis);
     return () => document.removeEventListener("visibilitychange", onVis);
   }, [publicId]);
+
+  // Marcar como "visto" INMEDIATO al hacer click en un chat de la lista
+  const acknowledgeSeen = (entry) => {
+    const stored = readStore();
+    const next = stored.map((c) =>
+      c.chatId === entry.chatId && c.anonToken === entry.anonToken
+        ? {
+            ...c,
+            // si ya conocemos el último del creador, lo damos por visto
+            lastSeenCreatorId:
+              entry.lastCreatorId != null
+                ? entry.lastCreatorId
+                : c.lastCreatorId || c.lastSeenCreatorId || null,
+            hasReply: false,
+          }
+        : c
+    );
+    writeStore(next);
+    const list = next
+      .filter((c) => c.publicId === publicId)
+      .sort((a, b) => b.ts - a.ts);
+    setLinks(list);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -88,11 +137,15 @@ export default function MessageForm({ publicId }) {
         ts: Date.now(),
         publicId,
         alias: alias || "Anónimo",
+        // nuevos campos para lógica robusta:
         hasReply: false,
+        lastCreatorId: null,
+        lastSeenCreatorId: null,
       };
-      const stored = JSON.parse(localStorage.getItem("myChats") || "[]");
+
+      const stored = readStore();
       const next = [entry, ...stored.filter((c) => c.chatId !== data.chatId)];
-      localStorage.setItem("myChats", JSON.stringify(next));
+      writeStore(next);
 
       const list = next
         .filter((c) => c.publicId === publicId)
@@ -142,6 +195,7 @@ export default function MessageForm({ publicId }) {
                 href={c.chatUrl}
                 target="_blank"
                 rel="noreferrer"
+                onClick={() => acknowledgeSeen(c)} // ← marcar visto al instante
                 style={{
                   border: "1px solid #ddd",
                   borderRadius: 8,
