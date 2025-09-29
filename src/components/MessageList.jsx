@@ -9,7 +9,6 @@ export default function MessageList({ dashboardId }) {
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openCard, setOpenCard] = useState(null);
-  const [lives, setLives] = useState(null);
   const [isPremium, setIsPremium] = useState(false);
   const router = useRouter();
 
@@ -24,8 +23,6 @@ export default function MessageList({ dashboardId }) {
 
       if (Array.isArray(data) && data.length > 0) {
         setIsPremium(data[0].creator?.isPremium || false);
-        const newLives = data[0].creator?.lives ?? null;
-        setLives((prev) => (typeof newLives === "number" ? newLives : prev));
       }
 
       const stored = JSON.parse(localStorage.getItem("myChats") || "[]");
@@ -82,10 +79,7 @@ export default function MessageList({ dashboardId }) {
         return;
       }
 
-      const json = await res.json();
-      if (typeof json.lives === "number") {
-        setLives(json.lives);
-      }
+      await res.json();
 
       // Actualizar UI
       setChats((prev) =>
@@ -117,9 +111,16 @@ export default function MessageList({ dashboardId }) {
 
   return (
     <div style={{ display: "grid", gap: 12 }}>
-      {!isPremium && lives !== null && (
-        <div style={{ fontWeight: "bold", marginBottom: 8 }}>
-          Vidas disponibles: {lives}
+      {!isPremium && (
+        <div
+          style={{
+            fontWeight: "bold",
+            marginBottom: 8,
+            color: "#d9534f",
+            fontSize: 14,
+          }}
+        >
+          ⚡ Las vidas se regeneran cada 15 minutos (+1 vida).
         </div>
       )}
 
