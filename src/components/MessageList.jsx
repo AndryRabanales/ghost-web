@@ -9,12 +9,12 @@ export default function MessageList({ dashboardId }) {
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openCard, setOpenCard] = useState(null);
-  const [lives, setLives] = useState(null); // vidas actuales
-  const [isPremium, setIsPremium] = useState(false); // premium o no
+  const [lives, setLives] = useState(null);
+  const [isPremium, setIsPremium] = useState(false);
   const router = useRouter();
 
   // Candado para que el polling no sobrescriba el valor local recién actualizado
-  const livesLockRef = useRef(0); // timestamp (ms). Si ahora < lock, saltamos setLives del polling
+  const livesLockRef = useRef(0);
 
   const fetchChats = async () => {
     if (!dashboardId) return;
@@ -25,13 +25,13 @@ export default function MessageList({ dashboardId }) {
       if (Array.isArray(data) && data.length > 0) {
         setIsPremium(data[0].creator?.isPremium || false);
 
-        const pollingLives = data[0].creator?.lives ?? null;
+        const newLives = data[0].creator?.lives ?? null;
         // Solo permitir que el polling actualice 'lives' si no hay candado activo
-        if (typeof pollingLives === "number") {
-          if (Date.now() >= livesLockRef.current) {
-            setLives(pollingLives);
-          }
-        }
+        setLives((prev) =>
+          typeof newLives === "number" && Date.now() >= livesLockRef.current
+            ? newLives
+            : prev
+        );
       }
 
       const stored = JSON.parse(localStorage.getItem("myChats") || "[]");
@@ -45,7 +45,7 @@ export default function MessageList({ dashboardId }) {
               lastAnonId: lastAnonMsg?.id || null,
               anonAlias:
                 foundLocal?.anonAlias || foundLocal?.alias || "Anónimo",
-              alreadyOpened: openedFlag, // persistente
+              alreadyOpened: openedFlag,
             };
           })
         : [];
@@ -89,50 +89,51 @@ export default function MessageList({ dashboardId }) {
     }
   };
 
-  // abrir mensaje (consume vida la primera vez si no es Premium)
+  // abrir mensaje (consume vida solo si es anon + no visto)
   const handleOpenMessage = async (chat) => {
     try {
-      const last = chat.messages?.[0]; // es el más reciente porque en /dashboard... usas orderBy desc y take:1
-      const shouldCharge = last?.from === "anon" && !last?.seen; // clave
-  
-      // Si hay que cobrar (anon + no visto) y no es premium -> abrir (cobra en server de forma idempotente)
+      const last = chat.messages?.[0];
+      const shouldCharge = last?.from === "anon" && !last?.seen;
+
       if (!isPremium && shouldCharge) {
         const res = await fetch(
           `${API}/dashboard/${dashboardId}/open-message/${last.id}`,
           { method: "POST" }
         );
-  
+
         if (res.status === 403) {
           const data = await res.json();
           alert(data.error);
           return;
         }
-  
+
         const json = await res.json();
         if (typeof json.lives === "number") {
           setLives(json.lives);
         } else {
-          // Fallback ultra seguro
-          setLives((prev) => (typeof prev === "number" ? Math.max(0, prev - 1) : prev));
+          setLives((prev) =>
+            typeof prev === "number" ? Math.max(0, prev - 1) : prev
+          );
         }
-  
+
+        // Bloquea el polling un momento
+        livesLockRef.current = Date.now() + 3000;
+
         // reflejar visto en UI inmediatamente
         await markSeen(chat.id, last.id);
       }
-  
-      // Marcar tarjeta como abierta (UI), pero ya NO condiciona el cobro
+
+      // Marcar tarjeta como abierta (UI)
       localStorage.setItem(`opened_${chat.id}`, "true");
       setChats((prev) =>
         prev.map((c) => (c.id === chat.id ? { ...c, alreadyOpened: true } : c))
       );
-  
+
       router.push(`/dashboard/${dashboardId}/chats/${chat.id}`);
     } catch (err) {
       console.error(err);
     }
   };
-  
-  
 
   if (loading) return <p>Cargando…</p>;
   if (chats.length === 0) return <p>No hay chats aún.</p>;
