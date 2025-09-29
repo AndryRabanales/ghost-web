@@ -9,14 +9,11 @@ export default function MessageForm({ publicId }) {
   const [alias, setAlias] = useState("");
   const [links, setLinks] = useState([]);
 
-  // Helpers
   const readStore = () =>
     JSON.parse(localStorage.getItem("myChats") || "[]");
-
   const writeStore = (arr) =>
     localStorage.setItem("myChats", JSON.stringify(arr));
-
-  const refreshLinksFromStore = () => {
+  const refreshLinks = () => {
     const stored = readStore();
     const list = stored
       .filter((c) => c.publicId === publicId)
@@ -24,31 +21,26 @@ export default function MessageForm({ publicId }) {
     setLinks(list);
   };
 
-  // Cargar alias + lista inicial
+  // cargar alias + lista inicial
   useEffect(() => {
     const storedAlias = localStorage.getItem(`alias_${publicId}`);
     if (storedAlias) setAlias(storedAlias);
-    refreshLinksFromStore();
+    refreshLinks();
   }, [publicId]);
 
-  // Polling: detectar si hay NUEVOS mensajes del creador
-  // hasReply = (lastCreatorId !== lastSeenCreatorId)
+  // polling: detectar mensajes nuevos del creador
   useEffect(() => {
     const interval = setInterval(async () => {
       const stored = readStore();
       let updated = [...stored];
 
-      // Recorremos solo chats de este publicId
       for (let i = 0; i < updated.length; i++) {
         const c = updated[i];
         if (c.publicId !== publicId) continue;
-
         try {
           const res = await fetch(`${API}/chats/${c.anonToken}/${c.chatId}`);
           const data = await res.json();
-
           const msgs = Array.isArray(data.messages) ? data.messages : [];
-          // Buscar último mensaje del creador y tomar su id como "marker"
           let lastCreatorId = null;
           for (let k = msgs.length - 1; k >= 0; k--) {
             if (msgs[k].from === "creator") {
@@ -56,11 +48,7 @@ export default function MessageForm({ publicId }) {
               break;
             }
           }
-
-          // Guardamos el último marker del creador conocido
           updated[i].lastCreatorId = lastCreatorId;
-
-          // hasReply solo si hay un "último del creador" distinto a lo último visto
           const lastSeen = updated[i].lastSeenCreatorId || null;
           updated[i].hasReply =
             lastCreatorId !== null && lastCreatorId !== lastSeen;
@@ -70,7 +58,6 @@ export default function MessageForm({ publicId }) {
       }
 
       writeStore(updated);
-      // Refrescamos solo esta vista
       const list = updated
         .filter((c) => c.publicId === publicId)
         .sort((a, b) => b.ts - a.ts);
@@ -79,23 +66,22 @@ export default function MessageForm({ publicId }) {
     return () => clearInterval(interval);
   }, [publicId]);
 
-  // Al volver de otra pestaña (p. ej. del chat), refrescamos lista sin esperar al polling
+  // refrescar lista al volver del chat sin esperar polling
   useEffect(() => {
     const onVis = () => {
-      if (!document.hidden) refreshLinksFromStore();
+      if (!document.hidden) refreshLinks();
     };
     document.addEventListener("visibilitychange", onVis);
     return () => document.removeEventListener("visibilitychange", onVis);
   }, [publicId]);
 
-  // Marcar como "visto" INMEDIATO al hacer click en un chat de la lista
+  // marcar visto inmediato al hacer click en chat
   const acknowledgeSeen = (entry) => {
     const stored = readStore();
     const next = stored.map((c) =>
       c.chatId === entry.chatId && c.anonToken === entry.anonToken
         ? {
             ...c,
-            // si ya conocemos el último del creador, lo damos por visto
             lastSeenCreatorId:
               entry.lastCreatorId != null
                 ? entry.lastCreatorId
@@ -114,7 +100,6 @@ export default function MessageForm({ publicId }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!content.trim()) return;
-
     try {
       const res = await fetch(`${API}/chats`, {
         method: "POST",
@@ -126,7 +111,6 @@ export default function MessageForm({ publicId }) {
         alert(data.error || "Error creando chat");
         return;
       }
-
       if (alias) localStorage.setItem(`alias_${publicId}`, alias);
 
       const entry = {
@@ -137,21 +121,17 @@ export default function MessageForm({ publicId }) {
         ts: Date.now(),
         publicId,
         alias: alias || "Anónimo",
-        // nuevos campos para lógica robusta:
         hasReply: false,
         lastCreatorId: null,
         lastSeenCreatorId: null,
       };
-
       const stored = readStore();
       const next = [entry, ...stored.filter((c) => c.chatId !== data.chatId)];
       writeStore(next);
-
       const list = next
         .filter((c) => c.publicId === publicId)
         .sort((a, b) => b.ts - a.ts);
       setLinks(list);
-
       setContent("");
     } catch (err) {
       console.error("Error al enviar mensaje:", err);
@@ -195,7 +175,7 @@ export default function MessageForm({ publicId }) {
                 href={c.chatUrl}
                 target="_blank"
                 rel="noreferrer"
-                onClick={() => acknowledgeSeen(c)} // ← marcar visto al instante
+                onClick={() => acknowledgeSeen(c)}
                 style={{
                   border: "1px solid #ddd",
                   borderRadius: 8,
@@ -205,8 +185,19 @@ export default function MessageForm({ publicId }) {
                   background: "#fafafa",
                 }}
               >
-                <div style={{ fontWeight: 600 }}>
-                  Chat con {c.alias || "Anónimo"}
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    fontWeight: 600,
+                  }}
+                >
+                  <span>Chat con {c.alias || "Anónimo"}</span>
+                  {c.hasReply && (
+                    <span style={{ color: "red", fontSize: 12 }}>
+                      ● Nueva respuesta
+                    </span>
+                  )}
                 </div>
                 <div style={{ fontSize: 12, color: "#555", marginTop: 4 }}>
                   {c.preview || "Mensaje inicial"}
