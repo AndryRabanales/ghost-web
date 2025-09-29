@@ -16,13 +16,18 @@ export default function MessageList({ dashboardId }) {
     try {
       const res = await fetch(`${API}/dashboard/${dashboardId}/chats`);
       const data = await res.json();
-      // añadimos markers para último del anónimo
+
+      // leer alias guardado de localStorage para cada chat
+      const stored = JSON.parse(localStorage.getItem("myChats") || "[]");
+
       const enhanced = Array.isArray(data)
         ? data.map((c) => {
             const lastAnonMsg = c.messages?.find((m) => m.from === "anon");
+            const foundLocal = stored.find((s) => s.chatId === c.id);
             return {
               ...c,
               lastAnonId: lastAnonMsg?.id || null,
+              anonAlias: foundLocal?.anonAlias || foundLocal?.alias || "Anónimo",
             };
           })
         : [];
@@ -49,7 +54,7 @@ export default function MessageList({ dashboardId }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ seen: true }),
       });
-      // actualiza estado local
+      // actualiza estado local sin refrescar
       setChats((prev) =>
         prev.map((c) =>
           c.id === chatId
@@ -58,7 +63,6 @@ export default function MessageList({ dashboardId }) {
                 messages: c.messages.map((m) =>
                   m.id === messageId ? { ...m, seen: true } : m
                 ),
-                // al verlo, marcamos también lastSeenAnonId para apagar badge
                 lastSeenAnonId: messageId,
               }
             : c
@@ -76,7 +80,6 @@ export default function MessageList({ dashboardId }) {
     <div style={{ display: "grid", gap: 12 }}>
       {chats.map((chat) => {
         const last = chat.messages?.[0];
-        // hasNewMsg: hay mensaje del anónimo no visto
         const hasNewMsg =
           last?.from === "anon" && !last?.seen ? true : false;
 
@@ -86,14 +89,11 @@ export default function MessageList({ dashboardId }) {
           (m) => m.from === "anon"
         );
 
-        const aliasToShow =
-          last?.from === "anon" && last?.alias
-            ? last.alias
-            : "Anónimo";
+        // usamos alias guardado (anonAlias) en vez de depender del último mensaje
+        const aliasToShow = chat.anonAlias || "Anónimo";
 
         const handleCardClick = async (e) => {
           if (e.target.tagName === "BUTTON") return;
-
           if (!isOpen) {
             setOpenCard(chat.id);
             if (last?.from === "anon" && !last?.seen) {
@@ -134,7 +134,6 @@ export default function MessageList({ dashboardId }) {
                   }}
                 >
                   <span>Alias: {aliasToShow}</span>
-                  {/* badge si hay mensaje nuevo */}
                   {hasNewMsg && (
                     <span style={{ color: "red", fontSize: 12 }}>
                       ● Mensaje nuevo

@@ -14,6 +14,18 @@ export default function PublicChatPage() {
   const [newMsg, setNewMsg] = useState("");
   const [creatorAlias, setCreatorAlias] = useState("Respuesta");
 
+  // leer alias original guardado para este chat
+  useEffect(() => {
+    const stored = JSON.parse(localStorage.getItem("myChats") || "[]");
+    const found = stored.find(
+      (c) => c.chatId === chatId && c.anonToken === anonToken
+    );
+    if (found?.anonAlias) {
+      // alias original guardado
+      setCreatorAlias(found.anonAlias);
+    }
+  }, [chatId, anonToken]);
+
   const fetchMessages = async () => {
     try {
       const res = await fetch(`${API}/chats/${anonToken}/${chatId}`);
@@ -70,7 +82,7 @@ export default function PublicChatPage() {
 
   return (
     <div style={{ maxWidth: 600, margin: "0 auto", padding: 20 }}>
-      <h1>Mi Chat</h1>
+      <h1>Chat con {creatorAlias}</h1>
       <div
         style={{
           border: "1px solid #ccc",

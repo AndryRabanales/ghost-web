@@ -87,6 +87,7 @@ export default function MessageForm({ publicId }) {
                 ? entry.lastCreatorId
                 : c.lastCreatorId || c.lastSeenCreatorId || null,
             hasReply: false,
+            anonAlias: c.anonAlias, // preservamos alias original
           }
         : c
     );
@@ -121,6 +122,7 @@ export default function MessageForm({ publicId }) {
         ts: Date.now(),
         publicId,
         alias: alias || "Anónimo",
+        anonAlias: alias || "Anónimo", // 🚀 guardamos alias original aquí
         hasReply: false,
         lastCreatorId: null,
         lastSeenCreatorId: null,
@@ -192,7 +194,7 @@ export default function MessageForm({ publicId }) {
                     fontWeight: 600,
                   }}
                 >
-                  <span>Chat con {c.alias || "Anónimo"}</span>
+                  <span>Chat con {c.anonAlias || c.alias || "Anónimo"}</span>
                   {c.hasReply && (
                     <span style={{ color: "red", fontSize: 12 }}>
                       ● Nueva respuesta
