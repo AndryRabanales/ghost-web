@@ -13,7 +13,6 @@ export default function MessageList({ dashboardId }) {
   const [isPremium, setIsPremium] = useState(false); // premium o no
   const router = useRouter();
 
-  // obtener chats y datos del creador
   const fetchChats = async () => {
     if (!dashboardId) return;
     try {
@@ -35,9 +34,9 @@ export default function MessageList({ dashboardId }) {
             return {
               ...c,
               lastAnonId: lastAnonMsg?.id || null,
-              anonAlias: foundLocal?.anonAlias || foundLocal?.alias || "Anónimo",
-              alreadyOpened: openedFlag,
-              openedNow: false, // flag temporal para mostrar aviso
+              anonAlias:
+                foundLocal?.anonAlias || foundLocal?.alias || "Anónimo",
+              alreadyOpened: openedFlag, // persistente
             };
           })
         : [];
@@ -56,7 +55,6 @@ export default function MessageList({ dashboardId }) {
     return () => clearInterval(int);
   }, [dashboardId]);
 
-  // marcar mensajes del anónimo como vistos
   const markSeen = async (chatId, messageId) => {
     try {
       await fetch(`${API}/chat-messages/${messageId}`, {
@@ -82,7 +80,6 @@ export default function MessageList({ dashboardId }) {
     }
   };
 
-  // abrir mensaje (consume vida la primera vez si no es Premium)
   const handleOpenMessage = async (chat, messageId, aliasToShow) => {
     try {
       if (!isPremium && !chat.alreadyOpened) {
@@ -92,27 +89,27 @@ export default function MessageList({ dashboardId }) {
         );
         if (res.status === 403) {
           const data = await res.json();
-          alert(data.error); // Sin vidas
+          alert(data.error);
           return;
         }
         const data = await res.json();
         setLives(data.lives);
       }
 
-      // marcar como visto y como "abierto"
+      // persistir opened en localStorage
       localStorage.setItem(`opened_${chat.id}`, "true");
+
       if (chat.messages?.[0]?.from === "anon" && !chat.messages?.[0]?.seen) {
         await markSeen(chat.id, chat.messages[0].id);
       }
 
-      // actualizar estado → marcar openedNow para mostrar aviso
+      // actualizar estado
       setChats((prev) =>
         prev.map((c) =>
           c.id === chat.id
             ? {
                 ...c,
                 alreadyOpened: true,
-                openedNow: true,
               }
             : c
         )
@@ -210,8 +207,8 @@ export default function MessageList({ dashboardId }) {
                   </div>
                 )}
 
-                {/* nuevo aviso si fue abierto por primera vez */}
-                {chat.openedNow && (
+                {/* aviso permanente si ya se abrió */}
+                {chat.alreadyOpened && (
                   <div
                     style={{
                       fontSize: 12,
@@ -219,7 +216,7 @@ export default function MessageList({ dashboardId }) {
                       marginTop: 6,
                     }}
                   >
-                    Este mensaje fue abierto. Se descontó una vida.
+                    Este mensaje ya fue abierto y se descontó una vida.
                   </div>
                 )}
 
