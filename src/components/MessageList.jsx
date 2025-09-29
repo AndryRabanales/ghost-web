@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 
 const API =
@@ -13,6 +13,9 @@ export default function MessageList({ dashboardId }) {
   const [isPremium, setIsPremium] = useState(false); // premium o no
   const router = useRouter();
 
+  // Candado para que el polling no sobrescriba el valor local recién actualizado
+  const livesLockRef = useRef(0); // timestamp (ms). Si ahora < lock, saltamos setLives del polling
+
   const fetchChats = async () => {
     if (!dashboardId) return;
     try {
@@ -21,7 +24,14 @@ export default function MessageList({ dashboardId }) {
 
       if (Array.isArray(data) && data.length > 0) {
         setIsPremium(data[0].creator?.isPremium || false);
-        setLives(data[0].creator?.lives ?? null);
+
+        const pollingLives = data[0].creator?.lives ?? null;
+        // Solo permitir que el polling actualice 'lives' si no hay candado activo
+        if (typeof pollingLives === "number") {
+          if (Date.now() >= livesLockRef.current) {
+            setLives(pollingLives);
+          }
+        }
       }
 
       const stored = JSON.parse(localStorage.getItem("myChats") || "[]");
@@ -79,56 +89,63 @@ export default function MessageList({ dashboardId }) {
     }
   };
 
-// abrir mensaje (consume vida la primera vez si no es Premium)
-const handleOpenMessage = async (chat) => {
-  try {
-    const last = chat.messages?.[0];
-    const lastAnon = chat.messages?.find((m) => m.from === "anon");
-    const targetMessageId = lastAnon?.id || chat.lastAnonId || last?.id;
-    if (!targetMessageId) {
-      router.push(`/dashboard/${dashboardId}/chats/${chat.id}`);
-      return;
-    }
-
-    // solo descuenta la primera vez si no es premium
-    if (!isPremium && !chat.alreadyOpened) {
-      const res = await fetch(
-        `${API}/dashboard/${dashboardId}/open-message/${targetMessageId}`,
-        { method: "POST" }
-      );
-
-      if (res.status === 403) {
-        const data = await res.json();
-        alert(data.error); // Sin vidas
+  // abrir mensaje (consume vida la primera vez si no es Premium)
+  const handleOpenMessage = async (chat) => {
+    try {
+      const last = chat.messages?.[0];
+      const lastAnon = chat.messages?.find((m) => m.from === "anon");
+      const targetMessageId = lastAnon?.id || chat.lastAnonId || last?.id;
+      if (!targetMessageId) {
+        router.push(`/dashboard/${dashboardId}/chats/${chat.id}`);
         return;
       }
 
-      // ⬇️ AQUÍ PONES ESTO:
-      const json = await res.json();
-      if (typeof json.lives === "number") {
-        setLives(json.lives);
+      // solo descuenta la primera vez si no es premium
+      if (!isPremium && !chat.alreadyOpened) {
+        const res = await fetch(
+          `${API}/dashboard/${dashboardId}/open-message/${targetMessageId}`,
+          { method: "POST" }
+        );
+
+        if (res.status === 403) {
+          const data = await res.json();
+          alert(data.error); // Sin vidas
+          return;
+        }
+
+        // Actualizar vidas inmediatamente con el valor del server, o fallback si no viene
+        const json = await res.json();
+        if (typeof json.lives === "number") {
+          setLives(json.lives);
+        } else {
+          // Fallback por si el server aún no devuelve lives
+          setLives((prev) =>
+            typeof prev === "number" ? Math.max(0, prev - 1) : prev
+          );
+        }
+
+        // activar candado 3s para que el polling no pise el valor recién mostrado
+        livesLockRef.current = Date.now() + 3000;
       }
+
+      // persistir opened en localStorage y estado
+      localStorage.setItem(`opened_${chat.id}`, "true");
+      setChats((prev) =>
+        prev.map((c) =>
+          c.id === chat.id ? { ...c, alreadyOpened: true } : c
+        )
+      );
+
+      // marcar como visto si el último era del anónimo y aún no se había visto
+      if (last?.from === "anon" && !last?.seen) {
+        await markSeen(chat.id, last.id);
+      }
+
+      router.push(`/dashboard/${dashboardId}/chats/${chat.id}`);
+    } catch (err) {
+      console.error(err);
     }
-
-    // persistir opened en localStorage y estado
-    localStorage.setItem(`opened_${chat.id}`, "true");
-    setChats((prev) =>
-      prev.map((c) =>
-        c.id === chat.id ? { ...c, alreadyOpened: true } : c
-      )
-    );
-
-    // marcar como visto si el último era del anónimo y aún no se había visto
-    if (last?.from === "anon" && !last?.seen) {
-      await markSeen(chat.id, last.id);
-    }
-
-    router.push(`/dashboard/${dashboardId}/chats/${chat.id}`);
-  } catch (err) {
-    console.error(err);
-  }
-};
-
+  };
 
   if (loading) return <p>Cargando…</p>;
   if (chats.length === 0) return <p>No hay chats aún.</p>;
