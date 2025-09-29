@@ -1,15 +1,15 @@
-// MessageList.jsx
 "use client";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
+const API =
+  process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
 
 export default function MessageList({ dashboardId }) {
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openCard, setOpenCard] = useState(null);
-  const [aliasMap, setAliasMap] = useState({}); // cache alias por chatId
+  const [aliasMap, setAliasMap] = useState({});
   const router = useRouter();
 
   const fetchChats = async () => {
@@ -31,7 +31,7 @@ export default function MessageList({ dashboardId }) {
     fetchChats();
   }, [dashboardId]);
 
-  // Al volver a enfocar la ventana, vuelve a cargar (evita "No leído" fantasma)
+  // Re-fetch al volver a enfocar la ventana (evita “No leído” fantasma)
   useEffect(() => {
     const onFocus = () => fetchChats();
     window.addEventListener("focus", onFocus);
@@ -50,20 +50,23 @@ export default function MessageList({ dashboardId }) {
     }
   };
 
-  // Obtiene alias REAL del anonimo y, opcionalmente, marca visto el último del anon
-  const fetchAliasAndMaybeMark = async (chatId, markLastAnonUnseen = false) => {
+  const fetchAliasAndMaybeMark = async (
+    chatId,
+    markLastAnonUnseen = false
+  ) => {
     try {
       const res = await fetch(`${API}/dashboard/chats/${chatId}`);
       const data = await res.json();
-      // alias: busca primer mensaje del anon con alias
-      const aliasMsg = data?.messages?.find(m => m.from === "anon" && m.alias);
+      const aliasMsg = data?.messages?.find(
+        (m) => m.from === "anon" && m.alias
+      );
       const alias = aliasMsg?.alias || "Anónimo";
-      setAliasMap(prev => ({ ...prev, [chatId]: alias }));
+      setAliasMap((prev) => ({ ...prev, [chatId]: alias }));
 
       if (markLastAnonUnseen) {
         const lastAnonUnseen = [...(data?.messages || [])]
-          .filter(m => m.from === "anon" && !m.seen)
-          .pop(); // el más reciente sin ver
+          .filter((m) => m.from === "anon" && !m.seen)
+          .pop();
         if (lastAnonUnseen?.id) await markSeen(lastAnonUnseen.id);
       }
     } catch (e) {
@@ -77,22 +80,24 @@ export default function MessageList({ dashboardId }) {
   return (
     <div style={{ display: "grid", gap: 12 }}>
       {chats.map((chat) => {
-        const last = chat.messages?.[0]; // backend manda 1 último mensaje:contentReference[oaicite:1]{index=1}
-        // Regla: "unread" solo si el último es del anon y está sin ver.
+        const last = chat.messages?.[0];
+        // unread solo si el último es del anon y !seen
         const unread = last?.from === "anon" ? !last?.seen : false;
         const isOpen = openCard === chat.id;
+
+        // mensaje inicial del anónimo
+        const firstAnonMessage = chat.messages?.find(
+          (m) => m.from === "anon"
+        );
 
         const handleCardClick = async (e) => {
           if (e.target.tagName === "BUTTON") return;
 
           if (!isOpen) {
             setOpenCard(chat.id);
-
             if (last?.from === "anon") {
-              // marca visto el último del anon si no estaba visto
               if (!last?.seen && last?.id) await markSeen(last.id);
             } else {
-              // último es del creador: trae chat, resuelve alias y marca último anon sin ver
               await fetchAliasAndMaybeMark(chat.id, true);
             }
           } else {
@@ -102,7 +107,9 @@ export default function MessageList({ dashboardId }) {
 
         const aliasToShow =
           isOpen
-            ? (last?.from === "anon" && last?.alias) || aliasMap[chat.id] || "Anónimo"
+            ? (last?.from === "anon" && last?.alias) ||
+              aliasMap[chat.id] ||
+              "Anónimo"
             : undefined;
 
         return (
@@ -114,7 +121,11 @@ export default function MessageList({ dashboardId }) {
               padding: 12,
               border: "1px solid #ddd",
               borderRadius: 8,
-              background: isOpen ? "#ffffff" : unread ? "#ffe6e6" : "#e6e6e6",
+              background: isOpen
+                ? "#ffffff"
+                : unread
+                ? "#ffe6e6"
+                : "#e6e6e6",
               textDecoration: "none",
               color: "#111",
               cursor: "pointer",
@@ -125,11 +136,26 @@ export default function MessageList({ dashboardId }) {
                 <div style={{ fontWeight: 600, marginBottom: 4 }}>
                   Alias: {aliasToShow}
                 </div>
-                <div style={{ color: "#444" }}>
-                  {last?.from === "creator"
-                    ? "Último mensaje enviado por ti. Abre el chat para ver la conversación."
-                    : last?.content}
+
+                {/* Mensaje inicial del anónimo */}
+                <div style={{ color: "#444", marginBottom: 6 }}>
+                  {firstAnonMessage?.content || "Sin mensaje del anónimo"}
                 </div>
+
+                {/* Si el último es del creador, mostrar aviso */}
+                {last?.from === "creator" && (
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: "#777",
+                      marginBottom: 6,
+                    }}
+                  >
+                    Último mensaje enviado por ti. Abre el chat para ver la
+                    conversación completa.
+                  </div>
+                )}
+
                 <button
                   style={{
                     marginTop: 10,
@@ -141,7 +167,9 @@ export default function MessageList({ dashboardId }) {
                     cursor: "pointer",
                   }}
                   onClick={() =>
-                    router.push(`/dashboard/${dashboardId}/chats/${chat.id}`)
+                    router.push(
+                      `/dashboard/${dashboardId}/chats/${chat.id}`
+                    )
                   }
                 >
                   Responder a {aliasToShow}
