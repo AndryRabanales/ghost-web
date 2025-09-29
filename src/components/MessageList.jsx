@@ -10,9 +10,13 @@ export default function MessageList({ dashboardId }) {
   const [loading, setLoading] = useState(true);
   const [openCard, setOpenCard] = useState(null);
   const [isPremium, setIsPremium] = useState(false);
-  const router = useRouter();
+  const [lives, setLives] = useState(null);
 
-  // 🔒 Evita llamadas duplicadas por mensaje
+  // nuevo: manejamos el tiempo de cooldown
+  const [cooldownEnd, setCooldownEnd] = useState(null);
+  const [timeLeft, setTimeLeft] = useState(null);
+
+  const router = useRouter();
   const openingRef = useRef(new Set());
 
   const fetchChats = async () => {
@@ -23,6 +27,15 @@ export default function MessageList({ dashboardId }) {
 
       if (Array.isArray(data) && data.length > 0) {
         setIsPremium(data[0].creator?.isPremium || false);
+
+        const newLives = data[0].creator?.lives ?? null;
+        setLives(newLives);
+
+        // si no tiene vidas, inicia el cooldown
+        if (newLives <= 0 && !cooldownEnd) {
+          const end = Date.now() + 15 * 60 * 1000; // 15 minutos
+          setCooldownEnd(end);
+        }
       }
 
       const stored = JSON.parse(localStorage.getItem("myChats") || "[]");
@@ -53,9 +66,30 @@ export default function MessageList({ dashboardId }) {
     const int = setInterval(fetchChats, 5000);
     return () => {
       clearInterval(int);
-      openingRef.current.clear(); // limpiar al desmontar
+      openingRef.current.clear();
     };
   }, [dashboardId]);
+
+  // efecto que actualiza el contador cada segundo
+  useEffect(() => {
+    if (!cooldownEnd) return;
+
+    const interval = setInterval(() => {
+      const diff = cooldownEnd - Date.now();
+      if (diff <= 0) {
+        clearInterval(interval);
+        setTimeLeft(null);
+        setCooldownEnd(null);
+        setLives(1); // regenerar 1 vida
+      } else {
+        const minutes = Math.floor(diff / 60000);
+        const seconds = Math.floor((diff % 60000) / 1000);
+        setTimeLeft(`${minutes}:${seconds.toString().padStart(2, "0")}`);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [cooldownEnd]);
 
   const handleOpenMessage = async (chat) => {
     const last = chat.messages?.[0];
@@ -63,7 +97,6 @@ export default function MessageList({ dashboardId }) {
 
     const messageId = last.id;
 
-    // ✅ Evitar llamadas duplicadas al mismo mensaje
     if (openingRef.current.has(messageId)) return;
     openingRef.current.add(messageId);
 
@@ -79,9 +112,16 @@ export default function MessageList({ dashboardId }) {
         return;
       }
 
-      await res.json();
+      const json = await res.json();
+      if (typeof json.lives === "number") {
+        setLives(json.lives);
 
-      // Actualizar UI
+        if (json.lives <= 0 && !cooldownEnd) {
+          const end = Date.now() + 15 * 60 * 1000;
+          setCooldownEnd(end);
+        }
+      }
+
       setChats((prev) =>
         prev.map((c) =>
           c.id === chat.id
@@ -101,7 +141,6 @@ export default function MessageList({ dashboardId }) {
     } catch (err) {
       console.error(err);
     } finally {
-      // ✅ Liberar el candado
       openingRef.current.delete(messageId);
     }
   };
@@ -111,7 +150,7 @@ export default function MessageList({ dashboardId }) {
 
   return (
     <div style={{ display: "grid", gap: 12 }}>
-      {!isPremium && (
+      {!isPremium && lives <= 0 && timeLeft && (
         <div
           style={{
             fontWeight: "bold",
@@ -120,7 +159,7 @@ export default function MessageList({ dashboardId }) {
             fontSize: 14,
           }}
         >
-          ⚡ Las vidas se regeneran cada 15 minutos (+1 vida).
+          ⚡ Puedes responder un nuevo en {timeLeft}.
         </div>
       )}
 
@@ -138,8 +177,8 @@ export default function MessageList({ dashboardId }) {
           setOpenCard(isOpen ? null : chat.id);
         };
 
-        // ✅ Deshabilitar botón si ya se abrió o está en proceso
-        const isDisabled = chat.alreadyOpened || openingRef.current.has(last?.id);
+        const isDisabled =
+          lives <= 0 || chat.alreadyOpened || openingRef.current.has(last?.id);
 
         return (
           <div
@@ -182,19 +221,6 @@ export default function MessageList({ dashboardId }) {
                   {firstAnonMessage?.content || "Sin mensaje del anónimo"}
                 </div>
 
-                {last?.from === "creator" && (
-                  <div
-                    style={{
-                      fontSize: 12,
-                      color: "#777",
-                      marginBottom: 6,
-                    }}
-                  >
-                    Último mensaje enviado por ti. Abre el chat para ver la
-                    conversación completa.
-                  </div>
-                )}
-
                 {chat.alreadyOpened && (
                   <div
                     style={{
@@ -220,14 +246,14 @@ export default function MessageList({ dashboardId }) {
                     opacity: isDisabled ? 0.6 : 1,
                   }}
                   onClick={(e) => {
-                    e.stopPropagation(); // evitar que se colapse la tarjeta
+                    e.stopPropagation();
                     handleOpenMessage(chat);
                   }}
                 >
                   {chat.alreadyOpened
                     ? "Ir al chat"
                     : isDisabled
-                    ? "Abriendo..."
+                    ? "Esperando vida..."
                     : `Responder a ${aliasToShow}`}
                 </button>
               </>
