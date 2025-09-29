@@ -99,35 +99,31 @@ export default function MessageList({ dashboardId }) {
         router.push(`/dashboard/${dashboardId}/chats/${chat.id}`);
         return;
       }
-
+  
       // solo descuenta la primera vez si no es premium
       if (!isPremium && !chat.alreadyOpened) {
         const res = await fetch(
           `${API}/dashboard/${dashboardId}/open-message/${targetMessageId}`,
           { method: "POST" }
         );
-
+  
         if (res.status === 403) {
           const data = await res.json();
           alert(data.error); // Sin vidas
           return;
         }
-
-        // Actualizar vidas inmediatamente con el valor del server, o fallback si no viene
+  
+        // ✅ usar vidas del server o fallback inmediato
         const json = await res.json();
         if (typeof json.lives === "number") {
           setLives(json.lives);
         } else {
-          // Fallback por si el server aún no devuelve lives
           setLives((prev) =>
             typeof prev === "number" ? Math.max(0, prev - 1) : prev
           );
         }
-
-        // activar candado 3s para que el polling no pise el valor recién mostrado
-        livesLockRef.current = Date.now() + 3000;
       }
-
+  
       // persistir opened en localStorage y estado
       localStorage.setItem(`opened_${chat.id}`, "true");
       setChats((prev) =>
@@ -135,17 +131,18 @@ export default function MessageList({ dashboardId }) {
           c.id === chat.id ? { ...c, alreadyOpened: true } : c
         )
       );
-
+  
       // marcar como visto si el último era del anónimo y aún no se había visto
       if (last?.from === "anon" && !last?.seen) {
         await markSeen(chat.id, last.id);
       }
-
+  
       router.push(`/dashboard/${dashboardId}/chats/${chat.id}`);
     } catch (err) {
       console.error(err);
     }
   };
+  
 
   if (loading) return <p>Cargando…</p>;
   if (chats.length === 0) return <p>No hay chats aún.</p>;
