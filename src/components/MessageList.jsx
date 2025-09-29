@@ -93,47 +93,48 @@ export default function MessageList({ dashboardId }) {
   const handleOpenMessage = async (chat) => {
     try {
       const last = chat.messages?.[0];
-      const shouldCharge = last?.from === "anon" && !last?.seen;
-
-      if (!isPremium && shouldCharge) {
-        const res = await fetch(
-          `${API}/dashboard/${dashboardId}/open-message/${last.id}`,
-          { method: "POST" }
+  
+      // 🔴 ya no comprobamos shouldCharge aquí, dejamos que el server decida
+      const res = await fetch(
+        `${API}/dashboard/${dashboardId}/open-message/${last.id}`,
+        { method: "POST" }
+      );
+  
+      if (res.status === 403) {
+        const data = await res.json();
+        alert(data.error);
+        return;
+      }
+  
+      const json = await res.json();
+      if (typeof json.lives === "number") {
+        setLives(json.lives);
+      } else {
+        setLives((prev) =>
+          typeof prev === "number" ? Math.max(0, prev - 1) : prev
         );
-
-        if (res.status === 403) {
-          const data = await res.json();
-          alert(data.error);
-          return;
-        }
-
-        const json = await res.json();
-        if (typeof json.lives === "number") {
-          setLives(json.lives);
-        } else {
-          setLives((prev) =>
-            typeof prev === "number" ? Math.max(0, prev - 1) : prev
-          );
-        }
-
-        // Bloquea el polling un momento
-        livesLockRef.current = Date.now() + 3000;
-
-        // reflejar visto en UI inmediatamente
+      }
+  
+      // Bloquea el polling un momento
+      livesLockRef.current = Date.now() + 3000;
+  
+      // reflejar visto en UI inmediatamente
+      if (last?.from === "anon" && !last?.seen) {
         await markSeen(chat.id, last.id);
       }
-
+  
       // Marcar tarjeta como abierta (UI)
       localStorage.setItem(`opened_${chat.id}`, "true");
       setChats((prev) =>
         prev.map((c) => (c.id === chat.id ? { ...c, alreadyOpened: true } : c))
       );
-
+  
       router.push(`/dashboard/${dashboardId}/chats/${chat.id}`);
     } catch (err) {
       console.error(err);
     }
   };
+  
 
   if (loading) return <p>Cargando…</p>;
   if (chats.length === 0) return <p>No hay chats aún.</p>;
