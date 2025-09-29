@@ -79,52 +79,56 @@ export default function MessageList({ dashboardId }) {
     }
   };
 
-  // abrir mensaje (consume vida la primera vez si no es Premium)
-  const handleOpenMessage = async (chat) => {
-    try {
-      const last = chat.messages?.[0];
-      const lastAnon = chat.messages?.find((m) => m.from === "anon");
-      const targetMessageId = lastAnon?.id || chat.lastAnonId || last?.id;
-      if (!targetMessageId) {
-        router.push(`/dashboard/${dashboardId}/chats/${chat.id}`);
+// abrir mensaje (consume vida la primera vez si no es Premium)
+const handleOpenMessage = async (chat) => {
+  try {
+    const last = chat.messages?.[0];
+    const lastAnon = chat.messages?.find((m) => m.from === "anon");
+    const targetMessageId = lastAnon?.id || chat.lastAnonId || last?.id;
+    if (!targetMessageId) {
+      router.push(`/dashboard/${dashboardId}/chats/${chat.id}`);
+      return;
+    }
+
+    // solo descuenta la primera vez si no es premium
+    if (!isPremium && !chat.alreadyOpened) {
+      const res = await fetch(
+        `${API}/dashboard/${dashboardId}/open-message/${targetMessageId}`,
+        { method: "POST" }
+      );
+
+      if (res.status === 403) {
+        const data = await res.json();
+        alert(data.error); // Sin vidas
         return;
       }
 
-      // solo descuenta la primera vez si no es premium
-      if (!isPremium && !chat.alreadyOpened) {
-        const res = await fetch(
-          `${API}/dashboard/${dashboardId}/open-message/${targetMessageId}`,
-          { method: "POST" }
-        );
-        if (res.status === 403) {
-          const data = await res.json();
-          alert(data.error); // Sin vidas
-          return;
-        }
-        const json = await res.json();
-        if (typeof json.lives === "number") {
-          setLives(json.lives);
-        }
+      // ⬇️ AQUÍ PONES ESTO:
+      const json = await res.json();
+      if (typeof json.lives === "number") {
+        setLives(json.lives);
       }
-
-      // persistir opened en localStorage y estado
-      localStorage.setItem(`opened_${chat.id}`, "true");
-      setChats((prev) =>
-        prev.map((c) =>
-          c.id === chat.id ? { ...c, alreadyOpened: true } : c
-        )
-      );
-
-      // marcar como visto si el último era del anónimo y aún no se había visto
-      if (last?.from === "anon" && !last?.seen) {
-        await markSeen(chat.id, last.id);
-      }
-
-      router.push(`/dashboard/${dashboardId}/chats/${chat.id}`);
-    } catch (err) {
-      console.error(err);
     }
-  };
+
+    // persistir opened en localStorage y estado
+    localStorage.setItem(`opened_${chat.id}`, "true");
+    setChats((prev) =>
+      prev.map((c) =>
+        c.id === chat.id ? { ...c, alreadyOpened: true } : c
+      )
+    );
+
+    // marcar como visto si el último era del anónimo y aún no se había visto
+    if (last?.from === "anon" && !last?.seen) {
+      await markSeen(chat.id, last.id);
+    }
+
+    router.push(`/dashboard/${dashboardId}/chats/${chat.id}`);
+  } catch (err) {
+    console.error(err);
+  }
+};
+
 
   if (loading) return <p>Cargando…</p>;
   if (chats.length === 0) return <p>No hay chats aún.</p>;
