@@ -84,7 +84,14 @@ export default function ChatPage() {
   };
 
   return (
-    <div style={{ maxWidth: 600, margin: "0 auto", padding: 20, position: "relative" }}>
+    <div
+      style={{
+        maxWidth: 600,
+        margin: "0 auto",
+        padding: 20,
+        position: "relative",
+      }}
+    >
       <h1>Chat con {anonAlias}</h1>
       <div
         style={{

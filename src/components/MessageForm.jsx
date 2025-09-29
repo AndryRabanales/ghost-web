@@ -1,7 +1,8 @@
 "use client";
 import React, { useEffect, useState } from "react";
 
-const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
+const API =
+  process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
 
 export default function MessageForm({ publicId }) {
   const [content, setContent] = useState("");
@@ -44,6 +45,21 @@ export default function MessageForm({ publicId }) {
       setLinks(list);
     }, 5000);
     return () => clearInterval(interval);
+  }, [publicId]);
+
+  // Nuevo: actualizar lista al volver de un chat (sin esperar polling)
+  useEffect(() => {
+    const onVis = () => {
+      if (!document.hidden) {
+        const stored = JSON.parse(localStorage.getItem("myChats") || "[]");
+        const list = stored
+          .filter((c) => c.publicId === publicId)
+          .sort((a, b) => b.ts - a.ts);
+        setLinks(list);
+      }
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
   }, [publicId]);
 
   const handleSubmit = async (e) => {
