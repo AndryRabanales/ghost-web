@@ -20,6 +20,34 @@ export default function MessageForm({ publicId }) {
     setLinks(list);
   }, [publicId]);
 
+  // Polling para ver si hay respuesta del creador en cada chat
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      const stored = JSON.parse(localStorage.getItem("myChats") || "[]");
+      let updated = [...stored];
+      // revisa cada chat guardado
+      for (let i = 0; i < updated.length; i++) {
+        const c = updated[i];
+        if (c.publicId !== publicId) continue;
+        try {
+          const res = await fetch(`${API}/chats/${c.anonToken}/${c.chatId}`);
+          const data = await res.json();
+          // hay algún mensaje del creador?
+          const hasReply = data.messages?.some((m) => m.from === "creator");
+          updated[i].hasReply = hasReply;
+        } catch (err) {
+          console.error("Error comprobando respuesta:", err);
+        }
+      }
+      localStorage.setItem("myChats", JSON.stringify(updated));
+      const list = updated
+        .filter((c) => c.publicId === publicId)
+        .sort((a, b) => b.ts - a.ts);
+      setLinks(list);
+    }, 5000); // cada 5s
+    return () => clearInterval(interval);
+  }, [publicId]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!content.trim()) return;
@@ -49,6 +77,7 @@ export default function MessageForm({ publicId }) {
         ts: Date.now(),
         publicId,
         alias: alias || "Anónimo",
+        hasReply: false,
       };
       const stored = JSON.parse(localStorage.getItem("myChats") || "[]");
       const next = [entry, ...stored.filter((c) => c.chatId !== data.chatId)];
@@ -123,11 +152,38 @@ export default function MessageForm({ publicId }) {
                 <div style={{ fontSize: 11, color: "#888", marginTop: 4 }}>
                   {new Date(c.ts).toLocaleString()}
                 </div>
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: c.hasReply ? "green" : "#999",
+                    marginTop: 4,
+                  }}
+                >
+                  {c.hasReply ? "¡Nueva respuesta!" : "Esperando respuesta"}
+                </div>
               </a>
             ))}
           </div>
         </div>
       )}
+
+      {/* CTA para crear dashboard */}
+      <div style={{ marginTop: 24, textAlign: "center" }}>
+        <p>¿Quieres recibir mensajes anónimos como este?</p>
+        <a
+          href="/"
+          style={{
+            display: "inline-block",
+            padding: "10px 20px",
+            background: "#4CAF50",
+            color: "#fff",
+            borderRadius: 6,
+            textDecoration: "none",
+          }}
+        >
+          Crea tu propio Dashboard
+        </a>
+      </div>
     </div>
   );
 }
