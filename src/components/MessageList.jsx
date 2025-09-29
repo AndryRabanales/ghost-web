@@ -64,6 +64,7 @@ export default function MessageList({ dashboardId }) {
     return () => clearInterval(int);
   }, [dashboardId]);
 
+  // marcar como visto manualmente si quieres usarlo en otros lugares
   const markSeen = async (chatId, messageId) => {
     try {
       await fetch(`${API}/chat-messages/${messageId}`, {
@@ -93,19 +94,19 @@ export default function MessageList({ dashboardId }) {
   const handleOpenMessage = async (chat) => {
     try {
       const last = chat.messages?.[0];
-  
-      // 🔴 ya no comprobamos shouldCharge aquí, dejamos que el server decida
+
+      // siempre llamamos al server, él decide si cobra
       const res = await fetch(
         `${API}/dashboard/${dashboardId}/open-message/${last.id}`,
         { method: "POST" }
       );
-  
+
       if (res.status === 403) {
         const data = await res.json();
         alert(data.error);
         return;
       }
-  
+
       const json = await res.json();
       if (typeof json.lives === "number") {
         setLives(json.lives);
@@ -114,27 +115,33 @@ export default function MessageList({ dashboardId }) {
           typeof prev === "number" ? Math.max(0, prev - 1) : prev
         );
       }
-  
+
       // Bloquea el polling un momento
       livesLockRef.current = Date.now() + 3000;
-  
-      // reflejar visto en UI inmediatamente
-      if (last?.from === "anon" && !last?.seen) {
-        await markSeen(chat.id, last.id);
-      }
-  
+
+      // reflejar visto en UI inmediatamente (el server ya marcó seen=true)
+      setChats((prev) =>
+        prev.map((c) =>
+          c.id === chat.id
+            ? {
+                ...c,
+                alreadyOpened: true,
+                messages: c.messages?.length
+                  ? [{ ...c.messages[0], seen: true }, ...c.messages.slice(1)]
+                  : c.messages,
+              }
+            : c
+        )
+      );
+
       // Marcar tarjeta como abierta (UI)
       localStorage.setItem(`opened_${chat.id}`, "true");
-      setChats((prev) =>
-        prev.map((c) => (c.id === chat.id ? { ...c, alreadyOpened: true } : c))
-      );
-  
+
       router.push(`/dashboard/${dashboardId}/chats/${chat.id}`);
     } catch (err) {
       console.error(err);
     }
   };
-  
 
   if (loading) return <p>Cargando…</p>;
   if (chats.length === 0) return <p>No hay chats aún.</p>;
@@ -156,13 +163,11 @@ export default function MessageList({ dashboardId }) {
         const firstAnonMessage = chat.messages?.find((m) => m.from === "anon");
         const aliasToShow = chat.anonAlias || "Anónimo";
 
-        const handleCardClick = async (e) => {
+        const handleCardClick = (e) => {
           if (e.target.tagName === "BUTTON") return;
           if (!isOpen) {
             setOpenCard(chat.id);
-            if (last?.from === "anon" && !last?.seen) {
-              await markSeen(chat.id, last.id);
-            }
+            // ❌ quitamos markSeen aquí para que el server descuente vida
           } else {
             setOpenCard(null);
           }
