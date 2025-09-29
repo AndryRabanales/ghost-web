@@ -9,7 +9,7 @@ export default function MessageList({ dashboardId }) {
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openCard, setOpenCard] = useState(null);
-  const [lives, setLives] = useState(null);   // vidas actuales
+  const [lives, setLives] = useState(null); // vidas actuales
   const [isPremium, setIsPremium] = useState(false); // premium o no
   const router = useRouter();
 
@@ -20,21 +20,23 @@ export default function MessageList({ dashboardId }) {
       const res = await fetch(`${API}/dashboard/${dashboardId}/chats`);
       const data = await res.json();
 
-      // aquí puedes sacar vidas e isPremium del primer chat (trae creator)
       if (Array.isArray(data) && data.length > 0) {
         setIsPremium(data[0].creator?.isPremium || false);
         setLives(data[0].creator?.lives ?? null);
       }
 
       const stored = JSON.parse(localStorage.getItem("myChats") || "[]");
+
       const enhanced = Array.isArray(data)
         ? data.map((c) => {
             const lastAnonMsg = c.messages?.find((m) => m.from === "anon");
             const foundLocal = stored.find((s) => s.chatId === c.id);
+            const openedFlag = localStorage.getItem(`opened_${c.id}`) === "true";
             return {
               ...c,
               lastAnonId: lastAnonMsg?.id || null,
               anonAlias: foundLocal?.anonAlias || foundLocal?.alias || "Anónimo",
+              alreadyOpened: openedFlag,
             };
           })
         : [];
@@ -53,7 +55,7 @@ export default function MessageList({ dashboardId }) {
     return () => clearInterval(int);
   }, [dashboardId]);
 
-  // marcar mensajes del anónimo como vistos al abrir card
+  // marcar mensajes del anónimo como vistos
   const markSeen = async (chatId, messageId) => {
     try {
       await fetch(`${API}/chat-messages/${messageId}`, {
@@ -79,26 +81,42 @@ export default function MessageList({ dashboardId }) {
     }
   };
 
-  // nuevo: validar vidas antes de abrir
+  // abrir mensaje (consume vida la primera vez si no es Premium)
   const handleOpenMessage = async (chat, messageId, aliasToShow) => {
     try {
-      // solo restringe si no es premium
-      if (!isPremium) {
-        const res = await fetch(`${API}/dashboard/${dashboardId}/open-message/${messageId}`, {
-          method: "POST",
-        });
+      if (!isPremium && !chat.alreadyOpened) {
+        const res = await fetch(
+          `${API}/dashboard/${dashboardId}/open-message/${messageId}`,
+          {
+            method: "POST",
+          }
+        );
         if (res.status === 403) {
           const data = await res.json();
           alert(data.error); // Sin vidas
           return;
         }
         const data = await res.json();
-        setLives(data.lives); // actualizar contador de vidas
+        setLives(data.lives);
       }
-      // marcar como visto y abrir
+
+      // marcar como visto y como "abierto"
+      localStorage.setItem(`opened_${chat.id}`, "true");
       if (chat.messages?.[0]?.from === "anon" && !chat.messages?.[0]?.seen) {
         await markSeen(chat.id, chat.messages[0].id);
       }
+
+      setChats((prev) =>
+        prev.map((c) =>
+          c.id === chat.id
+            ? {
+                ...c,
+                alreadyOpened: true,
+              }
+            : c
+        )
+      );
+
       router.push(`/dashboard/${dashboardId}/chats/${chat.id}`);
     } catch (err) {
       console.error(err);
@@ -119,14 +137,10 @@ export default function MessageList({ dashboardId }) {
       {chats.map((chat) => {
         const last = chat.messages?.[0];
         const hasNewMsg =
-          last?.from === "anon" && !last?.seen ? true : false;
+          last?.from === "anon" && !last?.seen && !chat.alreadyOpened;
 
         const isOpen = openCard === chat.id;
-
-        const firstAnonMessage = chat.messages?.find(
-          (m) => m.from === "anon"
-        );
-
+        const firstAnonMessage = chat.messages?.find((m) => m.from === "anon");
         const aliasToShow = chat.anonAlias || "Anónimo";
 
         const handleCardClick = async (e) => {
@@ -203,7 +217,9 @@ export default function MessageList({ dashboardId }) {
                     borderRadius: 4,
                     cursor: "pointer",
                   }}
-                  onClick={() => handleOpenMessage(chat, last?.id, aliasToShow)}
+                  onClick={() =>
+                    handleOpenMessage(chat, last?.id, aliasToShow)
+                  }
                 >
                   Responder a {aliasToShow}
                 </button>
