@@ -12,17 +12,16 @@ export default function PublicChatPage() {
 
   const [messages, setMessages] = useState([]);
   const [newMsg, setNewMsg] = useState("");
-  const [creatorAlias, setCreatorAlias] = useState("Respuesta");
+  const [creatorName, setCreatorName] = useState("Respuesta");
 
-  // leer alias original guardado para este chat
+  // leer nombre guardado en localStorage si existe
   useEffect(() => {
     const stored = JSON.parse(localStorage.getItem("myChats") || "[]");
     const found = stored.find(
       (c) => c.chatId === chatId && c.anonToken === anonToken
     );
-    if (found?.anonAlias) {
-      // alias original guardado
-      setCreatorAlias(found.anonAlias);
+    if (found?.creatorName) {
+      setCreatorName(found.creatorName);
     }
   }, [chatId, anonToken]);
 
@@ -33,6 +32,19 @@ export default function PublicChatPage() {
       if (Array.isArray(data.messages)) {
         setMessages(data.messages);
 
+        // si el backend devuelve creatorName, usarlo
+        if (data.creatorName) {
+          setCreatorName(data.creatorName);
+          // guardar también en localStorage para reusar
+          const stored = JSON.parse(localStorage.getItem("myChats") || "[]");
+          const next = stored.map((c) =>
+            c.chatId === chatId && c.anonToken === anonToken
+              ? { ...c, creatorName: data.creatorName }
+              : c
+          );
+          localStorage.setItem("myChats", JSON.stringify(next));
+        }
+
         // buscar el último mensaje del creador para guardarlo como "visto"
         const creatorMsgs = data.messages.filter((m) => m.from === "creator");
         const lastCreatorId = creatorMsgs.length
@@ -40,8 +52,8 @@ export default function PublicChatPage() {
           : null;
 
         // actualizar localStorage marcando hasReply=false y avanzando lastSeenCreatorId
-        const stored = JSON.parse(localStorage.getItem("myChats") || "[]");
-        const next = stored.map((c) =>
+        const stored2 = JSON.parse(localStorage.getItem("myChats") || "[]");
+        const next2 = stored2.map((c) =>
           c.chatId === chatId && c.anonToken === anonToken
             ? {
                 ...c,
@@ -51,7 +63,7 @@ export default function PublicChatPage() {
               }
             : c
         );
-        localStorage.setItem("myChats", JSON.stringify(next));
+        localStorage.setItem("myChats", JSON.stringify(next2));
       }
     } catch (err) {
       console.error(err);
@@ -82,7 +94,7 @@ export default function PublicChatPage() {
 
   return (
     <div style={{ maxWidth: 600, margin: "0 auto", padding: 20 }}>
-      <h1>Chat con {creatorAlias}</h1>
+      <h1>Chat con {creatorName}</h1>
       <div
         style={{
           border: "1px solid #ccc",
@@ -96,7 +108,7 @@ export default function PublicChatPage() {
         {messages.map((m) => (
           <div key={m.id} style={{ marginBottom: 8 }}>
             <strong>
-              {m.from === "creator" ? `${creatorAlias}:` : "Tú:"}
+              {m.from === "creator" ? `${creatorName}:` : "Tú:"}
             </strong>{" "}
             {m.content}
           </div>
