@@ -37,6 +37,7 @@ export default function MessageList({ dashboardId }) {
               lastAnonId: lastAnonMsg?.id || null,
               anonAlias: foundLocal?.anonAlias || foundLocal?.alias || "Anónimo",
               alreadyOpened: openedFlag,
+              openedNow: false, // flag temporal para mostrar aviso
             };
           })
         : [];
@@ -87,9 +88,7 @@ export default function MessageList({ dashboardId }) {
       if (!isPremium && !chat.alreadyOpened) {
         const res = await fetch(
           `${API}/dashboard/${dashboardId}/open-message/${messageId}`,
-          {
-            method: "POST",
-          }
+          { method: "POST" }
         );
         if (res.status === 403) {
           const data = await res.json();
@@ -106,12 +105,14 @@ export default function MessageList({ dashboardId }) {
         await markSeen(chat.id, chat.messages[0].id);
       }
 
+      // actualizar estado → marcar openedNow para mostrar aviso
       setChats((prev) =>
         prev.map((c) =>
           c.id === chat.id
             ? {
                 ...c,
                 alreadyOpened: true,
+                openedNow: true,
               }
             : c
         )
@@ -195,6 +196,7 @@ export default function MessageList({ dashboardId }) {
                 <div style={{ color: "#444", marginBottom: 6 }}>
                   {firstAnonMessage?.content || "Sin mensaje del anónimo"}
                 </div>
+
                 {last?.from === "creator" && (
                   <div
                     style={{
@@ -207,6 +209,20 @@ export default function MessageList({ dashboardId }) {
                     conversación completa.
                   </div>
                 )}
+
+                {/* nuevo aviso si fue abierto por primera vez */}
+                {chat.openedNow && (
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: "#d9534f",
+                      marginTop: 6,
+                    }}
+                  >
+                    Este mensaje fue abierto. Se descontó una vida.
+                  </div>
+                )}
+
                 <button
                   style={{
                     marginTop: 10,
