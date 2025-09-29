@@ -92,56 +92,46 @@ export default function MessageList({ dashboardId }) {
   // abrir mensaje (consume vida la primera vez si no es Premium)
   const handleOpenMessage = async (chat) => {
     try {
-      const last = chat.messages?.[0];
-      const lastAnon = chat.messages?.find((m) => m.from === "anon");
-      const targetMessageId = lastAnon?.id || chat.lastAnonId || last?.id;
-      if (!targetMessageId) {
-        router.push(`/dashboard/${dashboardId}/chats/${chat.id}`);
-        return;
-      }
+      const last = chat.messages?.[0]; // es el más reciente porque en /dashboard... usas orderBy desc y take:1
+      const shouldCharge = last?.from === "anon" && !last?.seen; // clave
   
-      // solo descuenta la primera vez si no es premium
-      if (!isPremium && !chat.alreadyOpened) {
+      // Si hay que cobrar (anon + no visto) y no es premium -> abrir (cobra en server de forma idempotente)
+      if (!isPremium && shouldCharge) {
         const res = await fetch(
-          `${API}/dashboard/${dashboardId}/open-message/${targetMessageId}`,
+          `${API}/dashboard/${dashboardId}/open-message/${last.id}`,
           { method: "POST" }
         );
   
         if (res.status === 403) {
           const data = await res.json();
-          alert(data.error); // Sin vidas
+          alert(data.error);
           return;
         }
   
-        // ✅ usar vidas del server o fallback inmediato
         const json = await res.json();
         if (typeof json.lives === "number") {
           setLives(json.lives);
         } else {
-          setLives((prev) =>
-            typeof prev === "number" ? Math.max(0, prev - 1) : prev
-          );
+          // Fallback ultra seguro
+          setLives((prev) => (typeof prev === "number" ? Math.max(0, prev - 1) : prev));
         }
-      }
   
-      // persistir opened en localStorage y estado
-      localStorage.setItem(`opened_${chat.id}`, "true");
-      setChats((prev) =>
-        prev.map((c) =>
-          c.id === chat.id ? { ...c, alreadyOpened: true } : c
-        )
-      );
-  
-      // marcar como visto si el último era del anónimo y aún no se había visto
-      if (last?.from === "anon" && !last?.seen) {
+        // reflejar visto en UI inmediatamente
         await markSeen(chat.id, last.id);
       }
+  
+      // Marcar tarjeta como abierta (UI), pero ya NO condiciona el cobro
+      localStorage.setItem(`opened_${chat.id}`, "true");
+      setChats((prev) =>
+        prev.map((c) => (c.id === chat.id ? { ...c, alreadyOpened: true } : c))
+      );
   
       router.push(`/dashboard/${dashboardId}/chats/${chat.id}`);
     } catch (err) {
       console.error(err);
     }
   };
+  
   
 
   if (loading) return <p>Cargando…</p>;
