@@ -1,3 +1,4 @@
+// MessageList.jsx
 "use client";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -8,6 +9,7 @@ export default function MessageList({ dashboardId }) {
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openCard, setOpenCard] = useState(null);
+  const [aliasMap, setAliasMap] = useState({}); // cache alias por chatId
   const router = useRouter();
 
   const fetchChats = async () => {
@@ -29,6 +31,13 @@ export default function MessageList({ dashboardId }) {
     fetchChats();
   }, [dashboardId]);
 
+  // Al volver a enfocar la ventana, vuelve a cargar (evita "No leído" fantasma)
+  useEffect(() => {
+    const onFocus = () => fetchChats();
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [dashboardId]);
+
   const markSeen = async (messageId) => {
     try {
       await fetch(`${API}/chat-messages/${messageId}`, {
@@ -41,39 +50,71 @@ export default function MessageList({ dashboardId }) {
     }
   };
 
+  // Obtiene alias REAL del anonimo y, opcionalmente, marca visto el último del anon
+  const fetchAliasAndMaybeMark = async (chatId, markLastAnonUnseen = false) => {
+    try {
+      const res = await fetch(`${API}/dashboard/chats/${chatId}`);
+      const data = await res.json();
+      // alias: busca primer mensaje del anon con alias
+      const aliasMsg = data?.messages?.find(m => m.from === "anon" && m.alias);
+      const alias = aliasMsg?.alias || "Anónimo";
+      setAliasMap(prev => ({ ...prev, [chatId]: alias }));
+
+      if (markLastAnonUnseen) {
+        const lastAnonUnseen = [...(data?.messages || [])]
+          .filter(m => m.from === "anon" && !m.seen)
+          .pop(); // el más reciente sin ver
+        if (lastAnonUnseen?.id) await markSeen(lastAnonUnseen.id);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   if (loading) return <p>Cargando…</p>;
   if (chats.length === 0) return <p>No hay chats aún.</p>;
 
   return (
     <div style={{ display: "grid", gap: 12 }}>
       {chats.map((chat) => {
-        const last = chat.messages?.[0];
+        const last = chat.messages?.[0]; // backend manda 1 último mensaje:contentReference[oaicite:1]{index=1}
+        // Regla: "unread" solo si el último es del anon y está sin ver.
+        const unread = last?.from === "anon" ? !last?.seen : false;
         const isOpen = openCard === chat.id;
-        const seen = last?.seen || false;
+
+        const handleCardClick = async (e) => {
+          if (e.target.tagName === "BUTTON") return;
+
+          if (!isOpen) {
+            setOpenCard(chat.id);
+
+            if (last?.from === "anon") {
+              // marca visto el último del anon si no estaba visto
+              if (!last?.seen && last?.id) await markSeen(last.id);
+            } else {
+              // último es del creador: trae chat, resuelve alias y marca último anon sin ver
+              await fetchAliasAndMaybeMark(chat.id, true);
+            }
+          } else {
+            setOpenCard(null);
+          }
+        };
+
+        const aliasToShow =
+          isOpen
+            ? (last?.from === "anon" && last?.alias) || aliasMap[chat.id] || "Anónimo"
+            : undefined;
 
         return (
           <div
             key={chat.id}
-            onClick={(e) => {
-              if (e.target.tagName !== "BUTTON") {
-                if (!isOpen) {
-                  setOpenCard(chat.id);
-                  if (!seen && last?.id) markSeen(last.id);
-                } else {
-                  setOpenCard(null);
-                }
-              }
-            }}
+            onClick={handleCardClick}
             style={{
               display: "block",
               padding: 12,
               border: "1px solid #ddd",
               borderRadius: 8,
-              background: isOpen
-                ? "#ffffff"
-                : seen
-                ? "#e6e6e6"
-                : "#ffe6e6",
+              background: isOpen ? "#ffffff" : unread ? "#ffe6e6" : "#e6e6e6",
               textDecoration: "none",
               color: "#111",
               cursor: "pointer",
@@ -82,9 +123,13 @@ export default function MessageList({ dashboardId }) {
             {isOpen ? (
               <>
                 <div style={{ fontWeight: 600, marginBottom: 4 }}>
-                  Alias: {last?.alias || "Anónimo"}
+                  Alias: {aliasToShow}
                 </div>
-                <div style={{ color: "#444" }}>{last?.content}</div>
+                <div style={{ color: "#444" }}>
+                  {last?.from === "creator"
+                    ? "Último mensaje enviado por ti. Abre el chat para ver la conversación."
+                    : last?.content}
+                </div>
                 <button
                   style={{
                     marginTop: 10,
@@ -99,18 +144,18 @@ export default function MessageList({ dashboardId }) {
                     router.push(`/dashboard/${dashboardId}/chats/${chat.id}`)
                   }
                 >
-                  Responder a {last?.alias || "Anónimo"}
+                  Responder a {aliasToShow}
                 </button>
               </>
             ) : (
               <>
                 <div style={{ fontWeight: 600, marginBottom: 4 }}>
-                  {seen ? "Leído" : "Sin leer"}
+                  {unread ? "Sin leer" : "Leído"}
                 </div>
                 <div style={{ fontSize: 12, color: "#666" }}>
-                  {seen
-                    ? "Mensaje oculto (Leído). Haz click para desplegar"
-                    : "Mensaje bloqueado, haz click para ver"}
+                  {unread
+                    ? "Mensaje bloqueado, haz click para ver"
+                    : "Mensaje oculto (Leído). Haz click para desplegar"}
                 </div>
               </>
             )}
