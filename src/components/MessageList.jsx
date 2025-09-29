@@ -2,13 +2,13 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
+const API =
+  process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
 
 export default function MessageList({ dashboardId }) {
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openCard, setOpenCard] = useState(null);
-  const [aliasMap, setAliasMap] = useState({});
   const router = useRouter();
 
   const fetchChats = async () => {
@@ -16,7 +16,17 @@ export default function MessageList({ dashboardId }) {
     try {
       const res = await fetch(`${API}/dashboard/${dashboardId}/chats`);
       const data = await res.json();
-      setChats(Array.isArray(data) ? data : []);
+      // añadimos markers para último del anónimo
+      const enhanced = Array.isArray(data)
+        ? data.map((c) => {
+            const lastAnonMsg = c.messages?.find((m) => m.from === "anon");
+            return {
+              ...c,
+              lastAnonId: lastAnonMsg?.id || null,
+            };
+          })
+        : [];
+      setChats(enhanced);
     } catch (err) {
       console.error(err);
       setChats([]);
@@ -27,23 +37,11 @@ export default function MessageList({ dashboardId }) {
 
   useEffect(() => {
     fetchChats();
-  }, [dashboardId]);
-
-  // Polling automático
-  useEffect(() => {
     const int = setInterval(fetchChats, 5000);
     return () => clearInterval(int);
   }, [dashboardId]);
 
-  // También refrescar al volver de otra página
-  useEffect(() => {
-    const onVis = () => {
-      if (!document.hidden) fetchChats();
-    };
-    document.addEventListener("visibilitychange", onVis);
-    return () => document.removeEventListener("visibilitychange", onVis);
-  }, [dashboardId]);
-
+  // marcar mensajes del anónimo como vistos al abrir card
   const markSeen = async (chatId, messageId) => {
     try {
       await fetch(`${API}/chat-messages/${messageId}`, {
@@ -51,7 +49,7 @@ export default function MessageList({ dashboardId }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ seen: true }),
       });
-      // actualiza el estado local para no esperar polling
+      // actualiza estado local
       setChats((prev) =>
         prev.map((c) =>
           c.id === chatId
@@ -60,30 +58,14 @@ export default function MessageList({ dashboardId }) {
                 messages: c.messages.map((m) =>
                   m.id === messageId ? { ...m, seen: true } : m
                 ),
+                // al verlo, marcamos también lastSeenAnonId para apagar badge
+                lastSeenAnonId: messageId,
               }
             : c
         )
       );
     } catch (err) {
       console.error(err);
-    }
-  };
-
-  const fetchAliasAndMaybeMark = async (chatId) => {
-    try {
-      const res = await fetch(`${API}/dashboard/chats/${chatId}`);
-      const data = await res.json();
-      const aliasMsg = data?.messages?.find(
-        (m) => m.from === "anon" && m.alias
-      );
-      const alias = aliasMsg?.alias || "Anónimo";
-      setAliasMap((prev) => ({ ...prev, [chatId]: alias }));
-      // actualiza mensajes en el estado local
-      setChats((prev) =>
-        prev.map((c) => (c.id === chatId ? { ...c, messages: data.messages } : c))
-      );
-    } catch (e) {
-      console.error(e);
     }
   };
 
@@ -94,35 +76,33 @@ export default function MessageList({ dashboardId }) {
     <div style={{ display: "grid", gap: 12 }}>
       {chats.map((chat) => {
         const last = chat.messages?.[0];
-        const unread = last?.from === "anon" ? !last?.seen : false;
+        // hasNewMsg: hay mensaje del anónimo no visto
+        const hasNewMsg =
+          last?.from === "anon" && !last?.seen ? true : false;
+
         const isOpen = openCard === chat.id;
 
         const firstAnonMessage = chat.messages?.find(
           (m) => m.from === "anon"
         );
 
+        const aliasToShow =
+          last?.from === "anon" && last?.alias
+            ? last.alias
+            : "Anónimo";
+
         const handleCardClick = async (e) => {
           if (e.target.tagName === "BUTTON") return;
 
           if (!isOpen) {
             setOpenCard(chat.id);
-            if (last?.from === "anon") {
-              if (!last?.seen && last?.id)
-                await markSeen(chat.id, last.id);
-            } else {
-              await fetchAliasAndMaybeMark(chat.id);
+            if (last?.from === "anon" && !last?.seen) {
+              await markSeen(chat.id, last.id);
             }
           } else {
             setOpenCard(null);
           }
         };
-
-        const aliasToShow =
-          isOpen
-            ? (last?.from === "anon" && last?.alias) ||
-              aliasMap[chat.id] ||
-              "Anónimo"
-            : undefined;
 
         return (
           <div
@@ -135,7 +115,7 @@ export default function MessageList({ dashboardId }) {
               borderRadius: 8,
               background: isOpen
                 ? "#ffffff"
-                : unread
+                : hasNewMsg
                 ? "#ffe6e6"
                 : "#e6e6e6",
               textDecoration: "none",
@@ -145,9 +125,23 @@ export default function MessageList({ dashboardId }) {
           >
             {isOpen ? (
               <>
-                <div style={{ fontWeight: 600, marginBottom: 4 }}>
-                  Alias: {aliasToShow}
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    fontWeight: 600,
+                    marginBottom: 4,
+                  }}
+                >
+                  <span>Alias: {aliasToShow}</span>
+                  {/* badge si hay mensaje nuevo */}
+                  {hasNewMsg && (
+                    <span style={{ color: "red", fontSize: 12 }}>
+                      ● Mensaje nuevo
+                    </span>
+                  )}
                 </div>
+
                 <div style={{ color: "#444", marginBottom: 6 }}>
                   {firstAnonMessage?.content || "Sin mensaje del anónimo"}
                 </div>
@@ -182,11 +176,23 @@ export default function MessageList({ dashboardId }) {
               </>
             ) : (
               <>
-                <div style={{ fontWeight: 600, marginBottom: 4 }}>
-                  {unread ? "Sin leer" : "Leído"}
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    fontWeight: 600,
+                    marginBottom: 4,
+                  }}
+                >
+                  <span>{hasNewMsg ? "Sin leer" : "Leído"}</span>
+                  {hasNewMsg && (
+                    <span style={{ color: "red", fontSize: 12 }}>
+                      ● Mensaje nuevo
+                    </span>
+                  )}
                 </div>
                 <div style={{ fontSize: 12, color: "#666" }}>
-                  {unread
+                  {hasNewMsg
                     ? "Mensaje bloqueado, haz click para ver"
                     : "Mensaje oculto (Leído). Haz click para desplegar"}
                 </div>
