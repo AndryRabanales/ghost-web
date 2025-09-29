@@ -9,17 +9,24 @@ export default function MessageList({ dashboardId }) {
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openCard, setOpenCard] = useState(null);
+  const [lives, setLives] = useState(null);   // vidas actuales
+  const [isPremium, setIsPremium] = useState(false); // premium o no
   const router = useRouter();
 
+  // obtener chats y datos del creador
   const fetchChats = async () => {
     if (!dashboardId) return;
     try {
       const res = await fetch(`${API}/dashboard/${dashboardId}/chats`);
       const data = await res.json();
 
-      // leer alias guardado de localStorage para cada chat
-      const stored = JSON.parse(localStorage.getItem("myChats") || "[]");
+      // aquí puedes sacar vidas e isPremium del primer chat (trae creator)
+      if (Array.isArray(data) && data.length > 0) {
+        setIsPremium(data[0].creator?.isPremium || false);
+        setLives(data[0].creator?.lives ?? null);
+      }
 
+      const stored = JSON.parse(localStorage.getItem("myChats") || "[]");
       const enhanced = Array.isArray(data)
         ? data.map((c) => {
             const lastAnonMsg = c.messages?.find((m) => m.from === "anon");
@@ -54,7 +61,6 @@ export default function MessageList({ dashboardId }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ seen: true }),
       });
-      // actualiza estado local sin refrescar
       setChats((prev) =>
         prev.map((c) =>
           c.id === chatId
@@ -73,11 +79,43 @@ export default function MessageList({ dashboardId }) {
     }
   };
 
+  // nuevo: validar vidas antes de abrir
+  const handleOpenMessage = async (chat, messageId, aliasToShow) => {
+    try {
+      // solo restringe si no es premium
+      if (!isPremium) {
+        const res = await fetch(`${API}/dashboard/${dashboardId}/open-message/${messageId}`, {
+          method: "POST",
+        });
+        if (res.status === 403) {
+          const data = await res.json();
+          alert(data.error); // Sin vidas
+          return;
+        }
+        const data = await res.json();
+        setLives(data.lives); // actualizar contador de vidas
+      }
+      // marcar como visto y abrir
+      if (chat.messages?.[0]?.from === "anon" && !chat.messages?.[0]?.seen) {
+        await markSeen(chat.id, chat.messages[0].id);
+      }
+      router.push(`/dashboard/${dashboardId}/chats/${chat.id}`);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   if (loading) return <p>Cargando…</p>;
   if (chats.length === 0) return <p>No hay chats aún.</p>;
 
   return (
     <div style={{ display: "grid", gap: 12 }}>
+      {!isPremium && lives !== null && (
+        <div style={{ fontWeight: "bold", marginBottom: 8 }}>
+          Vidas disponibles: {lives}
+        </div>
+      )}
+
       {chats.map((chat) => {
         const last = chat.messages?.[0];
         const hasNewMsg =
@@ -89,7 +127,6 @@ export default function MessageList({ dashboardId }) {
           (m) => m.from === "anon"
         );
 
-        // usamos alias guardado (anonAlias) en vez de depender del último mensaje
         const aliasToShow = chat.anonAlias || "Anónimo";
 
         const handleCardClick = async (e) => {
@@ -166,9 +203,7 @@ export default function MessageList({ dashboardId }) {
                     borderRadius: 4,
                     cursor: "pointer",
                   }}
-                  onClick={() =>
-                    router.push(`/dashboard/${dashboardId}/chats/${chat.id}`)
-                  }
+                  onClick={() => handleOpenMessage(chat, last?.id, aliasToShow)}
                 >
                   Responder a {aliasToShow}
                 </button>
