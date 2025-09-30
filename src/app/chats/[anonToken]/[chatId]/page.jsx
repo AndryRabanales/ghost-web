@@ -141,10 +141,11 @@ export default function PublicChatPage() {
             }}
           >
             <strong>
-              {m.from === "creator"
-                ? `${creatorName}:`
-                : `${m.alias || anonAlias}:`}
-            </strong>{" "}
+  {m.from === "creator"
+    ? `${creatorName}:`
+    : `${m.alias}:`}
+</strong>
+
             {m.content}
           </div>
         ))}
