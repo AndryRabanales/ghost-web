@@ -2,7 +2,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
+const API =
+  process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
 
 export default function Home() {
   const router = useRouter();
@@ -18,20 +19,22 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name }),
       });
+
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Error creando dashboard");
 
-      // 🔑 Guardar token en localStorage
+      // 👉 Guardar token y publicId en localStorage
       localStorage.setItem("token", data.token);
+      localStorage.setItem("publicId", data.publicId);
 
-      // 🚀 Redirigir solo al link limpio (sin ?token=...)
+      // 👉 Redirigir al dashboard limpio
       router.push(data.dashboardUrl);
 
-      // 👀 También mostramos los links en pantalla
+      // 👉 Mostrar también links en pantalla
       setDashboardUrl(data.dashboardUrl);
       setPublicUrl(data.publicUrl);
     } catch (err) {
-      console.error("Error creando dashboard:", err);
+      console.error(err);
     }
   };
 
@@ -53,8 +56,6 @@ export default function Home() {
             backgroundColor: "#4CAF50",
             color: "#fff",
             border: "none",
-            borderRadius: 4,
-            cursor: "pointer",
           }}
         >
           Generar Dashboard
@@ -65,15 +66,11 @@ export default function Home() {
         <div style={{ marginTop: 20 }}>
           <p>
             <strong>Tu dashboard (privado):</strong>{" "}
-            <a href={dashboardUrl} target="_blank" rel="noopener noreferrer">
-              {dashboardUrl}
-            </a>
+            <a href={dashboardUrl}>{dashboardUrl}</a>
           </p>
           <p>
             <strong>Tu link público para recibir mensajes:</strong>{" "}
-            <a href={publicUrl} target="_blank" rel="noopener noreferrer">
-              {publicUrl}
-            </a>
+            <a href={publicUrl}>{publicUrl}</a>
           </p>
         </div>
       )}

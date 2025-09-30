@@ -2,8 +2,10 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import MessageList from "@/components/MessageList";
+import { refreshToken } from "@/utils/auth"; // 👈 importamos el helper
 
-const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
+const API =
+  process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
 
 export default function DashboardPage() {
   const { id } = useParams(); // dashboardId
@@ -17,13 +19,29 @@ export default function DashboardPage() {
 
   const fetchCreator = async () => {
     try {
-      const res = await fetch(`${API}/dashboard/${id}`, {
+      let res = await fetch(`${API}/dashboard/${id}`, {
         headers: getAuthHeaders(),
       });
+
+      // 👇 Si el token expiró
+      if (res.status === 401) {
+        const publicId = localStorage.getItem("publicId"); // ⚠️ guarda publicId al crear el dashboard
+        const newToken = await refreshToken(publicId);
+        if (newToken) {
+          res = await fetch(`${API}/dashboard/${id}`, {
+            headers: { Authorization: `Bearer ${newToken}` },
+          });
+        } else {
+          console.error("No se pudo renovar el token");
+          return;
+        }
+      }
+
       if (!res.ok) {
         console.error("⚠️ Error cargando dashboard:", res.status);
         return;
       }
+
       const data = await res.json();
       setCreator(data);
     } catch (err) {
