@@ -1,17 +1,26 @@
 "use client";
-import React from "react";
-import { useParams } from "next/navigation";
-import MessageList from "@/components/MessageList";
+import { useEffect } from "react";
 
-export default function DashboardPage() {
-  const { id } = useParams(); // ✅ usamos "id" porque la carpeta es [id]
+export default function DashboardPage({ params, searchParams }) {
+  useEffect(() => {
+    // ✅ Guardar token si viene en la URL
+    if (searchParams?.token) {
+      localStorage.setItem("token", searchParams.token);
+      console.log("Token guardado en localStorage ✅");
+    }
 
-  if (!id) return <p>Cargando dashboard…</p>;
+    // ✅ Guardar dashboardId
+    if (params?.id) {
+      localStorage.setItem("dashboardId", params.id);
+      console.log("DashboardId guardado en localStorage ✅");
+    }
+  }, [params, searchParams]);
 
   return (
     <div style={{ padding: 20 }}>
-      <h1 style={{ marginBottom: 20 }}>Dashboard</h1>
-      <MessageList dashboardId={id} />
+      <h1>📊 Dashboard {params.id}</h1>
+      <p>Ya se guardaron el <b>token</b> y el <b>dashboardId</b> en localStorage.</p>
+      <p>Ahora los componentes como <code>MessageList</code> pueden usarlos en los fetch.</p>
     </div>
   );
 }
