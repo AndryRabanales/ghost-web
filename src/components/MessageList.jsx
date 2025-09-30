@@ -11,14 +11,12 @@ export default function MessageList({ dashboardId }) {
   const [openCard, setOpenCard] = useState(null);
   const [isPremium, setIsPremium] = useState(false);
   const [lives, setLives] = useState(null);
-
-  // cooldown real desde backend
   const [timeLeft, setTimeLeft] = useState(null);
 
   const router = useRouter();
   const openingRef = useRef(new Set());
 
-  // 🔹 nuevo: pedir vidas al backend
+  // 🔹 pedir vidas al backend
   const fetchLives = async () => {
     if (!dashboardId) return;
     try {
@@ -39,6 +37,7 @@ export default function MessageList({ dashboardId }) {
     }
   };
 
+  // 🔹 pedir chats al backend (ya devuelve lastMessage y anonAlias)
   const fetchChats = async () => {
     if (!dashboardId) return;
     try {
@@ -49,23 +48,17 @@ export default function MessageList({ dashboardId }) {
       });
       const data = await res.json();
 
-      const stored = JSON.parse(localStorage.getItem("myChats") || "[]");
       const enhanced = Array.isArray(data)
-        ? data.map((c) => {
-            const lastAnonMsg = c.messages?.find((m) => m.from === "anon");
-            const foundLocal = stored.find((s) => s.chatId === c.id);
-            const openedFlag = localStorage.getItem(`opened_${c.id}`) === "true";
-            return {
-              ...c,
-              lastAnonId: lastAnonMsg?.id || null,
-              anonAlias: foundLocal?.anonAlias || foundLocal?.alias || "Anónimo",
-              alreadyOpened: openedFlag,
-            };
-          })
+        ? data.map((c) => ({
+            ...c,
+            lastMessage: c.lastMessage || null,
+            anonAlias: c.anonAlias || "Anónimo",
+            alreadyOpened: localStorage.getItem(`opened_${c.id}`) === "true",
+          }))
         : [];
       setChats(enhanced);
     } catch (err) {
-      console.error(err);
+      console.error("Error cargando chats", err);
       setChats([]);
     } finally {
       setLoading(false);
@@ -74,28 +67,24 @@ export default function MessageList({ dashboardId }) {
 
   useEffect(() => {
     if (!dashboardId) return;
-
     fetchChats();
     fetchLives();
-
     const int = setInterval(() => {
       fetchChats();
       fetchLives();
-    }, 10000); // refresca cada 10s
-
+    }, 10000);
     return () => {
       clearInterval(int);
       openingRef.current.clear();
     };
   }, [dashboardId]);
 
-  // manejar apertura de mensaje
+  // 🔹 abrir mensaje anónimo
   const handleOpenMessage = async (chat) => {
-    const last = chat.messages?.[0];
+    const last = chat.lastMessage;
     if (!last || last.from !== "anon") return;
 
     const messageId = last.id;
-
     if (openingRef.current.has(messageId)) return;
     openingRef.current.add(messageId);
 
@@ -109,13 +98,12 @@ export default function MessageList({ dashboardId }) {
           },
         }
       );
-
       const json = await res.json();
 
       if (res.status === 403) {
         alert(json.error);
         if (json.minutesToNext) {
-          setTimeLeft(json.minutesToNext * 60); // en segundos
+          setTimeLeft(json.minutesToNext * 60);
         }
         return;
       }
@@ -123,7 +111,6 @@ export default function MessageList({ dashboardId }) {
       if (typeof json.lives === "number") {
         setLives(json.lives);
       }
-
       if (json.minutesToNext) {
         setTimeLeft(json.minutesToNext * 60);
       }
@@ -131,13 +118,7 @@ export default function MessageList({ dashboardId }) {
       setChats((prev) =>
         prev.map((c) =>
           c.id === chat.id
-            ? {
-                ...c,
-                alreadyOpened: true,
-                messages: c.messages?.length
-                  ? [{ ...c.messages[0], seen: true }, ...c.messages.slice(1)]
-                  : c.messages,
-              }
+            ? { ...c, alreadyOpened: true, lastMessage: { ...c.lastMessage, seen: true } }
             : c
         )
       );
@@ -151,21 +132,19 @@ export default function MessageList({ dashboardId }) {
     }
   };
 
-  // contador visual cada segundo
+  // contador visual
   useEffect(() => {
     if (!timeLeft) return;
-
     const interval = setInterval(() => {
       setTimeLeft((prev) => {
         if (!prev || prev <= 1) {
           clearInterval(interval);
-          fetchLives(); // 🔹 ahora refresca desde backend
+          fetchLives();
           return null;
         }
         return prev - 1;
       });
     }, 1000);
-
     return () => clearInterval(interval);
   }, [timeLeft]);
 
@@ -181,88 +160,47 @@ export default function MessageList({ dashboardId }) {
   return (
     <div style={{ display: "grid", gap: 12 }}>
       {!isPremium && lives <= 0 && timeLeft && (
-        <div
-          style={{
-            fontWeight: "bold",
-            marginBottom: 8,
-            color: "#d9534f",
-            fontSize: 14,
-          }}
-        >
+        <div style={{ fontWeight: "bold", marginBottom: 8, color: "#d9534f", fontSize: 14 }}>
           ⚡ Puedes responder un nuevo en {formatTime(timeLeft)}.
         </div>
       )}
 
       {chats.map((chat) => {
-        const last = chat.messages?.[0];
-        const hasNewMsg =
-          last?.from === "anon" && !last?.seen && !chat.alreadyOpened;
+        const last = chat.lastMessage;
+        const hasNewMsg = last?.from === "anon" && !last?.seen && !chat.alreadyOpened;
 
         const isOpen = openCard === chat.id;
-        const firstAnonMessage = chat.messages?.find((m) => m.from === "anon");
         const aliasToShow = chat.anonAlias || "Anónimo";
-
-        const handleCardClick = (e) => {
-          if (e.target.tagName === "BUTTON") return;
-          setOpenCard(isOpen ? null : chat.id);
-        };
-
         const isDisabled =
           lives <= 0 || chat.alreadyOpened || openingRef.current.has(last?.id);
 
         return (
           <div
             key={chat.id}
-            onClick={handleCardClick}
+            onClick={(e) => e.target.tagName !== "BUTTON" && setOpenCard(isOpen ? null : chat.id)}
             style={{
               display: "block",
               padding: 12,
               border: "1px solid #ddd",
               borderRadius: 8,
-              background: isOpen
-                ? "#ffffff"
-                : hasNewMsg
-                ? "#ffe6e6"
-                : "#e6e6e6",
-              textDecoration: "none",
-              color: "#111",
+              background: isOpen ? "#fff" : hasNewMsg ? "#ffe6e6" : "#e6e6e6",
               cursor: "pointer",
             }}
           >
             {isOpen ? (
               <>
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    fontWeight: 600,
-                    marginBottom: 4,
-                  }}
-                >
+                <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 600 }}>
                   <span>Alias: {aliasToShow}</span>
-                  {hasNewMsg && (
-                    <span style={{ color: "red", fontSize: 12 }}>
-                      ● Mensaje nuevo
-                    </span>
-                  )}
+                  {hasNewMsg && <span style={{ color: "red", fontSize: 12 }}>● Mensaje nuevo</span>}
                 </div>
-
                 <div style={{ color: "#444", marginBottom: 6 }}>
-                  {firstAnonMessage?.content || "Sin mensaje del anónimo"}
+                  {last?.content || "Sin mensaje del anónimo"}
                 </div>
-
                 {chat.alreadyOpened && (
-                  <div
-                    style={{
-                      fontSize: 12,
-                      color: "#d9534f",
-                      marginTop: 6,
-                    }}
-                  >
+                  <div style={{ fontSize: 12, color: "#d9534f", marginTop: 6 }}>
                     Este mensaje ya fue abierto y se descontó una vida.
                   </div>
                 )}
-
                 <button
                   disabled={isDisabled}
                   style={{
@@ -273,7 +211,6 @@ export default function MessageList({ dashboardId }) {
                     border: "none",
                     borderRadius: 4,
                     cursor: isDisabled ? "not-allowed" : "pointer",
-                    opacity: isDisabled ? 0.6 : 1,
                   }}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -289,20 +226,9 @@ export default function MessageList({ dashboardId }) {
               </>
             ) : (
               <>
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    fontWeight: 600,
-                    marginBottom: 4,
-                  }}
-                >
+                <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 600 }}>
                   <span>{hasNewMsg ? "Sin leer" : "Leído"}</span>
-                  {hasNewMsg && (
-                    <span style={{ color: "red", fontSize: 12 }}>
-                      ● Mensaje nuevo
-                    </span>
-                  )}
+                  {hasNewMsg && <span style={{ color: "red", fontSize: 12 }}>● Mensaje nuevo</span>}
                 </div>
                 <div style={{ fontSize: 12, color: "#666" }}>
                   {hasNewMsg
