@@ -10,9 +10,12 @@ export default function Home() {
   const [name, setName] = useState("");
   const [dashboardUrl, setDashboardUrl] = useState(null);
   const [publicUrl, setPublicUrl] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const handleCreate = async (e) => {
     e.preventDefault();
+    setLoading(true);
+
     try {
       const res = await fetch(`${API}/creators`, {
         method: "POST",
@@ -27,12 +30,16 @@ export default function Home() {
       localStorage.setItem("token", data.token);
       localStorage.setItem("publicId", data.publicId);
 
-
-      // 👉 Mostrar también links en pantalla
+      // 👉 Mostrar links en pantalla
       setDashboardUrl(data.dashboardUrl);
       setPublicUrl(data.publicUrl);
+
+      // 👉 Redirigir al dashboard automáticamente
+      router.push(`/dashboard/${data.dashboardId}`);
     } catch (err) {
-      console.error(err);
+      console.error("❌ Error creando dashboard:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -46,17 +53,20 @@ export default function Home() {
           value={name}
           onChange={(e) => setName(e.target.value)}
           style={{ width: "100%", padding: 10, marginBottom: 12 }}
+          required
         />
         <button
           type="submit"
+          disabled={loading}
           style={{
             padding: "10px 20px",
             backgroundColor: "#4CAF50",
             color: "#fff",
             border: "none",
+            cursor: loading ? "wait" : "pointer",
           }}
         >
-          Generar Dashboard
+          {loading ? "Creando..." : "Generar Dashboard"}
         </button>
       </form>
 

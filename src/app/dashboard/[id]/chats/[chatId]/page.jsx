@@ -1,8 +1,10 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { refreshToken } from "@/utils/auth";
 
-const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
+const API =
+  process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
 
 export default function ChatPage() {
   const params = useParams();
@@ -23,13 +25,27 @@ export default function ChatPage() {
 
   const fetchChat = async () => {
     try {
-      const res = await fetch(`${API}/dashboard/chats/${chatId}`, {
-        headers: getAuthHeaders(),
-      });
-      if (!res.ok) {
-        console.error("⚠️ Error cargando chat:", res.status);
-        return;
+      let res = await fetch(
+        `${API}/dashboard/${dashboardId}/chats/${chatId}`,
+        { headers: getAuthHeaders() }
+      );
+
+      // ⚠️ Si el token está vencido → intentar refresh
+      if (res.status === 401) {
+        const publicId = localStorage.getItem("publicId");
+        if (publicId) {
+          const newToken = await refreshToken(publicId);
+          if (newToken) {
+            res = await fetch(
+              `${API}/dashboard/${dashboardId}/chats/${chatId}`,
+              { headers: { Authorization: `Bearer ${newToken}` } }
+            );
+          }
+        }
       }
+
+      if (!res.ok) throw new Error("Error al obtener chat");
+
       const data = await res.json();
 
       if (Array.isArray(data.messages)) {
@@ -46,12 +62,14 @@ export default function ChatPage() {
     }
   };
 
+  // 🔁 Polling cada 5s
   useEffect(() => {
     fetchChat();
     const interval = setInterval(fetchChat, 5000);
     return () => clearInterval(interval);
   }, [chatId]);
 
+  // 👀 Marcar mensajes anónimos como vistos
   useEffect(() => {
     if (!chat?.messages) return;
     const unseenAnon = chat.messages.filter(
@@ -66,6 +84,7 @@ export default function ChatPage() {
     });
   }, [chat]);
 
+  // 🔔 Notificación toast
   useEffect(() => {
     if (!chat?.messages) return;
     const count = chat.messages.length;
@@ -79,20 +98,60 @@ export default function ChatPage() {
     setLastCount(count);
   }, [chat]);
 
+  // ✉️ Enviar mensaje como dueño
   const handleSend = async (e) => {
     e.preventDefault();
     if (!newMsg.trim()) return;
-    await fetch(`${API}/dashboard/chats/${chatId}/messages`, {
-      method: "POST",
-      headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
-      body: JSON.stringify({ content: newMsg }),
-    });
-    setNewMsg("");
-    fetchChat();
+
+    try {
+      let res = await fetch(
+        `${API}/dashboard/${dashboardId}/chats/${chatId}/messages`,
+        {
+          method: "POST",
+          headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
+          body: JSON.stringify({ content: newMsg }),
+        }
+      );
+
+      // ⚠️ Token expirado → refresh y reintento
+      if (res.status === 401) {
+        const publicId = localStorage.getItem("publicId");
+        if (publicId) {
+          const newToken = await refreshToken(publicId);
+          if (newToken) {
+            res = await fetch(
+              `${API}/dashboard/${dashboardId}/chats/${chatId}/messages`,
+              {
+                method: "POST",
+                headers: {
+                  Authorization: `Bearer ${newToken}`,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ content: newMsg }),
+              }
+            );
+          }
+        }
+      }
+
+      if (!res.ok) throw new Error("Error enviando mensaje");
+
+      setNewMsg("");
+      fetchChat();
+    } catch (err) {
+      console.error("Error en handleSend:", err);
+    }
   };
 
   return (
-    <div style={{ maxWidth: 600, margin: "0 auto", padding: 20, position: "relative" }}>
+    <div
+      style={{
+        maxWidth: 600,
+        margin: "0 auto",
+        padding: 20,
+        position: "relative",
+      }}
+    >
       <h1>Chat con {anonAlias}</h1>
       <div
         style={{
@@ -137,7 +196,7 @@ export default function ChatPage() {
             color: "#fff",
             padding: "10px 16px",
             borderRadius: 6,
-            boxShadow: "0 2px 6px rgba(0,0,0,0.3)",
+            boxShadow: "0 2px 6px rgba(0, 0, 0, 0.3)",
             zIndex: 9999,
             fontSize: 14,
           }}

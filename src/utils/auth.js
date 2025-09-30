@@ -1,3 +1,8 @@
+// utils/auth.js
+
+/**
+ * Refresca el token del usuario usando su publicId
+ */
 export async function refreshToken(publicId) {
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API}/refresh-token`, {
@@ -11,10 +16,19 @@ export async function refreshToken(publicId) {
   
       // Guardar nuevo token en localStorage
       localStorage.setItem("token", data.token);
+  
       return data.token;
     } catch (err) {
-      console.error("Error en refreshToken:", err);
+      console.error("❌ Error en refreshToken:", err);
       return null;
     }
+  }
+  
+  /**
+   * Devuelve headers con el token actual desde localStorage
+   */
+  export function getAuthHeaders() {
+    const token = localStorage.getItem("token");
+    return token ? { Authorization: `Bearer ${token}` } : {};
   }
   
