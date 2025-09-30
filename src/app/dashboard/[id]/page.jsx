@@ -1,86 +1,60 @@
 "use client";
-import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import MessageList from "@/components/MessageList";
 
 const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
 
-export default function CreatorChatsPage() {
+export default function DashboardPage() {
   const { id } = useParams(); // dashboardId
-  const [chats, setChats] = useState([]);
+  const [creator, setCreator] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchChats = async () => {
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem("token");
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  };
+
+  const fetchCreator = async () => {
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        console.error("⚠️ No hay token en localStorage");
-        setChats([]);
-        return;
-      }
-
-      const res = await fetch(`${API}/dashboard/${id}/chats`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const res = await fetch(`${API}/dashboard/${id}`, {
+        headers: getAuthHeaders(),
       });
-
       if (!res.ok) {
-        console.error("⚠️ Error al cargar chats:", res.status);
-        setChats([]);
+        console.error("⚠️ Error cargando dashboard:", res.status);
         return;
       }
-
       const data = await res.json();
-      setChats(data);
-    } catch (e) {
-      console.error("Error en fetchChats:", e);
-      setChats([]);
+      setCreator(data);
+    } catch (err) {
+      console.error("Error en fetchCreator:", err);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    if (id) fetchChats();
+    if (id) fetchCreator();
   }, [id]);
 
   if (loading) return <p style={{ padding: 20 }}>Cargando…</p>;
 
   return (
     <div style={{ maxWidth: 700, margin: "0 auto", padding: 20 }}>
-      <h1>Chats del dashboard</h1>
-      {chats.length === 0 ? (
-        <p>No hay chats aún.</p>
-      ) : (
-        <div style={{ display: "grid", gap: 12 }}>
-          {chats.map((c) => {
-            const last = c.lastMessage;
-            return (
-              <a
-                key={c.id}
-                href={`/dashboard/${id}/chats/${c.id}`}
-                style={{
-                  display: "block",
-                  padding: 12,
-                  border: "1px solid #ddd",
-                  borderRadius: 8,
-                  background: "#fafafa",
-                  textDecoration: "none",
-                  color: "#111",
-                }}
-              >
-                <div style={{ fontWeight: 600, marginBottom: 4 }}>
-                  Chat con {c.anonAlias || "Anónimo"}
-                </div>
-                <div style={{ color: "#444" }}>
-                  {last ? last.content.slice(0, 80) : "Sin mensajes"}
-                </div>
-                <div style={{ fontSize: 12, color: "#888", marginTop: 6 }}>
-                  {last ? new Date(last.createdAt).toLocaleString() : ""}
-                </div>
-              </a>
-            );
-          })}
+      <h1>Dashboard</h1>
+      {creator && (
+        <div style={{ marginBottom: 20 }}>
+          <p>
+            <strong>Nombre:</strong> {creator.name}
+          </p>
+          <p>
+            <strong>Dashboard ID:</strong> {id}
+          </p>
         </div>
       )}
+
+      {/* Lista de chats protegida con token */}
+      <MessageList dashboardId={id} />
     </div>
   );
 }

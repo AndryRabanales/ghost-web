@@ -1,59 +1,17 @@
 "use client";
-import React, { useEffect, useState, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
 
-export default function MessageList({ dashboardId, initialToken }) {
+export default function MessageList({ dashboardId }) {
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [openCard, setOpenCard] = useState(null);
-  const [isPremium, setIsPremium] = useState(false);
-  const [lives, setLives] = useState(null);
-  const [timeLeft, setTimeLeft] = useState(null);
-  const [error, setError] = useState(null);
 
-  const router = useRouter();
-  const openingRef = useRef(new Set());
-
-  // 🔹 Guardar token inicial en localStorage si viene de la URL
-  useEffect(() => {
-    if (initialToken) {
-      localStorage.setItem("token", initialToken);
-    }
-  }, [initialToken]);
-
-  // 🔹 Siempre usar el token de localStorage
   const getAuthHeaders = () => {
     const token = localStorage.getItem("token");
-    if (!token) {
-      setError("⚠️ No hay token válido, vuelve a iniciar sesión.");
-      return {};
-    }
-    return { Authorization: `Bearer ${token}` };
+    return token ? { Authorization: `Bearer ${token}` } : {};
   };
 
-  // 🔹 pedir vidas al backend
-  const fetchLives = async () => {
-    if (!dashboardId) return;
-    try {
-      const res = await fetch(`${API}/dashboard/${dashboardId}/lives`, {
-        headers: getAuthHeaders(),
-      });
-      if (!res.ok) {
-        setError("⚠️ Error al cargar vidas (token inválido o no enviado).");
-        return;
-      }
-      const data = await res.json();
-      setLives(data.lives);
-      setIsPremium(data.isPremium);
-      if (data.minutesToNext) setTimeLeft(data.minutesToNext * 60);
-    } catch (err) {
-      console.error("Error cargando vidas", err);
-    }
-  };
-
-  // 🔹 pedir chats al backend
   const fetchChats = async () => {
     if (!dashboardId) return;
     try {
@@ -61,202 +19,61 @@ export default function MessageList({ dashboardId, initialToken }) {
         headers: getAuthHeaders(),
       });
       if (!res.ok) {
-        setError("⚠️ Error al cargar chats (token inválido o no enviado).");
-        setChats([]);
+        console.error("⚠️ Error cargando chats:", res.status);
         return;
       }
       const data = await res.json();
-      const enhanced = Array.isArray(data)
-        ? data.map((c) => ({
-            ...c,
-            lastMessage: c.lastMessage || null,
-            anonAlias: c.anonAlias || "Anónimo",
-            alreadyOpened: localStorage.getItem(`opened_${c.id}`) === "true",
-          }))
-        : [];
-      setChats(enhanced);
+      setChats(data);
     } catch (err) {
-      console.error("Error cargando chats", err);
-      setChats([]);
+      console.error("Error en fetchChats:", err);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    if (!dashboardId) return;
     fetchChats();
-    fetchLives();
-    const int = setInterval(() => {
-      fetchChats();
-      fetchLives();
-    }, 10000);
-    return () => {
-      clearInterval(int);
-      openingRef.current.clear();
-    };
+    const interval = setInterval(fetchChats, 5000); // 🔁 actualizar cada 5s
+    return () => clearInterval(interval);
   }, [dashboardId]);
 
-  // 🔹 abrir mensaje anónimo
-  const handleOpenMessage = async (chat) => {
-    const last = chat.lastMessage;
-    if (!last || last.from !== "anon") return;
-
-    const messageId = last.id;
-    if (openingRef.current.has(messageId)) return;
-    openingRef.current.add(messageId);
-
-    try {
-      const res = await fetch(
-        `${API}/dashboard/${dashboardId}/open-message/${messageId}`,
-        {
-          method: "POST",
-          headers: getAuthHeaders(),
-        }
-      );
-      if (!res.ok) {
-        setError("⚠️ Error al abrir mensaje (token inválido o no enviado).");
-        return;
-      }
-
-      const json = await res.json();
-
-      if (res.status === 403) {
-        alert(json.error);
-        if (json.minutesToNext) setTimeLeft(json.minutesToNext * 60);
-        return;
-      }
-
-      if (typeof json.lives === "number") setLives(json.lives);
-      if (json.minutesToNext) setTimeLeft(json.minutesToNext * 60);
-
-      setChats((prev) =>
-        prev.map((c) =>
-          c.id === chat.id
-            ? { ...c, alreadyOpened: true, lastMessage: { ...c.lastMessage, seen: true } }
-            : c
-        )
-      );
-
-      localStorage.setItem(`opened_${chat.id}`, "true");
-      router.push(`/dashboard/${dashboardId}/chats/${chat.id}`);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      openingRef.current.delete(messageId);
-    }
-  };
-
-  // contador visual
-  useEffect(() => {
-    if (!timeLeft) return;
-    const interval = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (!prev || prev <= 1) {
-          clearInterval(interval);
-          fetchLives();
-          return null;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [timeLeft]);
-
-  const formatTime = (seconds) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m}:${s.toString().padStart(2, "0")}`;
-  };
-
-  // 🔹 mensajes visuales
-  if (error) return <p style={{ color: "red" }}>{error}</p>;
-  if (loading) return <p>Cargando…</p>;
-  if (chats.length === 0) return <p>No hay chats aún.</p>;
+  if (loading) return <p style={{ padding: 20 }}>Cargando…</p>;
 
   return (
-    <div style={{ display: "grid", gap: 12 }}>
-      {!isPremium && lives <= 0 && timeLeft && (
-        <div style={{ fontWeight: "bold", marginBottom: 8, color: "#d9534f", fontSize: 14 }}>
-          ⚡ Puedes responder un nuevo en {formatTime(timeLeft)}.
+    <div style={{ maxWidth: 700, margin: "0 auto", padding: 20 }}>
+      <h1>Chats del dashboard</h1>
+      {chats.length === 0 ? (
+        <p>No hay chats aún.</p>
+      ) : (
+        <div style={{ display: "grid", gap: 12 }}>
+          {chats.map((c) => {
+            const last = c.messages?.[0];
+            return (
+              <a
+                key={c.id}
+                href={`/dashboard/${dashboardId}/chats/${c.id}`}
+                style={{
+                  display: "block",
+                  padding: 12,
+                  border: "1px solid #ddd",
+                  borderRadius: 8,
+                  background: "#fafafa",
+                  textDecoration: "none",
+                  color: "#111",
+                }}
+              >
+                <div style={{ fontWeight: 600, marginBottom: 4 }}>Chat</div>
+                <div style={{ color: "#444" }}>
+                  {last ? last.content.slice(0, 80) : "Sin mensajes"}
+                </div>
+                <div style={{ fontSize: 12, color: "#888", marginTop: 6 }}>
+                  {last ? new Date(last.createdAt).toLocaleString() : ""}
+                </div>
+              </a>
+            );
+          })}
         </div>
       )}
-
-      {chats.map((chat) => {
-        const last = chat.lastMessage;
-        const hasNewMsg = last?.from === "anon" && !last?.seen && !chat.alreadyOpened;
-
-        const isOpen = openCard === chat.id;
-        const aliasToShow = chat.anonAlias || "Anónimo";
-        const isDisabled =
-          lives <= 0 || chat.alreadyOpened || openingRef.current.has(last?.id);
-
-        return (
-          <div
-            key={chat.id}
-            onClick={(e) => e.target.tagName !== "BUTTON" && setOpenCard(isOpen ? null : chat.id)}
-            style={{
-              display: "block",
-              padding: 12,
-              border: "1px solid #ddd",
-              borderRadius: 8,
-              background: isOpen ? "#fff" : hasNewMsg ? "#ffe6e6" : "#e6e6e6",
-              cursor: "pointer",
-            }}
-          >
-            {isOpen ? (
-              <>
-                <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 600 }}>
-                  <span>Alias: {aliasToShow}</span>
-                  {hasNewMsg && <span style={{ color: "red", fontSize: 12 }}>● Mensaje nuevo</span>}
-                </div>
-                <div style={{ color: "#444", marginBottom: 6 }}>
-                  {last?.content || "Sin mensaje del anónimo"}
-                </div>
-                {chat.alreadyOpened && (
-                  <div style={{ fontSize: 12, color: "#d9534f", marginTop: 6 }}>
-                    Este mensaje ya fue abierto y se descontó una vida.
-                  </div>
-                )}
-                <button
-                  disabled={isDisabled}
-                  style={{
-                    marginTop: 10,
-                    padding: "6px 10px",
-                    background: isDisabled ? "#ccc" : "#0070f3",
-                    color: "#fff",
-                    border: "none",
-                    borderRadius: 4,
-                    cursor: isDisabled ? "not-allowed" : "pointer",
-                  }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleOpenMessage(chat);
-                  }}
-                >
-                  {chat.alreadyOpened
-                    ? "Ir al chat"
-                    : isDisabled
-                    ? "Esperando vida..."
-                    : `Responder a ${aliasToShow}`}
-                </button>
-              </>
-            ) : (
-              <>
-                <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 600 }}>
-                  <span>{hasNewMsg ? "Sin leer" : "Leído"}</span>
-                  {hasNewMsg && <span style={{ color: "red", fontSize: 12 }}>● Mensaje nuevo</span>}
-                </div>
-                <div style={{ fontSize: 12, color: "#666" }}>
-                  {hasNewMsg
-                    ? "Mensaje bloqueado, haz click para ver"
-                    : "Mensaje oculto (Leído). Haz click para desplegar"}
-                </div>
-              </>
-            )}
-          </div>
-        );
-      })}
     </div>
   );
 }

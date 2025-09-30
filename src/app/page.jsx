@@ -2,8 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-const API =
-  process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
+const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
 
 export default function Home() {
   const router = useRouter();
@@ -22,18 +21,15 @@ export default function Home() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Error creando dashboard");
 
-      // Guardar token en localStorage
-      if (data.token) {
-        localStorage.setItem("token", data.token);
-      }
+      // 🔑 Guardar token en localStorage
+      localStorage.setItem("token", data.token);
 
-      // Guardar URLs
+      // 🚀 Redirigir solo al link limpio (sin ?token=...)
+      router.push(data.dashboardUrl);
+
+      // 👀 También mostramos los links en pantalla
       setDashboardUrl(data.dashboardUrl);
       setPublicUrl(data.publicUrl);
-
-      // Redirigir al dashboard con token
-      if (data.dashboardUrl && data.token) {
-      }
     } catch (err) {
       console.error("Error creando dashboard:", err);
     }
@@ -57,6 +53,8 @@ export default function Home() {
             backgroundColor: "#4CAF50",
             color: "#fff",
             border: "none",
+            borderRadius: 4,
+            cursor: "pointer",
           }}
         >
           Generar Dashboard
@@ -67,11 +65,15 @@ export default function Home() {
         <div style={{ marginTop: 20 }}>
           <p>
             <strong>Tu dashboard (privado):</strong>{" "}
-            <a href={dashboardUrl}>{dashboardUrl}</a>
+            <a href={dashboardUrl} target="_blank" rel="noopener noreferrer">
+              {dashboardUrl}
+            </a>
           </p>
           <p>
             <strong>Tu link público para recibir mensajes:</strong>{" "}
-            <a href={publicUrl}>{publicUrl}</a>
+            <a href={publicUrl} target="_blank" rel="noopener noreferrer">
+              {publicUrl}
+            </a>
           </p>
         </div>
       )}
