@@ -34,7 +34,7 @@ export default function Home() {
       <form onSubmit={handleCreate}>
         <input
           type="text"
-          placeholder="Tu nombre (opcional)"
+          placeholder="Tu nombre para el chat"
           value={name}
           onChange={(e) => setName(e.target.value)}
           style={{ width: "100%", padding: 10, marginBottom: 12 }}

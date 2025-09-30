@@ -12,8 +12,7 @@ export default function MessageList({ dashboardId }) {
   const [isPremium, setIsPremium] = useState(false);
   const [lives, setLives] = useState(null);
 
-  // nuevo: manejamos el tiempo de cooldown
-  const [cooldownEnd, setCooldownEnd] = useState(null);
+  // nuevo: cooldown real desde backend
   const [timeLeft, setTimeLeft] = useState(null);
 
   const router = useRouter();
@@ -27,15 +26,7 @@ export default function MessageList({ dashboardId }) {
 
       if (Array.isArray(data) && data.length > 0) {
         setIsPremium(data[0].creator?.isPremium || false);
-
-        const newLives = data[0].creator?.lives ?? null;
-        setLives(newLives);
-
-        // si no tiene vidas, inicia el cooldown
-        if (newLives <= 0 && !cooldownEnd) {
-          const end = Date.now() + 15 * 60 * 1000; // 15 minutos
-          setCooldownEnd(end);
-        }
+        setLives(data[0].creator?.lives ?? null);
       }
 
       const stored = JSON.parse(localStorage.getItem("myChats") || "[]");
@@ -70,27 +61,7 @@ export default function MessageList({ dashboardId }) {
     };
   }, [dashboardId]);
 
-  // efecto que actualiza el contador cada segundo
-  useEffect(() => {
-    if (!cooldownEnd) return;
-
-    const interval = setInterval(() => {
-      const diff = cooldownEnd - Date.now();
-      if (diff <= 0) {
-        clearInterval(interval);
-        setTimeLeft(null);
-        setCooldownEnd(null);
-        setLives(1); // regenerar 1 vida
-      } else {
-        const minutes = Math.floor(diff / 60000);
-        const seconds = Math.floor((diff % 60000) / 1000);
-        setTimeLeft(`${minutes}:${seconds.toString().padStart(2, "0")}`);
-      }
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [cooldownEnd]);
-
+  // manejar apertura de mensaje
   const handleOpenMessage = async (chat) => {
     const last = chat.messages?.[0];
     if (!last || last.from !== "anon") return;
@@ -106,20 +77,22 @@ export default function MessageList({ dashboardId }) {
         { method: "POST" }
       );
 
+      const json = await res.json();
+
       if (res.status === 403) {
-        const data = await res.json();
-        alert(data.error);
+        alert(json.error);
+        if (json.minutesToNext) {
+          setTimeLeft(json.minutesToNext * 60); // en segundos
+        }
         return;
       }
 
-      const json = await res.json();
       if (typeof json.lives === "number") {
         setLives(json.lives);
+      }
 
-        if (json.lives <= 0 && !cooldownEnd) {
-          const end = Date.now() + 15 * 60 * 1000;
-          setCooldownEnd(end);
-        }
+      if (json.minutesToNext) {
+        setTimeLeft(json.minutesToNext * 60);
       }
 
       setChats((prev) =>
@@ -145,6 +118,30 @@ export default function MessageList({ dashboardId }) {
     }
   };
 
+  // contador visual cada segundo
+  useEffect(() => {
+    if (!timeLeft) return;
+
+    const interval = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (!prev || prev <= 1) {
+          clearInterval(interval);
+          setLives(1); // el backend ya recarga, pero visualmente mostramos 1
+          return null;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [timeLeft]);
+
+  const formatTime = (seconds) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, "0")}`;
+  };
+
   if (loading) return <p>Cargando…</p>;
   if (chats.length === 0) return <p>No hay chats aún.</p>;
 
@@ -159,7 +156,7 @@ export default function MessageList({ dashboardId }) {
             fontSize: 14,
           }}
         >
-          ⚡ Puedes responder un nuevo en {timeLeft}.
+          ⚡ Puedes responder un nuevo en {formatTime(timeLeft)}.
         </div>
       )}
 
