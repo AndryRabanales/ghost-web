@@ -12,28 +12,36 @@ export default function PublicChatPage() {
   const [messages, setMessages] = useState([]);
   const [newMsg, setNewMsg] = useState("");
   const [creatorName, setCreatorName] = useState("Respuesta");
+  const [anonAlias, setAnonAlias] = useState("Tú");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const bottomRef = useRef(null);
 
-  // ⬇️ Scroll automático al final
+  // Scroll automático al fondo
   useEffect(() => {
     if (bottomRef.current) {
       bottomRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages]);
 
-  // Cargar nombre desde localStorage
+  // Recuperar nombre y alias guardados
   useEffect(() => {
     const stored = JSON.parse(localStorage.getItem("myChats") || "[]");
     const found = stored.find(
       (c) => c.chatId === chatId && c.anonToken === anonToken
     );
-    if (found?.creatorName) {
-      setCreatorName(found.creatorName);
-    }
+    if (found?.creatorName) setCreatorName(found.creatorName);
+    if (found?.anonAlias) setAnonAlias(found.anonAlias);
   }, [chatId, anonToken]);
+
+  const updateLocalStorage = (updater) => {
+    const stored = JSON.parse(localStorage.getItem("myChats") || "[]");
+    const next = stored.map((c) =>
+      c.chatId === chatId && c.anonToken === anonToken ? updater(c) : c
+    );
+    localStorage.setItem("myChats", JSON.stringify(next));
+  };
 
   const fetchMessages = async () => {
     try {
@@ -45,16 +53,20 @@ export default function PublicChatPage() {
       if (Array.isArray(data.messages)) {
         setMessages(data.messages);
 
-        // actualizar nombre del creador
+        // Guardar nombre del creador
         if (data.creatorName) {
           setCreatorName(data.creatorName);
-          updateLocalStorage((c) => ({
-            ...c,
-            creatorName: data.creatorName,
-          }));
+          updateLocalStorage((c) => ({ ...c, creatorName: data.creatorName }));
         }
 
-        // marcar última respuesta del creador como vista
+        // Guardar alias del anónimo (primer mensaje)
+        const firstAnon = data.messages.find((m) => m.from === "anon");
+        if (firstAnon?.alias) {
+          setAnonAlias(firstAnon.alias);
+          updateLocalStorage((c) => ({ ...c, anonAlias: firstAnon.alias }));
+        }
+
+        // Marcar última respuesta del creador como vista
         const creatorMsgs = data.messages.filter((m) => m.from === "creator");
         const lastCreatorId = creatorMsgs.length
           ? creatorMsgs[creatorMsgs.length - 1].id
@@ -74,17 +86,9 @@ export default function PublicChatPage() {
     }
   };
 
-  const updateLocalStorage = (updater) => {
-    const stored = JSON.parse(localStorage.getItem("myChats") || "[]");
-    const next = stored.map((c) =>
-      c.chatId === chatId && c.anonToken === anonToken ? updater(c) : c
-    );
-    localStorage.setItem("myChats", JSON.stringify(next));
-  };
-
   useEffect(() => {
     fetchMessages();
-    const interval = setInterval(fetchMessages, 5000);
+    const interval = setInterval(fetchMessages, 5000); // 🔁 refresco automático
     return () => clearInterval(interval);
   }, [chatId, anonToken]);
 
@@ -92,13 +96,14 @@ export default function PublicChatPage() {
     e.preventDefault();
     if (!newMsg.trim()) return;
     try {
-      await fetch(`${API}/chats/${anonToken}/${chatId}/messages`, {
+      const res = await fetch(`${API}/chats/${anonToken}/${chatId}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content: newMsg }),
       });
+      if (!res.ok) throw new Error("No se pudo enviar el mensaje");
       setNewMsg("");
-      fetchMessages();
+      await fetchMessages(); // ✅ refrescar al instante
     } catch (err) {
       console.error(err);
       setError("⚠️ No se pudo enviar el mensaje");
@@ -136,7 +141,9 @@ export default function PublicChatPage() {
             }}
           >
             <strong>
-              {m.from === "creator" ? `${creatorName}:` : "Tú:"}
+              {m.from === "creator"
+                ? `${creatorName}:`
+                : `${m.alias || anonAlias}:`}
             </strong>{" "}
             {m.content}
           </div>

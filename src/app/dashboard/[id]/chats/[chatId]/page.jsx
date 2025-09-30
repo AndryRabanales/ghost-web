@@ -8,7 +8,7 @@ const API =
 
 export default function ChatPage() {
   const params = useParams();
-  const dashboardId = params.id; // ✅ en Next 13 el param es "id"
+  const dashboardId = params.dashboardId; // ✅ usar "dashboardId"
   const chatId = params.chatId;
 
   const [chat, setChat] = useState(null);
@@ -18,9 +18,9 @@ export default function ChatPage() {
   const [lastCount, setLastCount] = useState(0);
   const [toast, setToast] = useState(null);
 
-  const getAuthHeaders = () => {
-    const token = localStorage.getItem("token");
-    return token ? { Authorization: `Bearer ${token}` } : {};
+  const getAuthHeaders = (token) => {
+    const t = token || localStorage.getItem("token");
+    return t ? { Authorization: `Bearer ${t}` } : {};
   };
 
   const fetchChat = async () => {
@@ -38,7 +38,7 @@ export default function ChatPage() {
           if (newToken) {
             res = await fetch(
               `${API}/dashboard/${dashboardId}/chats/${chatId}`,
-              { headers: { Authorization: `Bearer ${newToken}` } }
+              { headers: getAuthHeaders(newToken) }
             );
           }
         }
@@ -48,12 +48,10 @@ export default function ChatPage() {
 
       const data = await res.json();
 
-      // 👀 Alias anónimo
+      // 👀 alias del anónimo → tomar el PRIMER mensaje si existe
       if (Array.isArray(data.messages)) {
-        const firstAlias = data.messages.find(
-          (m) => m.from === "anon" && m.alias
-        )?.alias;
-        if (firstAlias) setAnonAlias(firstAlias);
+        const firstAnon = data.messages.find((m) => m.from === "anon");
+        if (firstAnon?.alias) setAnonAlias(firstAnon.alias);
       }
 
       if (data.creatorName) setCreatorName(data.creatorName);
@@ -68,7 +66,7 @@ export default function ChatPage() {
     fetchChat();
     const interval = setInterval(fetchChat, 5000);
     return () => clearInterval(interval);
-  }, [chatId]);
+  }, [chatId, dashboardId]);
 
   // 👀 Marcar mensajes anónimos como vistos
   useEffect(() => {
@@ -85,7 +83,7 @@ export default function ChatPage() {
     });
   }, [chat]);
 
-  // 🔔 Notificación toast
+  // 🔔 Toast cuando llega nuevo mensaje anónimo
   useEffect(() => {
     if (!chat?.messages) return;
     const count = chat.messages.length;
@@ -99,7 +97,7 @@ export default function ChatPage() {
     setLastCount(count);
   }, [chat]);
 
-  // ✉️ Enviar mensaje como dueño
+  // ✉️ Enviar mensaje como creador
   const handleSend = async (e) => {
     e.preventDefault();
     if (!newMsg.trim()) return;
@@ -124,7 +122,7 @@ export default function ChatPage() {
               {
                 method: "POST",
                 headers: {
-                  Authorization: `Bearer ${newToken}`,
+                  ...getAuthHeaders(newToken),
                   "Content-Type": "application/json",
                 },
                 body: JSON.stringify({ content: newMsg }),
@@ -137,7 +135,7 @@ export default function ChatPage() {
       if (!res.ok) throw new Error("Error enviando mensaje");
 
       setNewMsg("");
-      fetchChat(); // refrescar mensajes
+      fetchChat(); // refrescar
     } catch (err) {
       console.error("Error en handleSend:", err);
     }
@@ -174,6 +172,11 @@ export default function ChatPage() {
             {m.content}
           </div>
         ))}
+        {!chat?.messages?.length && (
+          <p style={{ color: "#666", textAlign: "center" }}>
+            No hay mensajes todavía
+          </p>
+        )}
       </div>
 
       {/* Formulario para responder */}
