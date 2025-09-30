@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import MessageList from "@/components/MessageList";
-import { refreshToken } from "@/utils/auth"; // 👈 importamos el helper
+import { refreshToken } from "@/utils/auth";
 
 const API =
   process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
@@ -19,16 +19,15 @@ export default function DashboardPage() {
 
   const fetchCreator = async () => {
     try {
-      let res = await fetch(`${API}/dashboard/${id}`, {
+      let res = await fetch(`${API}/creators/me`, {
         headers: getAuthHeaders(),
       });
 
-      // 👇 Si el token expiró
       if (res.status === 401) {
-        const publicId = localStorage.getItem("publicId"); // ⚠️ guarda publicId al crear el dashboard
+        const publicId = localStorage.getItem("publicId");
         const newToken = await refreshToken(publicId);
         if (newToken) {
-          res = await fetch(`${API}/dashboard/${id}`, {
+          res = await fetch(`${API}/creators/me`, {
             headers: { Authorization: `Bearer ${newToken}` },
           });
         } else {
@@ -38,7 +37,7 @@ export default function DashboardPage() {
       }
 
       if (!res.ok) {
-        console.error("⚠️ Error cargando dashboard:", res.status);
+        console.error("⚠️ Error cargando creator:", res.status);
         return;
       }
 
@@ -52,8 +51,8 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    if (id) fetchCreator();
-  }, [id]);
+    fetchCreator();
+  }, []);
 
   if (loading) return <p style={{ padding: 20 }}>Cargando…</p>;
 

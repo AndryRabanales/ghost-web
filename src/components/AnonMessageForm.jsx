@@ -1,12 +1,26 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
-const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
+const API =
+  process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
 
 export default function AnonMessageForm({ publicId }) {
   const [alias, setAlias] = useState("");
   const [content, setContent] = useState("");
   const [status, setStatus] = useState(null);
+  const [chatUrls, setChatUrls] = useState([]); // 👈 ahora manejamos múltiples
+
+  // 🔄 Revisar todos los chats guardados en localStorage
+  useEffect(() => {
+    const urls = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key.startsWith(`chat_${publicId}_`)) {
+        urls.push(localStorage.getItem(key));
+      }
+    }
+    setChatUrls(urls);
+  }, [publicId]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -25,6 +39,19 @@ export default function AnonMessageForm({ publicId }) {
       setContent("");
       setAlias("");
       setStatus("success");
+
+      // 👇 Construir link único con alias y guardarlo
+      if (data.chatId && data.anonToken) {
+        const baseUrl = window.location.origin;
+        const url = `${baseUrl}/chats/${data.anonToken}/${data.chatId}`;
+        const key = `chat_${publicId}_${alias || "anon"}`;
+
+        localStorage.setItem(key, url);
+
+        setChatUrls((prev) =>
+          prev.includes(url) ? prev : [...prev, url] // evitar duplicados
+        );
+      }
     } catch (err) {
       console.error(err);
       setStatus("error");
@@ -74,6 +101,26 @@ export default function AnonMessageForm({ publicId }) {
       )}
       {status === "error" && (
         <p style={{ color: "red" }}>❌ Error al enviar el mensaje</p>
+      )}
+
+      {chatUrls.length > 0 && (
+        <div style={{ marginTop: 16 }}>
+          <p style={{ fontWeight: "bold" }}>📌 Tus chats guardados:</p>
+          <ul style={{ paddingLeft: 20 }}>
+            {chatUrls.map((url, i) => (
+              <li key={i}>
+                <a
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: "#0070f3", textDecoration: "underline" }}
+                >
+                  {url}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
     </form>
   );

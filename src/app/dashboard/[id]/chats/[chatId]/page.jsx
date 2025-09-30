@@ -8,7 +8,7 @@ const API =
 
 export default function ChatPage() {
   const params = useParams();
-  const dashboardId = params.dashboardId || params.id;
+  const dashboardId = params.id; // ✅ en Next 13 el param es "id"
   const chatId = params.chatId;
 
   const [chat, setChat] = useState(null);
@@ -30,7 +30,7 @@ export default function ChatPage() {
         { headers: getAuthHeaders() }
       );
 
-      // ⚠️ Si el token está vencido → intentar refresh
+      // ⚠️ Token vencido → refrescar
       if (res.status === 401) {
         const publicId = localStorage.getItem("publicId");
         if (publicId) {
@@ -48,6 +48,7 @@ export default function ChatPage() {
 
       const data = await res.json();
 
+      // 👀 Alias anónimo
       if (Array.isArray(data.messages)) {
         const firstAlias = data.messages.find(
           (m) => m.from === "anon" && m.alias
@@ -113,7 +114,6 @@ export default function ChatPage() {
         }
       );
 
-      // ⚠️ Token expirado → refresh y reintento
       if (res.status === 401) {
         const publicId = localStorage.getItem("publicId");
         if (publicId) {
@@ -137,7 +137,7 @@ export default function ChatPage() {
       if (!res.ok) throw new Error("Error enviando mensaje");
 
       setNewMsg("");
-      fetchChat();
+      fetchChat(); // refrescar mensajes
     } catch (err) {
       console.error("Error en handleSend:", err);
     }
@@ -153,6 +153,8 @@ export default function ChatPage() {
       }}
     >
       <h1>Chat con {anonAlias}</h1>
+
+      {/* Lista de mensajes */}
       <div
         style={{
           border: "1px solid #ccc",
@@ -173,12 +175,14 @@ export default function ChatPage() {
           </div>
         ))}
       </div>
+
+      {/* Formulario para responder */}
       <form onSubmit={handleSend} style={{ marginTop: 10 }}>
         <input
           type="text"
           value={newMsg}
           onChange={(e) => setNewMsg(e.target.value)}
-          placeholder="Escribe tu respuesta."
+          placeholder="Escribe tu respuesta..."
           style={{ width: "100%", padding: 10 }}
         />
         <button type="submit" style={{ marginTop: 8 }}>
@@ -186,6 +190,7 @@ export default function ChatPage() {
         </button>
       </form>
 
+      {/* Toast de notificación */}
       {toast && (
         <div
           style={{
