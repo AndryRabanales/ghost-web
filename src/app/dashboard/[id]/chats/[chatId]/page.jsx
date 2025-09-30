@@ -13,33 +13,36 @@ export default function ChatPage() {
   const [chat, setChat] = useState(null);
   const [newMsg, setNewMsg] = useState("");
   const [anonAlias, setAnonAlias] = useState("Anónimo");
-  const [creatorName, setCreatorName] = useState("Tú"); // ← nombre del creador
+  const [creatorName, setCreatorName] = useState("Tú");
   const [lastCount, setLastCount] = useState(0);
-
-  // estado para el toast
   const [toast, setToast] = useState(null);
+
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem("token");
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  };
 
   const fetchChat = async () => {
     try {
-      const res = await fetch(`${API}/dashboard/chats/${chatId}`);
+      const res = await fetch(`${API}/dashboard/chats/${chatId}`, {
+        headers: getAuthHeaders(),
+      });
+      if (!res.ok) {
+        console.error("Error cargando chat:", res.status);
+        return;
+      }
       const data = await res.json();
 
-      // mensajes y alias del anónimo
       if (Array.isArray(data.messages)) {
         const firstAlias = data.messages.find(
           (m) => m.from === "anon" && m.alias
         )?.alias;
         if (firstAlias) setAnonAlias(firstAlias);
       }
-
-      // guardamos nombre del creador
-      if (data.creatorName) {
-        setCreatorName(data.creatorName);
-      }
-
+      if (data.creatorName) setCreatorName(data.creatorName);
       setChat(data);
     } catch (err) {
-      console.error(err);
+      console.error("Error en fetchChat:", err);
     }
   };
 
@@ -49,7 +52,6 @@ export default function ChatPage() {
     return () => clearInterval(interval);
   }, [chatId]);
 
-  // marcar automáticamente mensajes del anónimo como vistos
   useEffect(() => {
     if (!chat?.messages) return;
     const unseenAnon = chat.messages.filter(
@@ -58,13 +60,12 @@ export default function ChatPage() {
     unseenAnon.forEach((m) => {
       fetch(`${API}/chat-messages/${m.id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
         body: JSON.stringify({ seen: true }),
       }).catch(console.error);
     });
   }, [chat]);
 
-  // mostrar toast cuando llega mensaje nuevo del anónimo
   useEffect(() => {
     if (!chat?.messages) return;
     const count = chat.messages.length;
@@ -72,7 +73,7 @@ export default function ChatPage() {
       const lastMsg = chat.messages[chat.messages.length - 1];
       if (lastMsg.from === "anon") {
         setToast(`Nuevo mensaje de ${lastMsg.alias || anonAlias}`);
-        setTimeout(() => setToast(null), 4000); // oculta después de 4 s
+        setTimeout(() => setToast(null), 4000);
       }
     }
     setLastCount(count);
@@ -83,7 +84,7 @@ export default function ChatPage() {
     if (!newMsg.trim()) return;
     await fetch(`${API}/dashboard/chats/${chatId}/messages`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
       body: JSON.stringify({ content: newMsg }),
     });
     setNewMsg("");
@@ -91,9 +92,7 @@ export default function ChatPage() {
   };
 
   return (
-    <div
-      style={{ maxWidth: 600, margin: "0 auto", padding: 20, position: "relative" }}
-    >
+    <div style={{ maxWidth: 600, margin: "0 auto", padding: 20, position: "relative" }}>
       <h1>Chat con {anonAlias}</h1>
       <div
         style={{
@@ -120,7 +119,7 @@ export default function ChatPage() {
           type="text"
           value={newMsg}
           onChange={(e) => setNewMsg(e.target.value)}
-          placeholder="Escribe tu respuesta..."
+          placeholder="Escribe tu respuesta."
           style={{ width: "100%", padding: 10 }}
         />
         <button type="submit" style={{ marginTop: 8 }}>
@@ -128,7 +127,6 @@ export default function ChatPage() {
         </button>
       </form>
 
-      {/* Toast flotante */}
       {toast && (
         <div
           style={{
