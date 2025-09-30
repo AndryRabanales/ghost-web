@@ -27,8 +27,6 @@ export default function Home() {
       localStorage.setItem("token", data.token);
       localStorage.setItem("publicId", data.publicId);
 
-      // 👉 Redirigir al dashboard limpio
-      router.push(data.dashboardUrl);
 
       // 👉 Mostrar también links en pantalla
       setDashboardUrl(data.dashboardUrl);
