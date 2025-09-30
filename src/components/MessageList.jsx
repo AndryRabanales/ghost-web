@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 const API =
   process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
 
-export default function MessageList({ dashboardId }) {
+export default function MessageList({ dashboardId, initialToken }) {
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openCard, setOpenCard] = useState(null);
@@ -16,16 +16,28 @@ export default function MessageList({ dashboardId }) {
   const router = useRouter();
   const openingRef = useRef(new Set());
 
+  // 🔹 Asegurar token válido en localStorage
+  useEffect(() => {
+    if (initialToken && !localStorage.getItem("token")) {
+      localStorage.setItem("token", initialToken);
+    }
+  }, [initialToken]);
+
+  const getAuthHeaders = () => ({
+    Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+  });
+
   // 🔹 pedir vidas al backend
   const fetchLives = async () => {
     if (!dashboardId) return;
     try {
       const res = await fetch(`${API}/dashboard/${dashboardId}/lives`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
-        },
+        headers: getAuthHeaders(),
       });
-      if (!res.ok) return;
+      if (!res.ok) {
+        console.warn("No autorizado en fetchLives");
+        return;
+      }
       const data = await res.json();
       setLives(data.lives);
       setIsPremium(data.isPremium);
@@ -37,15 +49,18 @@ export default function MessageList({ dashboardId }) {
     }
   };
 
-  // 🔹 pedir chats al backend (ya devuelve lastMessage y anonAlias)
+  // 🔹 pedir chats al backend
   const fetchChats = async () => {
     if (!dashboardId) return;
     try {
       const res = await fetch(`${API}/dashboard/${dashboardId}/chats`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
-        },
+        headers: getAuthHeaders(),
       });
+      if (!res.ok) {
+        console.warn("No autorizado en fetchChats");
+        setChats([]);
+        return;
+      }
       const data = await res.json();
 
       const enhanced = Array.isArray(data)
@@ -93,9 +108,7 @@ export default function MessageList({ dashboardId }) {
         `${API}/dashboard/${dashboardId}/open-message/${messageId}`,
         {
           method: "POST",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
-          },
+          headers: getAuthHeaders(),
         }
       );
       const json = await res.json();
