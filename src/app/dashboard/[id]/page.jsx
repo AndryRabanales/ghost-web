@@ -1,26 +1,25 @@
 "use client";
 import { useEffect } from "react";
+import { useSearchParams } from "next/navigation";
+import MessageList from "@/components/MessageList";
 
-export default function DashboardPage({ params, searchParams }) {
+export default function DashboardPage({ params }) {
+  const { id: dashboardId } = params;
+  const searchParams = useSearchParams();
+
+  // Guardar el token en localStorage si viene en la URL
   useEffect(() => {
-    // ✅ Guardar token si viene en la URL
-    if (searchParams?.token) {
-      localStorage.setItem("token", searchParams.token);
-      console.log("Token guardado en localStorage ✅");
+    const token = searchParams.get("token");
+    if (token) {
+      localStorage.setItem("token", token);
+      console.log("🔑 Token guardado en localStorage:", token);
     }
-
-    // ✅ Guardar dashboardId
-    if (params?.id) {
-      localStorage.setItem("dashboardId", params.id);
-      console.log("DashboardId guardado en localStorage ✅");
-    }
-  }, [params, searchParams]);
+  }, [searchParams]);
 
   return (
-    <div style={{ padding: 20 }}>
-      <h1>📊 Dashboard {params.id}</h1>
-      <p>Ya se guardaron el <b>token</b> y el <b>dashboardId</b> en localStorage.</p>
-      <p>Ahora los componentes como <code>MessageList</code> pueden usarlos en los fetch.</p>
+    <div style={{ padding: "20px" }}>
+      <h1>Dashboard</h1>
+      <MessageList dashboardId={dashboardId} />
     </div>
   );
 }

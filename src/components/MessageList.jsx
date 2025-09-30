@@ -2,8 +2,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 
-const API =
-  process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
+const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
 
 export default function MessageList({ dashboardId, initialToken }) {
   const [chats, setChats] = useState([]);
@@ -12,20 +11,23 @@ export default function MessageList({ dashboardId, initialToken }) {
   const [isPremium, setIsPremium] = useState(false);
   const [lives, setLives] = useState(null);
   const [timeLeft, setTimeLeft] = useState(null);
+  const [error, setError] = useState(null);
 
   const router = useRouter();
   const openingRef = useRef(new Set());
 
-  // 🔹 Asegurar token válido en localStorage
+  // 🔹 Guardar token inicial en localStorage si aún no existe
   useEffect(() => {
-    if (initialToken && !localStorage.getItem("token")) {
+    if (initialToken) {
       localStorage.setItem("token", initialToken);
     }
   }, [initialToken]);
 
-  const getAuthHeaders = () => ({
-    Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
-  });
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem("token");
+    if (!token) return {};
+    return { Authorization: `Bearer ${token}` };
+  };
 
   // 🔹 pedir vidas al backend
   const fetchLives = async () => {
@@ -34,16 +36,14 @@ export default function MessageList({ dashboardId, initialToken }) {
       const res = await fetch(`${API}/dashboard/${dashboardId}/lives`, {
         headers: getAuthHeaders(),
       });
-      if (!res.ok) {
-        console.warn("No autorizado en fetchLives");
+      if (res.status === 401) {
+        setError("Token inválido o expirado. Vuelve a iniciar sesión.");
         return;
       }
       const data = await res.json();
       setLives(data.lives);
       setIsPremium(data.isPremium);
-      if (data.minutesToNext) {
-        setTimeLeft(data.minutesToNext * 60);
-      }
+      if (data.minutesToNext) setTimeLeft(data.minutesToNext * 60);
     } catch (err) {
       console.error("Error cargando vidas", err);
     }
@@ -56,13 +56,12 @@ export default function MessageList({ dashboardId, initialToken }) {
       const res = await fetch(`${API}/dashboard/${dashboardId}/chats`, {
         headers: getAuthHeaders(),
       });
-      if (!res.ok) {
-        console.warn("No autorizado en fetchChats");
+      if (res.status === 401) {
+        setError("Token inválido o expirado. Vuelve a iniciar sesión.");
         setChats([]);
         return;
       }
       const data = await res.json();
-
       const enhanced = Array.isArray(data)
         ? data.map((c) => ({
             ...c,
@@ -111,22 +110,21 @@ export default function MessageList({ dashboardId, initialToken }) {
           headers: getAuthHeaders(),
         }
       );
+      if (res.status === 401) {
+        setError("Token inválido o expirado. Vuelve a iniciar sesión.");
+        return;
+      }
+
       const json = await res.json();
 
       if (res.status === 403) {
         alert(json.error);
-        if (json.minutesToNext) {
-          setTimeLeft(json.minutesToNext * 60);
-        }
+        if (json.minutesToNext) setTimeLeft(json.minutesToNext * 60);
         return;
       }
 
-      if (typeof json.lives === "number") {
-        setLives(json.lives);
-      }
-      if (json.minutesToNext) {
-        setTimeLeft(json.minutesToNext * 60);
-      }
+      if (typeof json.lives === "number") setLives(json.lives);
+      if (json.minutesToNext) setTimeLeft(json.minutesToNext * 60);
 
       setChats((prev) =>
         prev.map((c) =>
@@ -167,6 +165,8 @@ export default function MessageList({ dashboardId, initialToken }) {
     return `${m}:${s.toString().padStart(2, "0")}`;
   };
 
+  // 🔹 mensajes visuales
+  if (error) return <p style={{ color: "red" }}>⚠️ {error}</p>;
   if (loading) return <p>Cargando…</p>;
   if (chats.length === 0) return <p>No hay chats aún.</p>;
 
