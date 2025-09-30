@@ -28,7 +28,7 @@ export default function ChatPage() {
         headers: getAuthHeaders(),
       });
       if (!res.ok) {
-        console.error("Error cargando chat:", res.status);
+        console.error("⚠️ Error cargando chat:", res.status);
         return;
       }
       const data = await res.json();
@@ -39,6 +39,7 @@ export default function ChatPage() {
         )?.alias;
         if (firstAlias) setAnonAlias(firstAlias);
       }
+
       if (data.creatorName) setCreatorName(data.creatorName);
       setChat(data);
     } catch (err) {

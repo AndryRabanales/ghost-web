@@ -2,10 +2,9 @@
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
-const API =
-  process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
+const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
 
-export default function CreatorChatsPage() {
+export default function DashboardChatsPage() {
   const { id } = useParams(); // creatorId (dashboardId)
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -53,7 +52,7 @@ export default function CreatorChatsPage() {
       ) : (
         <div style={{ display: "grid", gap: 12 }}>
           {chats.map((c) => {
-            const last = c.messages?.[0];
+            const last = c.lastMessage;
             return (
               <a
                 key={c.id}
@@ -68,7 +67,9 @@ export default function CreatorChatsPage() {
                   color: "#111",
                 }}
               >
-                <div style={{ fontWeight: 600, marginBottom: 4 }}>Chat</div>
+                <div style={{ fontWeight: 600, marginBottom: 4 }}>
+                  Chat con {c.anonAlias || "Anónimo"}
+                </div>
                 <div style={{ color: "#444" }}>
                   {last ? last.content.slice(0, 80) : "Sin mensajes"}
                 </div>
