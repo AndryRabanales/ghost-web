@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
 
 const API =
@@ -7,14 +7,24 @@ const API =
 
 export default function PublicChatPage() {
   const params = useParams();
-  const anonToken = params.anonToken;
-  const chatId = params.chatId;
+  const { anonToken, chatId } = params;
 
   const [messages, setMessages] = useState([]);
   const [newMsg, setNewMsg] = useState("");
   const [creatorName, setCreatorName] = useState("Respuesta");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // leer nombre guardado en localStorage si existe
+  const bottomRef = useRef(null);
+
+  // ⬇️ Scroll automático al final
+  useEffect(() => {
+    if (bottomRef.current) {
+      bottomRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]);
+
+  // Cargar nombre desde localStorage
   useEffect(() => {
     const stored = JSON.parse(localStorage.getItem("myChats") || "[]");
     const found = stored.find(
@@ -27,47 +37,49 @@ export default function PublicChatPage() {
 
   const fetchMessages = async () => {
     try {
+      setError(null);
       const res = await fetch(`${API}/chats/${anonToken}/${chatId}`);
+      if (!res.ok) throw new Error("No se pudo cargar el chat");
+
       const data = await res.json();
       if (Array.isArray(data.messages)) {
         setMessages(data.messages);
 
-        // si el backend devuelve creatorName, usarlo
+        // actualizar nombre del creador
         if (data.creatorName) {
           setCreatorName(data.creatorName);
-          // guardar también en localStorage para reusar
-          const stored = JSON.parse(localStorage.getItem("myChats") || "[]");
-          const next = stored.map((c) =>
-            c.chatId === chatId && c.anonToken === anonToken
-              ? { ...c, creatorName: data.creatorName }
-              : c
-          );
-          localStorage.setItem("myChats", JSON.stringify(next));
+          updateLocalStorage((c) => ({
+            ...c,
+            creatorName: data.creatorName,
+          }));
         }
 
-        // buscar el último mensaje del creador para guardarlo como "visto"
+        // marcar última respuesta del creador como vista
         const creatorMsgs = data.messages.filter((m) => m.from === "creator");
         const lastCreatorId = creatorMsgs.length
           ? creatorMsgs[creatorMsgs.length - 1].id
           : null;
 
-        // actualizar localStorage marcando hasReply=false y avanzando lastSeenCreatorId
-        const stored2 = JSON.parse(localStorage.getItem("myChats") || "[]");
-        const next2 = stored2.map((c) =>
-          c.chatId === chatId && c.anonToken === anonToken
-            ? {
-                ...c,
-                hasReply: false,
-                lastSeenCreatorId:
-                  lastCreatorId ?? c.lastSeenCreatorId ?? null,
-              }
-            : c
-        );
-        localStorage.setItem("myChats", JSON.stringify(next2));
+        updateLocalStorage((c) => ({
+          ...c,
+          hasReply: false,
+          lastSeenCreatorId: lastCreatorId ?? c.lastSeenCreatorId ?? null,
+        }));
       }
     } catch (err) {
       console.error(err);
+      setError("⚠️ Error cargando mensajes");
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const updateLocalStorage = (updater) => {
+    const stored = JSON.parse(localStorage.getItem("myChats") || "[]");
+    const next = stored.map((c) =>
+      c.chatId === chatId && c.anonToken === anonToken ? updater(c) : c
+    );
+    localStorage.setItem("myChats", JSON.stringify(next));
   };
 
   useEffect(() => {
@@ -89,12 +101,16 @@ export default function PublicChatPage() {
       fetchMessages();
     } catch (err) {
       console.error(err);
+      setError("⚠️ No se pudo enviar el mensaje");
     }
   };
+
+  if (loading) return <p style={{ padding: 20 }}>Cargando chat…</p>;
 
   return (
     <div style={{ maxWidth: 600, margin: "0 auto", padding: 20 }}>
       <h1>Chat con {creatorName}</h1>
+
       <div
         style={{
           border: "1px solid #ccc",
@@ -105,20 +121,31 @@ export default function PublicChatPage() {
           marginBottom: 10,
         }}
       >
+        {messages.length === 0 && (
+          <div style={{ color: "#666", textAlign: "center" }}>
+            No hay mensajes todavía.
+          </div>
+        )}
+
         {messages.map((m) => (
-          <div key={m.id} style={{ marginBottom: 8 }}>
+          <div
+            key={m.id}
+            style={{
+              marginBottom: 8,
+              textAlign: m.from === "creator" ? "left" : "right",
+            }}
+          >
             <strong>
               {m.from === "creator" ? `${creatorName}:` : "Tú:"}
             </strong>{" "}
             {m.content}
           </div>
         ))}
-        {messages.length === 0 && (
-          <div style={{ color: "#666", textAlign: "center" }}>
-            No hay mensajes todavía.
-          </div>
-        )}
+        <div ref={bottomRef} />
       </div>
+
+      {error && <p style={{ color: "red" }}>{error}</p>}
+
       <form onSubmit={handleSend} style={{ marginTop: 10 }}>
         <input
           type="text"
