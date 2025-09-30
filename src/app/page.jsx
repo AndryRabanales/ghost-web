@@ -33,7 +33,6 @@ export default function Home() {
 
       // Redirigir al dashboard con token
       if (data.dashboardUrl && data.token) {
-        router.push(`${data.dashboardUrl}?token=${data.token}`);
       }
     } catch (err) {
       console.error("Error creando dashboard:", err);
