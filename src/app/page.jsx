@@ -2,7 +2,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
+const API =
+  process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
 
 export default function Home() {
   const router = useRouter();
@@ -20,11 +21,22 @@ export default function Home() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Error creando dashboard");
+
+      // Guardar token en localStorage
+      if (data.token) {
+        localStorage.setItem("token", data.token);
+      }
+
+      // Guardar URLs
       setDashboardUrl(data.dashboardUrl);
       setPublicUrl(data.publicUrl);
-      // Quitar router.push si no quieres redirigir automáticamente
+
+      // Redirigir al dashboard con token
+      if (data.dashboardUrl && data.token) {
+        router.push(`${data.dashboardUrl}?token=${data.token}`);
+      }
     } catch (err) {
-      console.error(err);
+      console.error("Error creando dashboard:", err);
     }
   };
 

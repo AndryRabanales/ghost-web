@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
 
 export default function DashboardChatsPage() {
-  const { id } = useParams(); // creatorId (dashboardId)
+  const { id } = useParams(); // dashboardId
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -46,7 +46,7 @@ export default function DashboardChatsPage() {
 
   return (
     <div style={{ maxWidth: 700, margin: "0 auto", padding: 20 }}>
-      <h1>Chats del dashboard</h1>
+      <h1>Chats</h1>
       {chats.length === 0 ? (
         <p>No hay chats aún.</p>
       ) : (

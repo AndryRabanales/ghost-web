@@ -2,11 +2,10 @@
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
-const API =
-  process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
+const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
 
 export default function CreatorChatsPage() {
-  const { id } = useParams(); // creatorId (dashboardId)
+  const { id } = useParams(); // dashboardId
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -53,7 +52,7 @@ export default function CreatorChatsPage() {
       ) : (
         <div style={{ display: "grid", gap: 12 }}>
           {chats.map((c) => {
-            const last = c.lastMessage; // 👈 usamos el campo correcto
+            const last = c.lastMessage;
             return (
               <a
                 key={c.id}
