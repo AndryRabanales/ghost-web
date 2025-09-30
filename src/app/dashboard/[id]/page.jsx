@@ -6,30 +6,30 @@ import MessageList from "@/components/MessageList";
 export default function DashboardPage({ params }) {
   const { id: dashboardId } = params;
   const searchParams = useSearchParams();
-  const [initialToken, setInitialToken] = useState(null);
+  const [token, setToken] = useState(null);
 
-  // Guardar el token en localStorage si viene en la URL
   useEffect(() => {
-    const token = searchParams.get("token");
-    if (token) {
-      localStorage.setItem("token", token);
-      setInitialToken(token);
-      console.log("🔑 Token guardado en localStorage:", token);
+    const urlToken = searchParams.get("token");
+    if (urlToken) {
+      localStorage.setItem("token", urlToken);
+      setToken(urlToken);
+      console.log("🔑 Token guardado en localStorage:", urlToken);
     } else {
-      // Si no viene en la URL, usar el de localStorage
-      const stored = localStorage.getItem("token");
-      if (stored) setInitialToken(stored);
+      // intentar leer de localStorage si no vino en la URL
+      const saved = localStorage.getItem("token");
+      if (saved) setToken(saved);
     }
   }, [searchParams]);
+
+  if (!token) {
+    return <p style={{ color: "red" }}>⚠️ No hay token válido, vuelve a iniciar sesión.</p>;
+  }
 
   return (
     <div style={{ padding: "20px" }}>
       <h1>Dashboard</h1>
-      {initialToken ? (
-        <MessageList dashboardId={dashboardId} initialToken={initialToken} />
-      ) : (
-        <p style={{ color: "red" }}>⚠️ No hay token válido, vuelve a iniciar sesión.</p>
-      )}
+      {/* ✅ Ahora pasamos el token explícitamente */}
+      <MessageList dashboardId={dashboardId} initialToken={token} />
     </div>
   );
 }

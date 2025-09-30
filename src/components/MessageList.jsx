@@ -16,16 +16,20 @@ export default function MessageList({ dashboardId, initialToken }) {
   const router = useRouter();
   const openingRef = useRef(new Set());
 
-  // 🔹 Guardar token inicial en localStorage si aún no existe
+  // 🔹 Guardar token inicial en localStorage si viene de la URL
   useEffect(() => {
     if (initialToken) {
       localStorage.setItem("token", initialToken);
     }
   }, [initialToken]);
 
+  // 🔹 Siempre usar el token de localStorage
   const getAuthHeaders = () => {
     const token = localStorage.getItem("token");
-    if (!token) return {};
+    if (!token) {
+      setError("⚠️ No hay token válido, vuelve a iniciar sesión.");
+      return {};
+    }
     return { Authorization: `Bearer ${token}` };
   };
 
@@ -36,8 +40,8 @@ export default function MessageList({ dashboardId, initialToken }) {
       const res = await fetch(`${API}/dashboard/${dashboardId}/lives`, {
         headers: getAuthHeaders(),
       });
-      if (res.status === 401) {
-        setError("Token inválido o expirado. Vuelve a iniciar sesión.");
+      if (!res.ok) {
+        setError("⚠️ Error al cargar vidas (token inválido o no enviado).");
         return;
       }
       const data = await res.json();
@@ -56,8 +60,8 @@ export default function MessageList({ dashboardId, initialToken }) {
       const res = await fetch(`${API}/dashboard/${dashboardId}/chats`, {
         headers: getAuthHeaders(),
       });
-      if (res.status === 401) {
-        setError("Token inválido o expirado. Vuelve a iniciar sesión.");
+      if (!res.ok) {
+        setError("⚠️ Error al cargar chats (token inválido o no enviado).");
         setChats([]);
         return;
       }
@@ -110,8 +114,8 @@ export default function MessageList({ dashboardId, initialToken }) {
           headers: getAuthHeaders(),
         }
       );
-      if (res.status === 401) {
-        setError("Token inválido o expirado. Vuelve a iniciar sesión.");
+      if (!res.ok) {
+        setError("⚠️ Error al abrir mensaje (token inválido o no enviado).");
         return;
       }
 
@@ -166,7 +170,7 @@ export default function MessageList({ dashboardId, initialToken }) {
   };
 
   // 🔹 mensajes visuales
-  if (error) return <p style={{ color: "red" }}>⚠️ {error}</p>;
+  if (error) return <p style={{ color: "red" }}>{error}</p>;
   if (loading) return <p>Cargando…</p>;
   if (chats.length === 0) return <p>No hay chats aún.</p>;
 
