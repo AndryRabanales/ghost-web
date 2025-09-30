@@ -8,8 +8,13 @@ const API =
 
 export default function ChatPage() {
   const params = useParams();
-  const dashboardId = params.dashboardId; // ✅ usar "dashboardId"
+  const dashboardId = params.id;   // ✅ correcto
   const chatId = params.chatId;
+  
+   // 🟢 DEBUG: imprime en consola
+   useEffect(() => {
+    console.log("params:", params, "dashboardId:", dashboardId, "chatId:", chatId);
+  }, []);
 
   const [chat, setChat] = useState(null);
   const [newMsg, setNewMsg] = useState("");
