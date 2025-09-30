@@ -9,15 +9,19 @@ export default function DashboardPage({ params }) {
   const [token, setToken] = useState(null);
 
   useEffect(() => {
+    // 1️⃣ Intentar leer el token desde la URL
     const urlToken = searchParams.get("token");
     if (urlToken) {
       localStorage.setItem("token", urlToken);
       setToken(urlToken);
       console.log("🔑 Token guardado en localStorage:", urlToken);
     } else {
-      // intentar leer de localStorage si no vino en la URL
+      // 2️⃣ Si no viene en la URL, buscar en localStorage
       const saved = localStorage.getItem("token");
-      if (saved) setToken(saved);
+      if (saved) {
+        setToken(saved);
+        console.log("🔑 Token recuperado de localStorage:", saved);
+      }
     }
   }, [searchParams]);
 
@@ -28,7 +32,7 @@ export default function DashboardPage({ params }) {
   return (
     <div style={{ padding: "20px" }}>
       <h1>Dashboard</h1>
-      {/* ✅ Ahora pasamos el token explícitamente */}
+      {/* ✅ Pasamos el token explícitamente a MessageList */}
       <MessageList dashboardId={dashboardId} initialToken={token} />
     </div>
   );
