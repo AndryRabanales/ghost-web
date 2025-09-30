@@ -35,7 +35,6 @@ export default function Home() {
       setPublicUrl(data.publicUrl);
 
       // 👉 Redirigir al dashboard automáticamente
-      router.push(`/dashboard/${data.dashboardId}`);
     } catch (err) {
       console.error("❌ Error creando dashboard:", err);
     } finally {
