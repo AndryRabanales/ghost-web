@@ -12,22 +12,42 @@ export default function MessageList({ dashboardId }) {
   const [isPremium, setIsPremium] = useState(false);
   const [lives, setLives] = useState(null);
 
-  // nuevo: cooldown real desde backend
+  // cooldown real desde backend
   const [timeLeft, setTimeLeft] = useState(null);
 
   const router = useRouter();
   const openingRef = useRef(new Set());
 
+  // 🔹 nuevo: pedir vidas al backend
+  const fetchLives = async () => {
+    if (!dashboardId) return;
+    try {
+      const res = await fetch(`${API}/dashboard/${dashboardId}/lives`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+        },
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      setLives(data.lives);
+      setIsPremium(data.isPremium);
+      if (data.minutesToNext) {
+        setTimeLeft(data.minutesToNext * 60);
+      }
+    } catch (err) {
+      console.error("Error cargando vidas", err);
+    }
+  };
+
   const fetchChats = async () => {
     if (!dashboardId) return;
     try {
-      const res = await fetch(`${API}/dashboard/${dashboardId}/chats`);
+      const res = await fetch(`${API}/dashboard/${dashboardId}/chats`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+        },
+      });
       const data = await res.json();
-
-      if (Array.isArray(data) && data.length > 0) {
-        setIsPremium(data[0].creator?.isPremium || false);
-        setLives(data[0].creator?.lives ?? null);
-      }
 
       const stored = JSON.parse(localStorage.getItem("myChats") || "[]");
       const enhanced = Array.isArray(data)
@@ -53,8 +73,16 @@ export default function MessageList({ dashboardId }) {
   };
 
   useEffect(() => {
+    if (!dashboardId) return;
+
     fetchChats();
-    const int = setInterval(fetchChats, 5000);
+    fetchLives();
+
+    const int = setInterval(() => {
+      fetchChats();
+      fetchLives();
+    }, 10000); // refresca cada 10s
+
     return () => {
       clearInterval(int);
       openingRef.current.clear();
@@ -74,7 +102,12 @@ export default function MessageList({ dashboardId }) {
     try {
       const res = await fetch(
         `${API}/dashboard/${dashboardId}/open-message/${messageId}`,
-        { method: "POST" }
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+          },
+        }
       );
 
       const json = await res.json();
@@ -126,7 +159,7 @@ export default function MessageList({ dashboardId }) {
       setTimeLeft((prev) => {
         if (!prev || prev <= 1) {
           clearInterval(interval);
-          setLives(1); // el backend ya recarga, pero visualmente mostramos 1
+          fetchLives(); // 🔹 ahora refresca desde backend
           return null;
         }
         return prev - 1;
