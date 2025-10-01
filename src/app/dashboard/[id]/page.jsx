@@ -60,15 +60,18 @@ export default function DashboardPage() {
     <div style={{ maxWidth: 700, margin: "0 auto", padding: 20 }}>
       <h1>Dashboard</h1>
       {creator && (
-        <div style={{ marginBottom: 20 }}>
-          <p>
-            <strong>Nombre:</strong> {creator.name}
-          </p>
-          <p>
-            <strong>Dashboard ID:</strong> {id}
-          </p>
-        </div>
-      )}
+  <div style={{ marginBottom: 20 }}>
+    <p><strong>Nombre:</strong> {creator.name}</p>
+    <p><strong>Dashboard ID:</strong> {id}</p>
+
+    {/* ❤️ mostrar vidas */}
+    <p>
+      ❤️ Vidas restantes: {creator.lives} <br />
+      ⏳ Próxima vida en: {creator.minutesToNextLife} min
+    </p>
+  </div>
+)}
+
 
       {/* Lista de chats protegida con token */}
       <MessageList dashboardId={id} />
