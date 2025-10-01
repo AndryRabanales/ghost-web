@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { refreshToken } from "@/utils/auth";
+import MessageForm from "@/components/MessageForm";
 
 const API =
   process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
@@ -185,25 +186,14 @@ export default function ChatPage() {
       </div>
 
       {/* Formulario */}
-      <form onSubmit={handleSend} style={{ marginTop: 10 }}>
-        <input
-          type="text"
-          value={newMsg}
-          onChange={(e) => setNewMsg(e.target.value)}
-          placeholder="Escribe tu respuesta..."
-          style={{ width: "100%", padding: 10 }}
-          disabled={livesLeft === 0}
-        />
-        <button
-          type="submit"
-          style={{ marginTop: 8 }}
-          disabled={livesLeft === 0}
-        >
-          {livesLeft === 0
-            ? `Sin vidas ⏳ (${minutesNext} min)`
-            : `Enviar (${livesLeft} ❤️)`}
-        </button>
-      </form>
+      <MessageForm
+  dashboardId={dashboardId}
+  chatId={chatId}
+  onMessageSent={fetchChat}
+  livesLeft={livesLeft}
+  minutesToNextLife={minutesNext}
+/>
+
 
       {/* Toast */}
       {toast && (
