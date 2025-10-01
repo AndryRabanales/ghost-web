@@ -1,9 +1,6 @@
 "use client";
-import React from "react";
-import SubscribeButton from "../components/SubscribeButton";
-
-
-const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
+const API =
+  process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
 
 export default function SubscribeButton() {
   const handleSubscribe = async () => {
@@ -13,11 +10,11 @@ export default function SubscribeButton() {
       if (data.init_point) {
         window.location.href = data.init_point; // 🔗 redirige a Mercado Pago
       } else {
-        alert("No se pudo iniciar la suscripción.");
+        alert("Error iniciando suscripción");
       }
     } catch (err) {
-      console.error("❌ Error creando suscripción:", err);
-      alert("Error iniciando el pago.");
+      console.error("❌ Error en la suscripción:", err);
+      alert("Error en la suscripción");
     }
   };
 
@@ -26,7 +23,7 @@ export default function SubscribeButton() {
       onClick={handleSubscribe}
       style={{
         padding: "10px 20px",
-        backgroundColor: "#3483fa",
+        backgroundColor: "#0070f3",
         color: "#fff",
         border: "none",
         borderRadius: 6,
