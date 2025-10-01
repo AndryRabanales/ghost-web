@@ -70,17 +70,24 @@ export default function Home() {
       </form>
 
       {dashboardUrl && (
-        <div style={{ marginTop: 20 }}>
-          <p>
-            <strong>Tu dashboard (privado):</strong>{" "}
-            <a href={dashboardUrl}>{dashboardUrl}</a>
-          </p>
-          <p>
-            <strong>Tu link público para recibir mensajes:</strong>{" "}
-            <a href={publicUrl}>{publicUrl}</a>
-          </p>
-        </div>
-      )}
+  <div style={{ marginTop: 20 }}>
+    <p>
+      <strong>Tu dashboard (privado):</strong>{" "}
+      <a href={dashboardUrl}>{dashboardUrl}</a>
+    </p>
+    <p>
+      <strong>Tu link público para recibir mensajes:</strong>{" "}
+      <a href={publicUrl}>{publicUrl}</a>
+    </p>
+
+    {/* 👇 Aquí agregamos el botón premium */}
+    <div style={{ marginTop: 30 }}>
+      <h3>¿Quieres vidas ilimitadas?</h3>
+      <SubscribeButton />
+    </div>
+  </div>
+)}
+
     </div>
   );
 }
