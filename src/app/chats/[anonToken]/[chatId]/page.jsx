@@ -141,11 +141,8 @@ export default function PublicChatPage() {
             }}
           >
             <strong>
-  {m.from === "creator"
-    ? `${creatorName}:`
-    : `${m.alias}:`}
-</strong>
-
+              {m.from === "creator" ? `${creatorName}:` : `${m.alias}:`}
+            </strong>{" "}
             {m.content}
           </div>
         ))}
@@ -162,7 +159,11 @@ export default function PublicChatPage() {
           placeholder="Escribe un mensaje..."
           style={{ width: "100%", padding: 10 }}
         />
-        <button type="submit" style={{ marginTop: 8 }}>
+        <button
+          type="submit"
+          style={{ marginTop: 8 }}
+          disabled={!newMsg.trim()} // 👈 agregado: botón deshabilitado si input vacío
+        >
           Enviar
         </button>
       </form>
