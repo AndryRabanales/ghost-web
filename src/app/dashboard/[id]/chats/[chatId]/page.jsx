@@ -10,11 +10,6 @@ export default function ChatPage() {
   const params = useParams();
   const dashboardId = params.id;   // ✅ correcto
   const chatId = params.chatId;
-  
-   // 🟢 DEBUG: imprime en consola
-   useEffect(() => {
-    console.log("params:", params, "dashboardId:", dashboardId, "chatId:", chatId);
-  }, []);
 
   const [chat, setChat] = useState(null);
   const [newMsg, setNewMsg] = useState("");
@@ -22,6 +17,10 @@ export default function ChatPage() {
   const [creatorName, setCreatorName] = useState("Tú");
   const [lastCount, setLastCount] = useState(0);
   const [toast, setToast] = useState(null);
+
+  // 🟢 nuevo estado para vidas
+  const [livesLeft, setLivesLeft] = useState(null);
+  const [minutesNext, setMinutesNext] = useState(null);
 
   const getAuthHeaders = (token) => {
     const t = token || localStorage.getItem("token");
@@ -35,7 +34,6 @@ export default function ChatPage() {
         { headers: getAuthHeaders() }
       );
 
-      // ⚠️ Token vencido → refrescar
       if (res.status === 401) {
         const publicId = localStorage.getItem("publicId");
         if (publicId) {
@@ -53,7 +51,7 @@ export default function ChatPage() {
 
       const data = await res.json();
 
-      // 👀 alias del anónimo → tomar el PRIMER mensaje si existe
+      // 👀 alias del anónimo
       if (Array.isArray(data.messages)) {
         const firstAnon = data.messages.find((m) => m.from === "anon");
         if (firstAnon?.alias) setAnonAlias(firstAnon.alias);
@@ -61,34 +59,24 @@ export default function ChatPage() {
 
       if (data.creatorName) setCreatorName(data.creatorName);
       setChat(data);
+
+      // 🟢 guardar vidas y tiempo si llegan
+      if (data.livesLeft !== undefined) setLivesLeft(data.livesLeft);
+      if (data.minutesToNextLife !== undefined) setMinutesNext(data.minutesToNextLife);
+
     } catch (err) {
       console.error("Error en fetchChat:", err);
     }
   };
 
-  // 🔁 Polling cada 5s
+  // 🔁 Polling
   useEffect(() => {
     fetchChat();
     const interval = setInterval(fetchChat, 5000);
     return () => clearInterval(interval);
   }, [chatId, dashboardId]);
 
-  // 👀 Marcar mensajes anónimos como vistos
-  useEffect(() => {
-    if (!chat?.messages) return;
-    const unseenAnon = chat.messages.filter(
-      (m) => m.from === "anon" && !m.seen
-    );
-    unseenAnon.forEach((m) => {
-      fetch(`${API}/chat-messages/${m.id}`, {
-        method: "PATCH",
-        headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
-        body: JSON.stringify({ seen: true }),
-      }).catch(console.error);
-    });
-  }, [chat]);
-
-  // 🔔 Toast cuando llega nuevo mensaje anónimo
+  // 👀 Toast
   useEffect(() => {
     if (!chat?.messages) return;
     const count = chat.messages.length;
@@ -102,7 +90,7 @@ export default function ChatPage() {
     setLastCount(count);
   }, [chat]);
 
-  // ✉️ Enviar mensaje como creador
+  // ✉️ Enviar
   const handleSend = async (e) => {
     e.preventDefault();
     if (!newMsg.trim()) return;
@@ -139,23 +127,28 @@ export default function ChatPage() {
 
       if (!res.ok) throw new Error("Error enviando mensaje");
 
+      const msgData = await res.json();
+      setLivesLeft(msgData.livesLeft);
+      setMinutesNext(msgData.minutesToNextLife);
+
       setNewMsg("");
-      fetchChat(); // refrescar
+      fetchChat();
     } catch (err) {
       console.error("Error en handleSend:", err);
     }
   };
 
   return (
-    <div
-      style={{
-        maxWidth: 600,
-        margin: "0 auto",
-        padding: 20,
-        position: "relative",
-      }}
-    >
+    <div style={{ maxWidth: 600, margin: "0 auto", padding: 20 }}>
       <h1>Chat con {anonAlias}</h1>
+
+      {/* 🟢 mostrar vidas */}
+      {livesLeft !== null && (
+        <div style={{ marginBottom: 12, color: "#444" }}>
+          ❤️ Vidas restantes: {livesLeft} <br />
+          ⏳ Próxima vida en: {minutesNext} min
+        </div>
+      )}
 
       {/* Lista de mensajes */}
       <div
@@ -184,7 +177,7 @@ export default function ChatPage() {
         )}
       </div>
 
-      {/* Formulario para responder */}
+      {/* Formulario */}
       <form onSubmit={handleSend} style={{ marginTop: 10 }}>
         <input
           type="text"
@@ -198,7 +191,7 @@ export default function ChatPage() {
         </button>
       </form>
 
-      {/* Toast de notificación */}
+      {/* Toast */}
       {toast && (
         <div
           style={{
@@ -209,9 +202,7 @@ export default function ChatPage() {
             color: "#fff",
             padding: "10px 16px",
             borderRadius: 6,
-            boxShadow: "0 2px 6px rgba(0, 0, 0, 0.3)",
             zIndex: 9999,
-            fontSize: 14,
           }}
         >
           {toast}
