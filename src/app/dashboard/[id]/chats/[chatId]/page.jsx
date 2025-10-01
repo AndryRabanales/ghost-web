@@ -125,7 +125,14 @@ export default function ChatPage() {
         }
       }
 
-      if (!res.ok) throw new Error("Error enviando mensaje");
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        if (res.status === 403 && errData.minutesToNextLife !== undefined) {
+          setLivesLeft(errData.livesLeft ?? 0);
+          setMinutesNext(errData.minutesToNextLife);
+        }
+        throw new Error(errData.error || "Error enviando mensaje");
+      }
 
       const msgData = await res.json();
       setLivesLeft(msgData.livesLeft);
@@ -185,9 +192,16 @@ export default function ChatPage() {
           onChange={(e) => setNewMsg(e.target.value)}
           placeholder="Escribe tu respuesta..."
           style={{ width: "100%", padding: 10 }}
+          disabled={livesLeft === 0}
         />
-        <button type="submit" style={{ marginTop: 8 }}>
-          Enviar
+        <button
+          type="submit"
+          style={{ marginTop: 8 }}
+          disabled={livesLeft === 0}
+        >
+          {livesLeft === 0
+            ? `Sin vidas ⏳ (${minutesNext} min)`
+            : `Enviar (${livesLeft} ❤️)`}
         </button>
       </form>
 
