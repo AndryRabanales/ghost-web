@@ -33,25 +33,25 @@ export default function ChatPage() {
   const fetchChat = async () => {
     try {
       let res = await fetch(
-        `${API}/dashboard/chats/${chatId}`,
+        `${API}/dashboard/${dashboardId}/chats/${chatId}`, // 👈 corregido
         { headers: getAuthHeaders() }
       );
-
+  
       if (res.status === 401) {
         const publicId = localStorage.getItem("publicId");
         if (publicId) {
           const newToken = await refreshToken(publicId);
           if (newToken) {
             res = await fetch(
-              `${API}/dashboard/chats/${chatId}`,
+              `${API}/dashboard/${dashboardId}/chats/${chatId}`, // 👈 también aquí
               { headers: getAuthHeaders(newToken) }
             );
           }
         }
       }
-
+  
       if (!res.ok) throw new Error("Error al obtener chat");
-
+  
       const data = await res.json();
 
       // alias del anónimo (usa el primer msg anon si trae alias)
