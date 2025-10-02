@@ -2,7 +2,6 @@
 import { useEffect, useState } from "react";
 import { refreshToken } from "@/utils/auth";
 import { useRouter } from "next/navigation";
-import LivesStatus from "../../../components/LivesStatus"; // 👈 nuevo import
 
 const API =
   process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
