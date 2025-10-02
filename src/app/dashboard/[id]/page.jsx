@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { refreshToken } from "@/utils/auth";
 import MessageList from "@/components/MessageList";
-import DashboardInfo from "../../../components/DashboardInfo";
+import DashboardInfo from "@/components/DashboardInfo";
 
 const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
 
