@@ -9,7 +9,7 @@ const API =
 
 export default function ChatPage() {
   const params = useParams();
-  const dashboardId = params.id;
+  const dashboardId = params.id; // 👈 se mantiene aunque ya no se use en fetch
   const chatId = params.chatId;
 
   const [chat, setChat] = useState(null);
@@ -32,7 +32,8 @@ export default function ChatPage() {
   const fetchChat = async () => {
     try {
       let res = await fetch(
-        `${API}/dashboard/${dashboardId}/chats/${chatId}`,
+        // 🔹 cambiamos el endpoint al estilo PublicChatPage (pero con JWT)
+        `${API}/dashboard/chats/${chatId}`,
         { headers: getAuthHeaders() }
       );
 
@@ -42,7 +43,7 @@ export default function ChatPage() {
           const newToken = await refreshToken(publicId);
           if (newToken) {
             res = await fetch(
-              `${API}/dashboard/${dashboardId}/chats/${chatId}`,
+              `${API}/dashboard/chats/${chatId}`,
               { headers: getAuthHeaders(newToken) }
             );
           }
