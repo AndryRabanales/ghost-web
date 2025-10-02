@@ -22,6 +22,8 @@ export default function ChatPage() {
   const [livesLeft, setLivesLeft] = useState(null);
   const [minutesNext, setMinutesNext] = useState(null);
 
+  const storageKey = `chat_${dashboardId}_${chatId}`;
+
   const getAuthHeaders = (token) => {
     const t = token || localStorage.getItem("token");
     return t ? { Authorization: `Bearer ${t}` } : {};
@@ -58,7 +60,22 @@ export default function ChatPage() {
       }
 
       if (data.creatorName) setCreatorName(data.creatorName);
-      setChat(data);
+
+      // 🔹 fusionar mensajes anteriores con nuevos
+      setChat((prev) => {
+        const prevMsgs = prev?.messages || [];
+        const newMsgs = data.messages || [];
+        const merged = [...prevMsgs];
+
+        newMsgs.forEach((m) => {
+          if (!merged.find((x) => x.id === m.id)) merged.push(m);
+        });
+
+        // guardar en localStorage
+        localStorage.setItem(storageKey, JSON.stringify(merged));
+
+        return { ...data, messages: merged };
+      });
 
       // vidas
       if (data.livesLeft !== undefined) setLivesLeft(data.livesLeft);
@@ -67,6 +84,14 @@ export default function ChatPage() {
       console.error("Error en fetchChat:", err);
     }
   };
+
+  // 🟢 Cargar mensajes guardados al inicio
+  useEffect(() => {
+    const saved = localStorage.getItem(storageKey);
+    if (saved) {
+      setChat((prev) => ({ ...prev, messages: JSON.parse(saved) }));
+    }
+  }, [storageKey]);
 
   // Polling
   useEffect(() => {
@@ -134,10 +159,11 @@ export default function ChatPage() {
         minutesToNextLife={minutesNext}
         onMessageSent={(newMsg) => {
           // agrega el mensaje del creador inmediatamente
-          setChat((prev) => ({
-            ...prev,
-            messages: [...(prev?.messages || []), newMsg],
-          }));
+          setChat((prev) => {
+            const updated = [...(prev?.messages || []), newMsg];
+            localStorage.setItem(storageKey, JSON.stringify(updated));
+            return { ...prev, messages: updated };
+          });
         }}
       />
 
