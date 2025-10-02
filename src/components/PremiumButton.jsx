@@ -26,7 +26,7 @@ export default function PremiumButton() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Error al cambiar premium");
 
-      setIsPremium(data.isPremium);
+      setIsPremium(data.isPremium); // 👈 toma valor del backend
     } catch (err) {
       console.error("❌ Error cambiando premium:", err);
     } finally {
