@@ -9,7 +9,7 @@ const API =
 
 export default function ChatPage() {
   const params = useParams();
-  const dashboardId = params.id; // 👈 se mantiene aunque ya no se use en fetch
+  const dashboardId = params.id;
   const chatId = params.chatId;
 
   const [chat, setChat] = useState(null);
@@ -22,39 +22,46 @@ export default function ChatPage() {
   const [livesLeft, setLivesLeft] = useState(null);
   const [minutesNext, setMinutesNext] = useState(null);
 
+  // WebSocket
+  const wsRef = useRef(null);
+  const reconnectRef = useRef(null);
+  const [wsStatus, setWsStatus] = useState("⏳ Conectando...");
+
   const storageKey = `chat_${dashboardId}_${chatId}`;
-  const wsRef = useRef(null); // 🔌 referencia al WebSocket
+  const messagesEndRef = useRef(null);
 
   const getAuthHeaders = (token) => {
     const t = token || localStorage.getItem("token");
     return t ? { Authorization: `Bearer ${t}` } : {};
   };
 
+  // ===========================
+  // Fetch del chat
+  // ===========================
   const fetchChat = async () => {
     try {
       let res = await fetch(
-        `${API}/dashboard/${dashboardId}/chats/${chatId}`, // 👈 corregido
+        `${API}/dashboard/${dashboardId}/chats/${chatId}`,
         { headers: getAuthHeaders() }
       );
-  
+
       if (res.status === 401) {
         const publicId = localStorage.getItem("publicId");
         if (publicId) {
           const newToken = await refreshToken(publicId);
           if (newToken) {
             res = await fetch(
-              `${API}/dashboard/${dashboardId}/chats/${chatId}`, // 👈 también aquí
+              `${API}/dashboard/${dashboardId}/chats/${chatId}`,
               { headers: getAuthHeaders(newToken) }
             );
           }
         }
       }
-  
+
       if (!res.ok) throw new Error("Error al obtener chat");
-  
+
       const data = await res.json();
 
-      // alias del anónimo (usa el primer msg anon si trae alias)
       if (Array.isArray(data.messages)) {
         const firstAnon = data.messages.find((m) => m.from === "anon");
         if (firstAnon?.alias) setAnonAlias(firstAnon.alias);
@@ -62,7 +69,6 @@ export default function ChatPage() {
 
       if (data.creatorName) setCreatorName(data.creatorName);
 
-      // 🔹 fusionar mensajes anteriores con nuevos
       setChat((prev) => {
         const prevMsgs = prev?.messages || [];
         const newMsgs = data.messages || [];
@@ -72,13 +78,10 @@ export default function ChatPage() {
           if (!merged.find((x) => x.id === m.id)) merged.push(m);
         });
 
-        // guardar en localStorage
         localStorage.setItem(storageKey, JSON.stringify(merged));
-
         return { ...data, messages: merged };
       });
 
-      // vidas
       if (data.livesLeft !== undefined) setLivesLeft(data.livesLeft);
       if (data.minutesToNextLife !== undefined) setMinutesNext(data.minutesToNextLife);
     } catch (err) {
@@ -86,6 +89,9 @@ export default function ChatPage() {
     }
   };
 
+  // ===========================
+  // Fetch del perfil
+  // ===========================
   const fetchProfile = async () => {
     try {
       let res = await fetch(`${API}/creators/me`, { headers: getAuthHeaders() });
@@ -103,8 +109,6 @@ export default function ChatPage() {
       if (!res.ok) throw new Error("Error al obtener perfil");
 
       const data = await res.json();
-
-      // setear datos del creator
       if (data.name) setCreatorName(data.name);
       if (data.lives !== undefined) setLivesLeft(data.lives);
       if (data.minutesToNextLife !== undefined) setMinutesNext(data.minutesToNextLife);
@@ -113,8 +117,10 @@ export default function ChatPage() {
     }
   };
 
-
-  // 🟢 Cargar mensajes guardados al inicio
+  // ===========================
+  // Efectos
+  // ===========================
+  // 1) Cargar mensajes guardados
   useEffect(() => {
     const saved = localStorage.getItem(storageKey);
     if (saved) {
@@ -122,59 +128,70 @@ export default function ChatPage() {
     }
   }, [storageKey]);
 
-  // Polling + perfil (vidas y nombre del creador)
+  // 2) Polling inicial + perfil
   useEffect(() => {
-    fetchProfile(); // 👈 pedimos datos del creador al entrar
-    fetchChat();    // 👈 pedimos mensajes del chat también
+    fetchProfile();
+    fetchChat();
 
     const interval = setInterval(fetchChat, 60000);
     return () => clearInterval(interval);
   }, [chatId, dashboardId]);
 
-
-  // 🔌 WebSocket añadido
+  // 3) WebSocket con reconexión
   useEffect(() => {
-    const ws = new WebSocket(
-      `wss://ghost-api-2qmr.onrender.com/ws/chat?chatId=${chatId}`
-    );
-    
-    wsRef.current = ws;
+    const connectWS = () => {
+      const ws = new WebSocket(
+        `wss://ghost-api-2qmr.onrender.com/ws/chat?chatId=${chatId}`
+      );
+      wsRef.current = ws;
 
-    ws.onopen = () => {
-      console.log("✅ WS conectado en ChatPage (creador)");
-    };
+      ws.onopen = () => {
+        console.log("✅ WS conectado en ChatPage");
+        setWsStatus("🟢 Conectado");
+      };
 
-    ws.onmessage = (event) => {
-      try {
-        const msg = JSON.parse(event.data);
+      ws.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data);
+          if (msg.chatId === chatId) {
+            setChat((prev) => {
+              const prevMsgs = prev?.messages || [];
+              if (prevMsgs.find((x) => x.id === msg.id && msg.id)) return prev; // anti-duplicado
+              const updated = [...prevMsgs, msg];
+              localStorage.setItem(storageKey, JSON.stringify(updated));
+              return { ...prev, messages: updated };
+            });
 
-        // Filtrar solo mensajes de este chat
-        if (msg.chatId === chatId) {
-          setChat((prev) => {
-            const updated = [...(prev?.messages || []), msg];
-            localStorage.setItem(storageKey, JSON.stringify(updated));
-            return { ...prev, messages: updated };
-          });
-
-          // Notificación (toast) si el mensaje viene de anon
-          if (msg.from === "anon") {
-            setToast(`Nuevo mensaje de ${msg.alias || anonAlias}`);
-            setTimeout(() => setToast(null), 5000);
+            if (msg.from === "anon") {
+              setToast(`Nuevo mensaje de ${msg.alias || anonAlias}`);
+              setTimeout(() => setToast(null), 5000);
+            }
           }
+        } catch {
+          console.log("Mensaje WS no es JSON:", event.data);
         }
-      } catch {
-        console.log("Mensaje WS no es JSON:", event.data);
-      }
+      };
+
+      ws.onclose = () => {
+        console.log("❌ WS desconectado");
+        setWsStatus("🔴 Desconectado. Reintentando...");
+        // Reintento en 5s
+        reconnectRef.current = setTimeout(connectWS, 5000);
+      };
+
+      ws.onerror = () => {
+        setWsStatus("⚠️ Error de conexión");
+      };
     };
 
-    ws.onclose = () => {
-      console.log("❌ WS desconectado en ChatPage");
+    connectWS();
+    return () => {
+      if (wsRef.current) wsRef.current.close();
+      if (reconnectRef.current) clearTimeout(reconnectRef.current);
     };
-
-    return () => ws.close();
   }, [chatId, anonAlias, storageKey]);
 
-  // Toast llegada de anon (se mantiene como extra, no lo quitamos)
+  // 4) Toast cuando llega un nuevo mensaje
   useEffect(() => {
     if (!chat?.messages) return;
     const count = chat.messages.length;
@@ -188,9 +205,27 @@ export default function ChatPage() {
     setLastCount(count);
   }, [chat]);
 
+  // 5) Auto-scroll al último mensaje
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chat?.messages]);
+
+  // ===========================
+  // Render
+  // ===========================
+  const formatTime = (dateStr) => {
+    const d = new Date(dateStr);
+    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  };
+
   return (
-    <div style={{ maxWidth: 600, margin: "0 auto", padding: 20 }}>
+    <div style={{ maxWidth: 650, margin: "0 auto", padding: 20 }}>
       <h1>Chat con {anonAlias}</h1>
+
+      {/* estado de conexión */}
+      <div style={{ marginBottom: 8, fontSize: 14, color: "#666" }}>
+        Estado WS: {wsStatus}
+      </div>
 
       {/* vidas */}
       {livesLeft !== null && (
@@ -206,16 +241,29 @@ export default function ChatPage() {
           border: "1px solid #ccc",
           borderRadius: 8,
           padding: 10,
-          height: 400,
+          height: 420,
           overflowY: "auto",
+          background: "#fafafa",
         }}
       >
         {chat?.messages?.map((m) => (
-          <div key={m.id} style={{ marginBottom: 8 }}>
-            <strong>
-              {m.from === "creator" ? `${creatorName}:` : `${m.alias || anonAlias}:`}
-            </strong>{" "}
-            {m.content}
+          <div
+            key={m.id || Math.random()}
+            style={{
+              marginBottom: 10,
+              padding: "6px 10px",
+              borderRadius: 6,
+              background: m.from === "creator" ? "#e1f5fe" : "#f1f1f1",
+              textAlign: m.from === "creator" ? "right" : "left",
+            }}
+          >
+            <div style={{ fontSize: 13, fontWeight: "bold" }}>
+              {m.from === "creator" ? creatorName : m.alias || anonAlias}
+            </div>
+            <div>{m.content}</div>
+            <div style={{ fontSize: 11, color: "#888" }}>
+              {formatTime(m.createdAt)}
+            </div>
           </div>
         ))}
         {!chat?.messages?.length && (
@@ -223,6 +271,7 @@ export default function ChatPage() {
             No hay mensajes todavía
           </p>
         )}
+        <div ref={messagesEndRef} />
       </div>
 
       {/* enviar */}
@@ -232,7 +281,6 @@ export default function ChatPage() {
         livesLeft={livesLeft}
         minutesToNextLife={minutesNext}
         onMessageSent={(newMsg) => {
-          // agrega el mensaje del creador inmediatamente
           setChat((prev) => {
             const updated = [...(prev?.messages || []), newMsg];
             localStorage.setItem(storageKey, JSON.stringify(updated));
