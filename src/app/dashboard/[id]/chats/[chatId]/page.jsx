@@ -1,42 +1,69 @@
 "use client";
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { refreshToken } from "@/utils/auth";
 import MessageForm from "@/components/MessageForm";
 
+// ===========================
+// API base
+// ===========================
 const API =
   process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
 
+// ===========================
+// Componente principal
+// ===========================
 export default function ChatPage() {
   const params = useParams();
   const dashboardId = params.id;
   const chatId = params.chatId;
 
+  // ===========================
+  // Estados principales
+  // ===========================
   const [chat, setChat] = useState(null);
   const [anonAlias, setAnonAlias] = useState("Anónimo");
   const [creatorName, setCreatorName] = useState("Tú");
   const [lastCount, setLastCount] = useState(0);
   const [toast, setToast] = useState(null);
 
-  // vidas
+  // ❤️ Vidas
   const [livesLeft, setLivesLeft] = useState(null);
   const [minutesNext, setMinutesNext] = useState(null);
 
-  // WebSocket
+  // 🔌 WebSocket
   const wsRef = useRef(null);
   const reconnectRef = useRef(null);
   const [wsStatus, setWsStatus] = useState("⏳ Conectando...");
 
+  // LocalStorage
   const storageKey = `chat_${dashboardId}_${chatId}`;
+
+  // Auto-scroll
   const messagesEndRef = useRef(null);
 
+  // ===========================
+  // Helpers
+  // ===========================
   const getAuthHeaders = (token) => {
     const t = token || localStorage.getItem("token");
     return t ? { Authorization: `Bearer ${t}` } : {};
   };
 
+  const formatTime = (dateStr) => {
+    const d = new Date(dateStr);
+    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  };
+
+  const formatDate = (dateStr) => {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString([], { year: "numeric", month: "short", day: "numeric" });
+  };
+
+  const formatAlias = (alias) => alias || "Anónimo";
+
   // ===========================
-  // Fetch del chat
+  // Fetch Chat
   // ===========================
   const fetchChat = async () => {
     try {
@@ -59,7 +86,6 @@ export default function ChatPage() {
       }
 
       if (!res.ok) throw new Error("Error al obtener chat");
-
       const data = await res.json();
 
       if (Array.isArray(data.messages)) {
@@ -73,11 +99,9 @@ export default function ChatPage() {
         const prevMsgs = prev?.messages || [];
         const newMsgs = data.messages || [];
         const merged = [...prevMsgs];
-
         newMsgs.forEach((m) => {
           if (!merged.find((x) => x.id === m.id)) merged.push(m);
         });
-
         localStorage.setItem(storageKey, JSON.stringify(merged));
         return { ...data, messages: merged };
       });
@@ -90,7 +114,7 @@ export default function ChatPage() {
   };
 
   // ===========================
-  // Fetch del perfil
+  // Fetch Perfil
   // ===========================
   const fetchProfile = async () => {
     try {
@@ -107,7 +131,6 @@ export default function ChatPage() {
       }
 
       if (!res.ok) throw new Error("Error al obtener perfil");
-
       const data = await res.json();
       if (data.name) setCreatorName(data.name);
       if (data.lives !== undefined) setLivesLeft(data.lives);
@@ -132,13 +155,13 @@ export default function ChatPage() {
   useEffect(() => {
     fetchProfile();
     fetchChat();
-
     const interval = setInterval(fetchChat, 60000);
     return () => clearInterval(interval);
   }, [chatId, dashboardId]);
 
   // 3) WebSocket con reconexión
   useEffect(() => {
+    let retries = 0;
     const connectWS = () => {
       const ws = new WebSocket(
         `wss://ghost-api-2qmr.onrender.com/ws/chat?chatId=${chatId}`
@@ -148,6 +171,7 @@ export default function ChatPage() {
       ws.onopen = () => {
         console.log("✅ WS conectado en ChatPage");
         setWsStatus("🟢 Conectado");
+        retries = 0; // reset backoff
       };
 
       ws.onmessage = (event) => {
@@ -156,7 +180,7 @@ export default function ChatPage() {
           if (msg.chatId === chatId) {
             setChat((prev) => {
               const prevMsgs = prev?.messages || [];
-              if (prevMsgs.find((x) => x.id === msg.id && msg.id)) return prev; // anti-duplicado
+              if (prevMsgs.find((x) => x.id === msg.id && msg.id)) return prev;
               const updated = [...prevMsgs, msg];
               localStorage.setItem(storageKey, JSON.stringify(updated));
               return { ...prev, messages: updated };
@@ -175,8 +199,9 @@ export default function ChatPage() {
       ws.onclose = () => {
         console.log("❌ WS desconectado");
         setWsStatus("🔴 Desconectado. Reintentando...");
-        // Reintento en 5s
-        reconnectRef.current = setTimeout(connectWS, 5000);
+        retries++;
+        const delay = Math.min(10000, retries * 2000); // backoff hasta 10s
+        reconnectRef.current = setTimeout(connectWS, delay);
       };
 
       ws.onerror = () => {
@@ -213,11 +238,6 @@ export default function ChatPage() {
   // ===========================
   // Render
   // ===========================
-  const formatTime = (dateStr) => {
-    const d = new Date(dateStr);
-    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  };
-
   return (
     <div style={{ maxWidth: 650, margin: "0 auto", padding: 20 }}>
       <h1>Chat con {anonAlias}</h1>
@@ -258,11 +278,11 @@ export default function ChatPage() {
             }}
           >
             <div style={{ fontSize: 13, fontWeight: "bold" }}>
-              {m.from === "creator" ? creatorName : m.alias || anonAlias}
+              {m.from === "creator" ? creatorName : formatAlias(m.alias)}
             </div>
             <div>{m.content}</div>
             <div style={{ fontSize: 11, color: "#888" }}>
-              {formatTime(m.createdAt)}
+              {formatDate(m.createdAt)} {formatTime(m.createdAt)}
             </div>
           </div>
         ))}
@@ -301,10 +321,29 @@ export default function ChatPage() {
             padding: "10px 16px",
             borderRadius: 6,
             zIndex: 9999,
+            boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
           }}
         >
           {toast}
         </div>
+      )}
+
+      {/* Panel debug (solo dev) */}
+      {process.env.NODE_ENV === "development" && (
+        <pre
+          style={{
+            marginTop: 20,
+            fontSize: 12,
+            padding: 10,
+            background: "#111",
+            color: "#0f0",
+            borderRadius: 8,
+            maxHeight: 150,
+            overflow: "auto",
+          }}
+        >
+          {JSON.stringify({ dashboardId, chatId, wsStatus, livesLeft, minutesNext }, null, 2)}
+        </pre>
       )}
     </div>
   );
