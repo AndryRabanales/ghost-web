@@ -189,10 +189,16 @@ export default function ChatPage() {
       <MessageForm
   dashboardId={dashboardId}
   chatId={chatId}
-  onMessageSent={fetchChat}
   livesLeft={livesLeft}
   minutesToNextLife={minutesNext}
+  onMessageSent={(newMsg) => {
+    setChat((prev) => ({
+      ...prev,
+      messages: [...(prev?.messages || []), newMsg],
+    }));
+  }}
 />
+
 
 
       {/* Toast */}

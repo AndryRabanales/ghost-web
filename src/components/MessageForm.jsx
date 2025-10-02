@@ -21,8 +21,8 @@ export default function MessageForm({
 
   const handleSend = async (e) => {
     e.preventDefault();
-    if (!newMsg.trim() || livesLeft === 0) return; // 👈 bloquea si no hay vidas
-
+    if (!newMsg.trim() || livesLeft === 0) return;
+  
     try {
       let res = await fetch(
         `${API}/dashboard/${dashboardId}/chats/${chatId}/messages`,
@@ -35,39 +35,22 @@ export default function MessageForm({
           body: JSON.stringify({ content: newMsg }),
         }
       );
-
-      if (res.status === 401) {
-        const publicId = localStorage.getItem("publicId");
-        const newToken = await refreshToken(publicId);
-        if (newToken) {
-          res = await fetch(
-            `${API}/dashboard/${dashboardId}/chats/${chatId}/messages`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${newToken}`,
-              },
-              body: JSON.stringify({ content: newMsg }),
-            }
-          );
-        } else {
-          console.error("No se pudo renovar el token al enviar mensaje");
-          return;
-        }
-      }
-
+  
       if (!res.ok) {
         console.error("⚠️ Error enviando mensaje:", res.status);
         return;
       }
-
+  
+      const msgData = await res.json(); // 👈 el backend ya devuelve el mensaje creado
       setNewMsg("");
-      if (onMessageSent) onMessageSent();
+  
+      // 🔥 pasar mensaje nuevo al padre (ChatPage)
+      if (onMessageSent) onMessageSent(msgData);
     } catch (err) {
       console.error("Error en handleSend:", err);
     }
   };
+  
 
   return (
     <form onSubmit={handleSend} style={{ marginTop: 10 }}>
