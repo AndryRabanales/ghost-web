@@ -88,7 +88,7 @@ export default function PublicChatPage() {
 
   useEffect(() => {
     fetchMessages();
-    const interval = setInterval(fetchMessages, 2000); // 🔁 refresco automático
+    const interval = setInterval(fetchMessages, 5000); // 🔁 refresco automático
     return () => clearInterval(interval);
   }, [chatId, anonToken]);
 
