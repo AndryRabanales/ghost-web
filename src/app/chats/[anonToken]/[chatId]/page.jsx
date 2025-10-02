@@ -17,6 +17,7 @@ export default function PublicChatPage() {
   const [error, setError] = useState(null);
 
   const bottomRef = useRef(null);
+  const wsRef = useRef(null);
 
   // Scroll automático al fondo
   useEffect(() => {
@@ -43,6 +44,7 @@ export default function PublicChatPage() {
     localStorage.setItem("myChats", JSON.stringify(next));
   };
 
+  // 📥 Cargar mensajes iniciales (solo 1 vez)
   const fetchMessages = async () => {
     try {
       setError(null);
@@ -53,20 +55,17 @@ export default function PublicChatPage() {
       if (Array.isArray(data.messages)) {
         setMessages(data.messages);
 
-        // Guardar nombre del creador
         if (data.creatorName) {
           setCreatorName(data.creatorName);
           updateLocalStorage((c) => ({ ...c, creatorName: data.creatorName }));
         }
 
-        // Guardar alias del anónimo (primer mensaje)
         const firstAnon = data.messages.find((m) => m.from === "anon");
         if (firstAnon?.alias) {
           setAnonAlias(firstAnon.alias);
           updateLocalStorage((c) => ({ ...c, anonAlias: firstAnon.alias }));
         }
 
-        // Marcar última respuesta del creador como vista
         const creatorMsgs = data.messages.filter((m) => m.from === "creator");
         const lastCreatorId = creatorMsgs.length
           ? creatorMsgs[creatorMsgs.length - 1].id
@@ -86,12 +85,38 @@ export default function PublicChatPage() {
     }
   };
 
+  // 🔌 WebSocket: escuchar mensajes nuevos
   useEffect(() => {
-    fetchMessages();
-    const interval = setInterval(fetchMessages, 5000); // 🔁 refresco automático
-    return () => clearInterval(interval);
+    fetchMessages(); // solo al inicio
+
+    const ws = new WebSocket(
+      `wss://ghost-api-2qmr.onrender.com/ws/chat?chatId=${chatId}`
+    );
+    wsRef.current = ws;
+
+    ws.onopen = () => {
+      console.log("✅ Conectado al WebSocket");
+      // opcional: puedes autenticar con anonToken/chatId si lo implementas en backend
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const msg = JSON.parse(event.data);
+        // Solo agregar si pertenece al chat actual
+        if (msg.chatId === chatId) {
+          setMessages((prev) => [...prev, msg]);
+        }
+      } catch {
+        console.log("Mensaje WS no es JSON:", event.data);
+      }
+    };
+
+    ws.onclose = () => console.log("❌ WS cerrado");
+
+    return () => ws.close();
   }, [chatId, anonToken]);
 
+  // ✉️ Enviar mensaje (REST normal)
   const handleSend = async (e) => {
     e.preventDefault();
     if (!newMsg.trim()) return;
@@ -103,7 +128,7 @@ export default function PublicChatPage() {
       });
       if (!res.ok) throw new Error("No se pudo enviar el mensaje");
       setNewMsg("");
-      await fetchMessages(); // ✅ refrescar al instante
+      // 👇 ya no hace falta fetchMessages(), el WS debe notificar
     } catch (err) {
       console.error(err);
       setError("⚠️ No se pudo enviar el mensaje");
@@ -162,7 +187,7 @@ export default function PublicChatPage() {
         <button
           type="submit"
           style={{ marginTop: 8 }}
-          disabled={!newMsg.trim()} // 🛑 botón bloqueado si está vacío
+          disabled={!newMsg.trim()}
         >
           Enviar
         </button>

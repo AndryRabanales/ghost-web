@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
 import { refreshToken } from "@/utils/auth";
 import MessageForm from "@/components/MessageForm";
@@ -23,6 +23,7 @@ export default function ChatPage() {
   const [minutesNext, setMinutesNext] = useState(null);
 
   const storageKey = `chat_${dashboardId}_${chatId}`;
+  const wsRef = useRef(null); // 🔌 referencia al WebSocket
 
   const getAuthHeaders = (token) => {
     const t = token || localStorage.getItem("token");
@@ -32,7 +33,6 @@ export default function ChatPage() {
   const fetchChat = async () => {
     try {
       let res = await fetch(
-        // 🔹 cambiamos el endpoint al estilo PublicChatPage (pero con JWT)
         `${API}/dashboard/chats/${chatId}`,
         { headers: getAuthHeaders() }
       );
@@ -94,14 +94,56 @@ export default function ChatPage() {
     }
   }, [storageKey]);
 
-  // Polling
+  // Polling (lo dejamos activo por ahora ⚠️)
   useEffect(() => {
     fetchChat();
     const interval = setInterval(fetchChat, 5000);
     return () => clearInterval(interval);
   }, [chatId, dashboardId]);
 
-  // Toast llegada de anon
+  // 🔌 WebSocket añadido
+  useEffect(() => {
+    const ws = new WebSocket(
+      `wss://ghost-api-2qmr.onrender.com/ws/chat?chatId=${chatId}`
+    );
+    
+    wsRef.current = ws;
+
+    ws.onopen = () => {
+      console.log("✅ WS conectado en ChatPage (creador)");
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const msg = JSON.parse(event.data);
+
+        // Filtrar solo mensajes de este chat
+        if (msg.chatId === chatId) {
+          setChat((prev) => {
+            const updated = [...(prev?.messages || []), msg];
+            localStorage.setItem(storageKey, JSON.stringify(updated));
+            return { ...prev, messages: updated };
+          });
+
+          // Notificación (toast) si el mensaje viene de anon
+          if (msg.from === "anon") {
+            setToast(`Nuevo mensaje de ${msg.alias || anonAlias}`);
+            setTimeout(() => setToast(null), 5000);
+          }
+        }
+      } catch {
+        console.log("Mensaje WS no es JSON:", event.data);
+      }
+    };
+
+    ws.onclose = () => {
+      console.log("❌ WS desconectado en ChatPage");
+    };
+
+    return () => ws.close();
+  }, [chatId, anonAlias, storageKey]);
+
+  // Toast llegada de anon (se mantiene como extra, no lo quitamos)
   useEffect(() => {
     if (!chat?.messages) return;
     const count = chat.messages.length;
