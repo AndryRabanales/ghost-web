@@ -61,11 +61,27 @@ export default function MessageList({ dashboardId }) {
     }
   };
 
+ // 1️⃣ cargar valores guardados antes que nada
+useEffect(() => {
+  const storedLives = localStorage.getItem("livesLeft");
+  const storedNext = localStorage.getItem("minutesNext");
+  if (storedLives) setLivesLeft(parseInt(storedLives, 10));
+  if (storedNext) setMinutesNext(parseInt(storedNext, 10));
+}, []);
+
+// 2️⃣ fetch al backend
+useEffect(() => {
+  fetchData();
+  const interval = setInterval(fetchData, 5000);
+  return () => clearInterval(interval);
+}, [dashboardId]);
+
+  
   useEffect(() => {
-    fetchData();
-    const interval = setInterval(fetchData, 5000); // 🔁 refresca cada 5s
-    return () => clearInterval(interval);
-  }, [dashboardId]);
+    if (livesLeft !== null) localStorage.setItem("livesLeft", livesLeft);
+    if (minutesNext !== null) localStorage.setItem("minutesNext", minutesNext);
+  }, [livesLeft, minutesNext]);
+  
 
   // 🔹 cuando se hace click en "Responder"
   const handleOpenChat = async (chatId) => {

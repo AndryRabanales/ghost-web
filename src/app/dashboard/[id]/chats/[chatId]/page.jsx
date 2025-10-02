@@ -9,17 +9,16 @@ const API =
 
 export default function ChatPage() {
   const params = useParams();
-  const dashboardId = params.id;   // ✅ correcto
+  const dashboardId = params.id;
   const chatId = params.chatId;
 
   const [chat, setChat] = useState(null);
-  const [newMsg, setNewMsg] = useState("");
   const [anonAlias, setAnonAlias] = useState("Anónimo");
   const [creatorName, setCreatorName] = useState("Tú");
   const [lastCount, setLastCount] = useState(0);
   const [toast, setToast] = useState(null);
 
-  // 🟢 nuevo estado para vidas
+  // vidas
   const [livesLeft, setLivesLeft] = useState(null);
   const [minutesNext, setMinutesNext] = useState(null);
 
@@ -52,7 +51,7 @@ export default function ChatPage() {
 
       const data = await res.json();
 
-      // 👀 alias del anónimo
+      // alias del anónimo (usa el primer msg anon si trae alias)
       if (Array.isArray(data.messages)) {
         const firstAnon = data.messages.find((m) => m.from === "anon");
         if (firstAnon?.alias) setAnonAlias(firstAnon.alias);
@@ -61,23 +60,22 @@ export default function ChatPage() {
       if (data.creatorName) setCreatorName(data.creatorName);
       setChat(data);
 
-      // 🟢 guardar vidas y tiempo si llegan
+      // vidas
       if (data.livesLeft !== undefined) setLivesLeft(data.livesLeft);
       if (data.minutesToNextLife !== undefined) setMinutesNext(data.minutesToNextLife);
-
     } catch (err) {
       console.error("Error en fetchChat:", err);
     }
   };
 
-  // 🔁 Polling
+  // Polling
   useEffect(() => {
     fetchChat();
     const interval = setInterval(fetchChat, 5000);
     return () => clearInterval(interval);
   }, [chatId, dashboardId]);
 
-  // 👀 Toast
+  // Toast llegada de anon
   useEffect(() => {
     if (!chat?.messages) return;
     const count = chat.messages.length;
@@ -91,66 +89,11 @@ export default function ChatPage() {
     setLastCount(count);
   }, [chat]);
 
-  // ✉️ Enviar
-  const handleSend = async (e) => {
-    e.preventDefault();
-    if (!newMsg.trim()) return;
-
-    try {
-      let res = await fetch(
-        `${API}/dashboard/${dashboardId}/chats/${chatId}/messages`,
-        {
-          method: "POST",
-          headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
-          body: JSON.stringify({ content: newMsg }),
-        }
-      );
-
-      if (res.status === 401) {
-        const publicId = localStorage.getItem("publicId");
-        if (publicId) {
-          const newToken = await refreshToken(publicId);
-          if (newToken) {
-            res = await fetch(
-              `${API}/dashboard/${dashboardId}/chats/${chatId}/messages`,
-              {
-                method: "POST",
-                headers: {
-                  ...getAuthHeaders(newToken),
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ content: newMsg }),
-              }
-            );
-          }
-        }
-      }
-
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        if (res.status === 403 && errData.minutesToNextLife !== undefined) {
-          setLivesLeft(errData.livesLeft ?? 0);
-          setMinutesNext(errData.minutesToNextLife);
-        }
-        throw new Error(errData.error || "Error enviando mensaje");
-      }
-
-      const msgData = await res.json();
-      setLivesLeft(msgData.livesLeft);
-      setMinutesNext(msgData.minutesToNextLife);
-
-      setNewMsg("");
-      fetchChat();
-    } catch (err) {
-      console.error("Error en handleSend:", err);
-    }
-  };
-
   return (
     <div style={{ maxWidth: 600, margin: "0 auto", padding: 20 }}>
       <h1>Chat con {anonAlias}</h1>
 
-      {/* 🟢 mostrar vidas */}
+      {/* vidas */}
       {livesLeft !== null && (
         <div style={{ marginBottom: 12, color: "#444" }}>
           ❤️ Vidas restantes: {livesLeft} <br />
@@ -158,7 +101,7 @@ export default function ChatPage() {
         </div>
       )}
 
-      {/* Lista de mensajes */}
+      {/* lista de mensajes */}
       <div
         style={{
           border: "1px solid #ccc",
@@ -171,9 +114,7 @@ export default function ChatPage() {
         {chat?.messages?.map((m) => (
           <div key={m.id} style={{ marginBottom: 8 }}>
             <strong>
-              {m.from === "creator"
-                ? `${creatorName}:`
-                : `${m.alias || anonAlias}:`}
+              {m.from === "creator" ? `${creatorName}:` : `${m.alias || anonAlias}:`}
             </strong>{" "}
             {m.content}
           </div>
@@ -185,23 +126,22 @@ export default function ChatPage() {
         )}
       </div>
 
-      {/* Formulario */}
+      {/* enviar */}
       <MessageForm
-  dashboardId={dashboardId}
-  chatId={chatId}
-  livesLeft={livesLeft}
-  minutesToNextLife={minutesNext}
-  onMessageSent={(newMsg) => {
-    setChat((prev) => ({
-      ...prev,
-      messages: [...(prev?.messages || []), newMsg],
-    }));
-  }}
-/>
+        dashboardId={dashboardId}
+        chatId={chatId}
+        livesLeft={livesLeft}
+        minutesToNextLife={minutesNext}
+        onMessageSent={(newMsg) => {
+          // agrega el mensaje del creador inmediatamente
+          setChat((prev) => ({
+            ...prev,
+            messages: [...(prev?.messages || []), newMsg],
+          }));
+        }}
+      />
 
-
-
-      {/* Toast */}
+      {/* toast */}
       {toast && (
         <div
           style={{
