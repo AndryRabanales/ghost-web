@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import MessageList from "@/components/MessageList";
 import { refreshToken } from "@/utils/auth";
+import PremiumButton from "../../../components/PremiumButton";
 
 const API =
   process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
@@ -72,9 +73,10 @@ export default function DashboardPage() {
   </div>
 )}
 
-
+<PremiumButton />
       {/* Lista de chats protegida con token */}
       <MessageList dashboardId={id} />
+
     </div>
   );
 }
