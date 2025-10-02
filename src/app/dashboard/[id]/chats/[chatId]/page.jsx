@@ -97,7 +97,7 @@ export default function ChatPage() {
   // Polling
   useEffect(() => {
     fetchChat();
-    const interval = setInterval(fetchChat, 5000);
+    const interval = setInterval(fetchChat, 2000);
     return () => clearInterval(interval);
   }, [chatId, dashboardId]);
 
@@ -109,7 +109,7 @@ export default function ChatPage() {
       const lastMsg = chat.messages[chat.messages.length - 1];
       if (lastMsg.from === "anon") {
         setToast(`Nuevo mensaje de ${lastMsg.alias || anonAlias}`);
-        setTimeout(() => setToast(null), 4000);
+        setTimeout(() => setToast(null), 3000);
       }
     }
     setLastCount(count);
