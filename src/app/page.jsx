@@ -1,7 +1,6 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import SubscribeButton from "@/components/SubscribeButton";
 
 
 const API =
@@ -82,11 +81,6 @@ export default function Home() {
       <a href={publicUrl}>{publicUrl}</a>
     </p>
 
-    {/* 👇 Aquí agregamos el botón premium */}
-    <div style={{ marginTop: 30 }}>
-      <h3>¿Quieres vidas ilimitadas?</h3>
-      <SubscribeButton />
-    </div>
   </div>
 )}
 
