@@ -1,21 +1,20 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import MessageList from "@/components/MessageList";
 import { refreshToken } from "@/utils/auth";
-import PremiumButton from "../../../components/PremiumButton";
+import MessageList from "@/components/MessageList";
+import DashboardInfo from "../../../components/DashboardInfo";
 
-const API =
-  process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
+const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
 
 export default function DashboardPage() {
   const { id } = useParams(); // dashboardId
   const [creator, setCreator] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const getAuthHeaders = () => {
-    const token = localStorage.getItem("token");
-    return token ? { Authorization: `Bearer ${token}` } : {};
+  const getAuthHeaders = (token) => {
+    const t = token || localStorage.getItem("token");
+    return t ? { Authorization: `Bearer ${t}` } : {};
   };
 
   const fetchCreator = async () => {
@@ -29,23 +28,16 @@ export default function DashboardPage() {
         const newToken = await refreshToken(publicId);
         if (newToken) {
           res = await fetch(`${API}/creators/me`, {
-            headers: { Authorization: `Bearer ${newToken}` },
+            headers: getAuthHeaders(newToken),
           });
-        } else {
-          console.error("No se pudo renovar el token");
-          return;
-        }
+        } else return;
       }
 
-      if (!res.ok) {
-        console.error("⚠️ Error cargando creator:", res.status);
-        return;
-      }
-
+      if (!res.ok) return;
       const data = await res.json();
       setCreator(data);
     } catch (err) {
-      console.error("Error en fetchCreator:", err);
+      console.error("❌ Error en fetchCreator:", err);
     } finally {
       setLoading(false);
     }
@@ -60,23 +52,17 @@ export default function DashboardPage() {
   return (
     <div style={{ maxWidth: 700, margin: "0 auto", padding: 20 }}>
       <h1>Dashboard</h1>
+
       {creator && (
-  <div style={{ marginBottom: 20 }}>
-    <p><strong>Nombre:</strong> {creator.name}</p>
-    <p><strong>Dashboard ID:</strong> {id}</p>
+        <DashboardInfo
+          creator={creator}
+          dashboardId={id}
+          onChange={(data) => setCreator(data)}
+        />
+      )}
 
-    {/* ❤️ mostrar vidas */}
-    <p>
-      ❤️ Vidas restantes: {creator.lives} <br />
-      ⏳ Próxima vida en: {creator.minutesToNextLife} min
-    </p>
-  </div>
-)}
-
-<PremiumButton />
-      {/* Lista de chats protegida con token */}
+      {/* chats */}
       <MessageList dashboardId={id} />
-
     </div>
   );
 }
