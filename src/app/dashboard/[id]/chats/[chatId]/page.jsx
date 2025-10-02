@@ -86,6 +86,34 @@ export default function ChatPage() {
     }
   };
 
+  const fetchProfile = async () => {
+    try {
+      let res = await fetch(`${API}/creators/me`, { headers: getAuthHeaders() });
+
+      if (res.status === 401) {
+        const publicId = localStorage.getItem("publicId");
+        if (publicId) {
+          const newToken = await refreshToken(publicId);
+          if (newToken) {
+            res = await fetch(`${API}/creators/me`, { headers: getAuthHeaders(newToken) });
+          }
+        }
+      }
+
+      if (!res.ok) throw new Error("Error al obtener perfil");
+
+      const data = await res.json();
+
+      // setear datos del creator
+      if (data.name) setCreatorName(data.name);
+      if (data.lives !== undefined) setLivesLeft(data.lives);
+      if (data.minutesToNextLife !== undefined) setMinutesNext(data.minutesToNextLife);
+    } catch (err) {
+      console.error("Error en fetchProfile:", err);
+    }
+  };
+
+
   // 🟢 Cargar mensajes guardados al inicio
   useEffect(() => {
     const saved = localStorage.getItem(storageKey);
@@ -94,12 +122,15 @@ export default function ChatPage() {
     }
   }, [storageKey]);
 
-  // Polling (lo dejamos activo por ahora ⚠️)
+  // Polling + perfil (vidas y nombre del creador)
   useEffect(() => {
-    fetchChat();
-    const interval = setInterval(fetchChat, 5000);
+    fetchProfile(); // 👈 pedimos datos del creador al entrar
+    fetchChat();    // 👈 pedimos mensajes del chat también
+
+    const interval = setInterval(fetchChat, 60000);
     return () => clearInterval(interval);
   }, [chatId, dashboardId]);
+
 
   // 🔌 WebSocket añadido
   useEffect(() => {
