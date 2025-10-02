@@ -162,7 +162,7 @@ export default function PublicChatPage() {
         <button
           type="submit"
           style={{ marginTop: 8 }}
-          disabled={!newMsg.trim()} // 👈 agregado: botón deshabilitado si input vacío
+          disabled={!newMsg.trim()} // 🛑 botón bloqueado si está vacío
         >
           Enviar
         </button>
