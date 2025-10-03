@@ -86,38 +86,43 @@ export default function PublicChatPage() {
   };
 
   // 🔌 WebSocket: escuchar mensajes nuevos
-  useEffect(() => {
-    fetchMessages(); // solo al inicio
+  // 🔌 WebSocket: escuchar mensajes nuevos
+useEffect(() => {
+  fetchMessages(); // solo al inicio
 
-    const apiBase = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
-    const wsUrl = apiBase.replace(/^http(s?)/, "ws$1") + `/ws/chat?chatId=${chatId}`;
-    
-    const ws = new WebSocket(wsUrl);
-    
-    
-    wsRef.current = ws;
+  const apiBase =
+    process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
 
-    ws.onopen = () => {
-      console.log("✅ Conectado al WebSocket");
-      // opcional: puedes autenticar con anonToken/chatId si lo implementas en backend
-    };
+  // 👇 construyes bien el wsUrl con el anonToken
+  const wsUrl =
+    apiBase.replace(/^http/, "ws") +
+    `/ws/chat?chatId=${chatId}&anonToken=${anonToken}`;
 
-    ws.onmessage = (event) => {
-      try {
-        const msg = JSON.parse(event.data);
-        // Solo agregar si pertenece al chat actual
-        if (msg.chatId === chatId) {
-          setMessages((prev) => [...prev, msg]);
-        }
-      } catch {
-        console.log("Mensaje WS no es JSON:", event.data);
+  const ws = new WebSocket(wsUrl);
+  wsRef.current = ws;
+
+  ws.onopen = () => {
+    console.log(`✅ WS conectado al chat ${chatId} como ${anonAlias}`);
+  };
+
+  ws.onmessage = (event) => {
+    try {
+      const msg = JSON.parse(event.data);
+      if (msg.chatId === chatId) {
+        setMessages((prev) => [...prev, msg]);
       }
-    };
+    } catch {
+      console.log("Mensaje WS no es JSON:", event.data);
+    }
+  };
 
-    ws.onclose = () => console.log("❌ WS cerrado");
+  ws.onclose = () => {
+    console.log("❌ WS cerrado");
+  };
 
-    return () => ws.close();
-  }, [chatId, anonToken]);
+  return () => ws.close();
+}, [chatId, anonToken]);
+
 
   // ✉️ Enviar mensaje (REST normal)
   const handleSend = async (e) => {
