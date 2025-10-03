@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { refreshToken } from "@/utils/auth";
 
-const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
+const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
 
 export default function PremiumButton({ onChange }) {
   const [loading, setLoading] = useState(false);

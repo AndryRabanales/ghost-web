@@ -8,7 +8,10 @@ export default function WsTest() {
 
   useEffect(() => {
     // 🔌 Conectarse al backend (ajusta la URL a tu Render)
-    const ws = new WebSocket("wss://tu-backend.onrender.com/ws");
+    const ws = new WebSocket(
+      `${process.env.NEXT_PUBLIC_API?.replace(/^http/, "ws")}/ws/chat?chatId=${chatId}`
+    );
+    
 
     ws.onopen = () => console.log("✅ Conectado al WebSocket");
     ws.onmessage = (event) => {

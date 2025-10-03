@@ -3,7 +3,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
 
 const API =
-  process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
+  process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
 
 export default function PublicChatPage() {
   const params = useParams();
@@ -90,8 +90,9 @@ export default function PublicChatPage() {
     fetchMessages(); // solo al inicio
 
     const ws = new WebSocket(
-      `wss://ghost-api-2qmr.onrender.com/ws/chat?chatId=${chatId}`
+      `${process.env.NEXT_PUBLIC_API?.replace(/^http/, "ws")}/ws/chat?chatId=${chatId}`
     );
+    
     wsRef.current = ws;
 
     ws.onopen = () => {

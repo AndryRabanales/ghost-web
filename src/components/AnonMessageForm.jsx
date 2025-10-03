@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 
 const API =
-  process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
+  process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
 
 export default function AnonMessageForm({ publicId, onSent }) {
   const [alias, setAlias] = useState("");

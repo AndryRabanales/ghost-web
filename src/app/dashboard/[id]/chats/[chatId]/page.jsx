@@ -8,7 +8,7 @@ import MessageForm from "@/components/MessageForm";
 // API base
 // ===========================
 const API =
-  process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
+  process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
 
 // ===========================
 // Componente principal
@@ -164,7 +164,7 @@ export default function ChatPage() {
     let retries = 0;
     const connectWS = () => {
       const ws = new WebSocket(
-        `wss://ghost-api-2qmr.onrender.com/ws/chat?chatId=${chatId}`
+        `${process.env.NEXT_PUBLIC_API?.replace(/^http/, "ws")}/ws/chat?chatId=${chatId}`
       );
       wsRef.current = ws;
 

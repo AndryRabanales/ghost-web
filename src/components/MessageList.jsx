@@ -4,7 +4,7 @@ import { refreshToken } from "@/utils/auth";
 import { useRouter } from "next/navigation";
 
 const API =
-  process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
+  process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
 
 export default function MessageList({ dashboardId }) {
   const [chats, setChats] = useState([]);

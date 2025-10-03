@@ -5,7 +5,7 @@ import { refreshToken } from "@/utils/auth";
 import MessageList from "@/components/MessageList";
 import DashboardInfo from "@/components/DashboardInfo";
 
-const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-2qmr.onrender.com";
+const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
 
 export default function DashboardPage() {
   const { id } = useParams(); // dashboardId
