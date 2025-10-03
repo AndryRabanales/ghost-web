@@ -89,9 +89,11 @@ export default function PublicChatPage() {
   useEffect(() => {
     fetchMessages(); // solo al inicio
 
-    const ws = new WebSocket(
-      `${process.env.NEXT_PUBLIC_API?.replace(/^http/, "ws")}/ws/chat?chatId=${chatId}`
-    );
+    const apiBase = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
+    const wsUrl = apiBase.replace(/^http(s?)/, "ws$1") + `/ws/chat?chatId=${chatId}`;
+    
+    const ws = new WebSocket(wsUrl);
+    
     
     wsRef.current = ws;
 
