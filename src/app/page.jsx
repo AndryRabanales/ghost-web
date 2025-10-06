@@ -1,89 +1,82 @@
+// src/app/page.jsx
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-
-const API =
-  process.env.NEXT_PUBLIC_API || " https://ghost-api-production.up.railway.app";
+const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
 
 export default function Home() {
   const router = useRouter();
   const [name, setName] = useState("");
-  const [dashboardUrl, setDashboardUrl] = useState(null);
-  const [publicUrl, setPublicUrl] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const handleCreate = async (e) => {
+  const handleCreateGuest = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
 
     try {
+      // Esta es la llamada para crear un usuario "invitado" o anónimo
       const res = await fetch(`${API}/creators`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name }),
+        body: JSON.stringify({ name: name || "Anónimo" }),
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Error creando dashboard");
+      if (!res.ok) throw new Error(data.error || "Error al crear tu link");
 
-      // 👉 Guardar token y publicId en localStorage
+      // Guardar los datos de la sesión temporal en localStorage
       localStorage.setItem("token", data.token);
       localStorage.setItem("publicId", data.publicId);
 
-      // 👉 Mostrar links en pantalla
-      setDashboardUrl(data.dashboardUrl);
-      setPublicUrl(data.publicUrl);
+      // Redirigir automáticamente al nuevo dashboard
+      router.push(`/dashboard/${data.dashboardId}`);
 
-      // 👉 Redirigir al dashboard automáticamente
     } catch (err) {
-      console.error("❌ Error creando dashboard:", err);
-    } finally {
+      // 👇 BLOQUE CORREGIDO CON LLAVES 👇
+      setError(err.message);
       setLoading(false);
     }
   };
 
   return (
-    <div style={{ maxWidth: 600, margin: "0 auto", padding: 20 }}>
-      <h1>Crear mi Dashboard</h1>
-      <form onSubmit={handleCreate}>
+    <div style={{ maxWidth: 600, margin: "80px auto", padding: 20, textAlign: 'center' }}>
+      <h1>Recibe Mensajes Anónimos</h1>
+      <p style={{color: '#666', marginBottom: '30px'}}>Crea tu link personal y compártelo donde quieras.</p>
+      
+      <form onSubmit={handleCreateGuest}>
         <input
           type="text"
-          placeholder="Tu nombre para el chat"
+          placeholder="Escribe tu nombre (opcional)"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          style={{ width: "100%", padding: 10, marginBottom: 12 }}
-          required
+          style={{ width: "100%", padding: 12, marginBottom: 16, textAlign: 'center', fontSize: '16px' }}
         />
         <button
           type="submit"
           disabled={loading}
           style={{
-            padding: "10px 20px",
-            backgroundColor: "#4CAF50",
-            color: "#fff",
-            border: "none",
-            cursor: loading ? "wait" : "pointer",
+            width: '100%',
+            padding: "12px 24px",
+            fontSize: '18px',
+            cursor: 'pointer',
+            background: '#0070f3',
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            fontWeight: 'bold'
           }}
         >
-          {loading ? "Creando..." : "Generar Dashboard"}
+          {loading ? "Generando..." : "✨ Generar mi Link Mágico"}
         </button>
+        {error && <p style={{ color: "red", marginTop: '10px' }}>{error}</p>}
       </form>
 
-      {dashboardUrl && (
-  <div style={{ marginTop: 20 }}>
-    <p>
-      <strong>Tu dashboard (privado):</strong>{" "}
-      <a href={dashboardUrl}>{dashboardUrl}</a>
-    </p>
-    <p>
-      <strong>Tu link público para recibir mensajes:</strong>{" "}
-      <a href={publicUrl}>{publicUrl}</a>
-    </p>
-
-  </div>
-)}
-
+      <div style={{ marginTop: 40 }}>
+        <a href="/login" style={{color: '#666', textDecoration: 'underline'}}>¿Ya tienes una cuenta? Inicia sesión</a>
+      </div>
     </div>
   );
 }

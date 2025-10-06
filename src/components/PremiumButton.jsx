@@ -1,58 +1,71 @@
+// src/components/PremiumButton.jsx
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useRouter } from "next/navigation"; // 👈 Importar useRouter
 import { getAuthHeaders, refreshToken } from "@/utils/auth";
 
 const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
-// ¡Aquí ponemos tu nuevo link de suscripción!
-const SUBSCRIPTION_LINK = "https://www.mercadopago.com.mx/subscriptions/checkout?preapproval_plan_id=094c9c062ad54eecb0f4d0feb72bbd85";
 
-export default function PremiumButton({ onChange }) {
-  const [isPremium, setIsPremium] = useState(false);
+export default function PremiumButton({ creator }) {
+  const [loading, setLoading] = useState(false);
+  const router = useRouter(); // 👈 Inicializar router
 
-  // Esta función sigue siendo importante para saber si el usuario YA es premium.
-  const fetchCreatorStatus = async () => {
+  const handleSubscribe = async () => {
+    // 👇 ¡LA LÓGICA CLAVE! 👇
+    // Si el usuario no tiene email, es un invitado.
+    if (!creator.email) {
+      alert("Para suscribirte a Premium, primero necesitas crear una cuenta para guardar tu compra.");
+      router.push('/register'); // Lo mandamos a registrarse
+      return;
+    }
+
+    // Si tiene email, es un usuario registrado. Procedemos con el pago.
+    setLoading(true);
     try {
-      let res = await fetch(`${API}/creators/me`, { headers: getAuthHeaders() });
+      let res = await fetch(`${API}/premium/create-subscription`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+      });
+
       if (res.status === 401) {
-        const publicId = localStorage.getItem("publicId");
-        if (publicId) {
-          const newToken = await refreshToken(publicId);
-          if (newToken) {
-            res = await fetch(`${API}/creators/me`, { headers: getAuthHeaders(newToken) });
-          }
+        const newToken = await refreshToken(localStorage.getItem("publicId"));
+        if (newToken) {
+          res = await fetch(`${API}/premium/create-subscription`, {
+            method: 'POST',
+            headers: getAuthHeaders(newToken),
+          });
         }
       }
-      if (!res.ok) return;
+      
+      if (!res.ok) throw new Error("No se pudo generar el link de pago");
+      
       const data = await res.json();
-      setIsPremium(data.isPremium || false);
-      if (onChange) onChange(data);
+      if (data.init_point) {
+        window.location.href = data.init_point;
+      }
+
     } catch (err) {
-      console.error("❌ Error en fetchCreatorStatus:", err);
+      console.error("❌ Error al suscribirse:", err);
+      alert("Hubo un error al intentar suscribirte. Por favor, intenta de nuevo.");
+      setLoading(false);
     }
   };
-
-  useEffect(() => {
-    fetchCreatorStatus();
-  }, []);
-
-  // Si el usuario ya es premium, le mostramos un mensaje de agradecimiento.
-  if (isPremium) {
+  
+  if (creator?.isPremium) {
     return (
       <div style={{ color: "gold", marginBottom: 8, padding: '10px', background: '#333', borderRadius: '8px', textAlign: 'center' }}>
-        ⭐ ¡Eres Premium! Disfruta de vidas ilimitadas.
+        ⭐ ¡Ya eres Premium! Disfruta de vidas ilimitadas.
       </div>
     );
   }
 
-  // Si no es premium, mostramos un link (con estilo de botón) que lleva directo a la suscripción.
   return (
     <div style={{ marginBottom: 16, border: '1px solid #0070f3', padding: '15px', borderRadius: '8px', textAlign: 'center' }}>
       <h3 style={{marginTop: 0}}>¿Te quedas sin vidas?</h3>
-      <p>¡Suscríbete a Premium para tener respuestas ilimitadas!</p>
-      <a
-        href={SUBSCRIPTION_LINK}
-        target="_blank" // Abre en una nueva pestaña para no perder tu página
-        rel="noopener noreferrer"
+      <p>¡Conviértete en Premium para tener respuestas ilimitadas!</p>
+      <button
+        onClick={handleSubscribe}
+        disabled={loading}
         style={{
           display: 'block',
           padding: "10px 20px",
@@ -64,11 +77,11 @@ export default function PremiumButton({ onChange }) {
           fontWeight: 'bold',
           width: '100%',
           fontSize: '16px',
-          boxSizing: 'border-box'
+          cursor: loading ? 'wait' : 'pointer',
         }}
       >
-        🚀 Suscribirme a Premium
-      </a>
+        {loading ? 'Generando link...' : '🚀 Hacerme Premium'}
+      </button>
     </div>
   );
 }
