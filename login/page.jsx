@@ -29,12 +29,19 @@ export default function LoginPage() {
         throw new Error(data.error || "Error al iniciar sesión");
       }
 
-      // Guardar datos y redirigir al dashboard
+      // --- CAMBIO CLAVE ---
+      // Guardar datos y usar el dashboardId que devuelve la API para redirigir
       localStorage.setItem("token", data.token);
       localStorage.setItem("publicId", data.publicId);
       
-      const creatorId = JSON.parse(atob(data.token.split('.')[1])).id;
-      router.push(`/dashboard/${creatorId}`);
+      // La API ahora devuelve el dashboardId directamente
+      if (data.dashboardId) {
+        router.push(`/dashboard/${data.dashboardId}`);
+      } else {
+        // Fallback por si la API no devuelve el dashboardId (aunque debería)
+        const creatorId = JSON.parse(atob(data.token.split('.')[1])).id;
+        router.push(`/dashboard/${creatorId}`);
+      }
 
     } catch (err) {
       setError(err.message);
