@@ -15,44 +15,51 @@ export default function MessageList({ dashboardId }) {
 
   const router = useRouter();
 
-  const getAuthHeaders = () => {
-    const token = localStorage.getItem("token");
-    return token ? { Authorization: `Bearer ${token}` } : {};
+  // 🔹 Modificamos getAuthHeaders para aceptar un token opcional
+  const getAuthHeaders = (token) => {
+    const t = token || localStorage.getItem("token");
+    return t ? { Authorization: `Bearer ${t}` } : {};
   };
 
-  // 🔹 obtener datos de vidas y chats
+  // 🔹 obtener datos de vidas y chats (con lógica corregida)
   const fetchData = async () => {
     if (!dashboardId) return;
+    
+    let currentToken = localStorage.getItem("token");
+
     try {
       // 1️⃣ traer info del creador (vidas)
-      let me = await fetch(`${API}/creators/me`, {
-        headers: getAuthHeaders(),
+      let meRes = await fetch(`${API}/creators/me`, {
+        headers: getAuthHeaders(currentToken),
       });
 
-      if (me.status === 401) {
+      if (meRes.status === 401) {
         const publicId = localStorage.getItem("publicId");
         const newToken = await refreshToken(publicId);
         if (newToken) {
-          me = await fetch(`${API}/creators/me`, {
-            headers: { Authorization: `Bearer ${newToken}` },
+          currentToken = newToken; // Actualizamos el token para esta ejecución
+          meRes = await fetch(`${API}/creators/me`, {
+            headers: getAuthHeaders(currentToken),
           });
         }
       }
 
-      if (me.ok) {
-        const meData = await me.json();
+      if (meRes.ok) {
+        const meData = await meRes.json();
         setLivesLeft(meData.lives);
         setMinutesNext(meData.minutesToNextLife);
       }
 
-      // 2️⃣ traer chats
-      let res = await fetch(`${API}/dashboard/${dashboardId}/chats`, {
-        headers: getAuthHeaders(),
+      // 2️⃣ traer chats (usando el token actualizado si fue necesario)
+      const chatsRes = await fetch(`${API}/dashboard/${dashboardId}/chats`, {
+        headers: getAuthHeaders(currentToken),
       });
 
-      if (!res.ok) throw new Error("Error cargando chats");
-      const data = await res.json();
+      if (!chatsRes.ok) throw new Error("Error cargando chats");
+      
+      const data = await chatsRes.json();
       setChats(data);
+
     } catch (err) {
       console.error("Error en fetchData:", err);
       setError("⚠️ Error cargando datos");
@@ -61,36 +68,34 @@ export default function MessageList({ dashboardId }) {
     }
   };
 
- // 1️⃣ cargar valores guardados antes que nada
-useEffect(() => {
-  const storedLives = localStorage.getItem("livesLeft");
-  const storedNext = localStorage.getItem("minutesNext");
-  if (storedLives) setLivesLeft(parseInt(storedLives, 10));
-  if (storedNext) setMinutesNext(parseInt(storedNext, 10));
-}, []);
+  // 1️⃣ cargar valores guardados antes que nada
+  useEffect(() => {
+    const storedLives = localStorage.getItem("livesLeft");
+    const storedNext = localStorage.getItem("minutesNext");
+    if (storedLives) setLivesLeft(parseInt(storedLives, 10));
+    if (storedNext) setMinutesNext(parseInt(storedNext, 10));
+  }, []);
 
-// 2️⃣ fetch al backend
-useEffect(() => {
-  fetchData();
-  const interval = setInterval(fetchData, 5000);
-  return () => clearInterval(interval);
-}, [dashboardId]);
-
+  // 2️⃣ fetch al backend
+  useEffect(() => {
+    fetchData();
+    const interval = setInterval(fetchData, 5000);
+    return () => clearInterval(interval);
+  }, [dashboardId]);
   
   useEffect(() => {
     if (livesLeft !== null) localStorage.setItem("livesLeft", livesLeft);
     if (minutesNext !== null) localStorage.setItem("minutesNext", minutesNext);
   }, [livesLeft, minutesNext]);
-  
 
-  // 🔹 cuando se hace click en "Responder"
   const handleOpenChat = async (chatId) => {
+    let currentToken = localStorage.getItem("token");
     try {
       let res = await fetch(
         `${API}/dashboard/${dashboardId}/chats/${chatId}/open`,
         {
           method: "POST",
-          headers: getAuthHeaders(),
+          headers: getAuthHeaders(currentToken),
         }
       );
 
@@ -98,11 +103,12 @@ useEffect(() => {
         const publicId = localStorage.getItem("publicId");
         const newToken = await refreshToken(publicId);
         if (newToken) {
+          currentToken = newToken;
           res = await fetch(
             `${API}/dashboard/${dashboardId}/chats/${chatId}/open`,
             {
               method: "POST",
-              headers: { Authorization: `Bearer ${newToken}` },
+              headers: getAuthHeaders(currentToken),
             }
           );
         }
@@ -117,11 +123,9 @@ useEffect(() => {
         return;
       }
 
-      // ✅ actualizar contador
       setLivesLeft(data.livesLeft);
       setMinutesNext(data.minutesToNextLife);
 
-      // ✅ redirigir al chat
       router.push(`/dashboard/${dashboardId}/chats/${chatId}`);
     } catch (err) {
       console.error("Error al abrir chat:", err);
@@ -135,7 +139,6 @@ useEffect(() => {
     <div style={{ maxWidth: 700, margin: "0 auto", padding: 20 }}>
       <h2>Chats recibidos</h2>
 
-      {/* ❤️ contador de vidas global */}
       {livesLeft !== null && (
         <div
           style={{
@@ -172,22 +175,18 @@ useEffect(() => {
                   boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
                 }}
               >
-                {/* Alias */}
                 <div style={{ fontWeight: 600, marginBottom: 6 }}>
                   {c.anonAlias || "Anónimo"}
                 </div>
 
-                {/* Preview mensaje */}
                 <div style={{ color: "#444", marginBottom: 6 }}>
                   {last ? last.content.slice(0, 80) : "Sin mensajes"}
                 </div>
 
-                {/* Fecha */}
                 <div style={{ fontSize: 12, color: "#888", marginBottom: 10 }}>
                   {last ? new Date(last.createdAt).toLocaleString() : ""}
                 </div>
 
-                {/* Botón responder */}
                 <button
                   onClick={() => handleOpenChat(c.id)}
                   disabled={livesLeft === 0}
