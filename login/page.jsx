@@ -29,18 +29,17 @@ export default function LoginPage() {
         throw new Error(data.error || "Error al iniciar sesión");
       }
 
-      // --- CAMBIO CLAVE ---
-      // Guardar datos y usar el dashboardId que devuelve la API para redirigir
+      // Guardar datos en el navegador
       localStorage.setItem("token", data.token);
       localStorage.setItem("publicId", data.publicId);
       
-      // La API ahora devuelve el dashboardId directamente
+      // ---- ✨ CORRECCIÓN CLAVE AQUÍ ✨ ----
+      // Usamos el 'dashboardId' que nos da la API para redirigir.
       if (data.dashboardId) {
         router.push(`/dashboard/${data.dashboardId}`);
       } else {
-        // Fallback por si la API no devuelve el dashboardId (aunque debería)
-        const creatorId = JSON.parse(atob(data.token.split('.')[1])).id;
-        router.push(`/dashboard/${creatorId}`);
+        // Si por alguna razón no viene, mostramos un error claro.
+        setError("No se pudo obtener el ID del dashboard para la redirección.");
       }
 
     } catch (err) {
