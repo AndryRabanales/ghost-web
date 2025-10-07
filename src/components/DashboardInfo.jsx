@@ -12,8 +12,8 @@ export default function DashboardInfo({ creator, dashboardId, onChange }) {
 
       <LivesStatus creator={creator} />
 
-      {/* Botón premium sincronizado */}
-      <PremiumButton onChange={onChange} />
+      {/* Botón premium sincronizado - AHORA CON LA PROP 'creator' */}
+      <PremiumButton creator={creator} onChange={onChange} />
     </div>
   );
 }
