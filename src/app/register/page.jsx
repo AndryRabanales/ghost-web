@@ -19,9 +19,17 @@ export default function RegisterPage() {
     setError(null);
 
     try {
+      // ---- ✨ LÓGICA DE ENVÍO DE TOKEN DE INVITADO ✨ ----
+      const guestToken = localStorage.getItem("token");
+      const headers = { "Content-Type": "application/json" };
+      if (guestToken) {
+        headers["Authorization"] = `Bearer ${guestToken}`;
+      }
+      // ----------------------------------------------------
+
       const res = await fetch(`${API}/auth/register`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: headers, // Usamos los headers que preparamos
         body: JSON.stringify({ name, email, password }),
       });
 
@@ -30,14 +38,16 @@ export default function RegisterPage() {
         throw new Error(data.error || "Error al crear la cuenta");
       }
 
-      // Guardar datos y redirigir al dashboard
+      // Limpiamos cualquier dato viejo y guardamos la nueva sesión permanente
+      localStorage.clear(); 
       localStorage.setItem("token", data.token);
       localStorage.setItem("publicId", data.publicId);
       
-      // La API ahora debería devolver el dashboardId (que es el creator.id)
-      // Si no, necesitamos ajustar la API o la redirección. Asumamos que sí lo tenemos.
-      const creatorId = JSON.parse(atob(data.token.split('.')[1])).id;
-      router.push(`/dashboard/${creatorId}`);
+      if (data.dashboardId) {
+        router.push(`/dashboard/${data.dashboardId}`);
+      } else {
+        setError("Error: No se recibió el ID del dashboard.");
+      }
 
     } catch (err) {
       setError(err.message);
