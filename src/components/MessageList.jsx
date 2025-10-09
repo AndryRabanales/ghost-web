@@ -15,20 +15,22 @@ export default function MessageList({ dashboardId }) {
 
   const router = useRouter();
 
-  // 🔹 Modificamos getAuthHeaders para aceptar un token opcional
   const getAuthHeaders = (token) => {
     const t = token || localStorage.getItem("token");
     return t ? { Authorization: `Bearer ${t}` } : {};
   };
+  
+  const handleAuthFailure = () => {
+    localStorage.clear();
+    router.push("/login?session=expired");
+  };
 
-  // 🔹 obtener datos de vidas y chats (con lógica corregida)
   const fetchData = async () => {
     if (!dashboardId) return;
     
     let currentToken = localStorage.getItem("token");
 
     try {
-      // 1️⃣ traer info del creador (vidas)
       let meRes = await fetch(`${API}/creators/me`, {
         headers: getAuthHeaders(currentToken),
       });
@@ -36,11 +38,15 @@ export default function MessageList({ dashboardId }) {
       if (meRes.status === 401) {
         const publicId = localStorage.getItem("publicId");
         const newToken = await refreshToken(publicId);
+        
         if (newToken) {
-          currentToken = newToken; // Actualizamos el token para esta ejecución
+          currentToken = newToken;
           meRes = await fetch(`${API}/creators/me`, {
             headers: getAuthHeaders(currentToken),
           });
+        } else {
+          handleAuthFailure();
+          return;
         }
       }
 
@@ -50,12 +56,18 @@ export default function MessageList({ dashboardId }) {
         setMinutesNext(meData.minutesToNextLife);
       }
 
-      // 2️⃣ traer chats (usando el token actualizado si fue necesario)
       const chatsRes = await fetch(`${API}/dashboard/${dashboardId}/chats`, {
         headers: getAuthHeaders(currentToken),
       });
 
-      if (!chatsRes.ok) throw new Error("Error cargando chats");
+      if (!chatsRes.ok) {
+        // Si la petición de chats falla por autenticación, también redirigir
+        if (chatsRes.status === 401 || chatsRes.status === 403) {
+            handleAuthFailure();
+            return;
+        }
+        throw new Error("Error cargando chats");
+      }
       
       const data = await chatsRes.json();
       setChats(data);
@@ -63,12 +75,13 @@ export default function MessageList({ dashboardId }) {
     } catch (err) {
       console.error("Error en fetchData:", err);
       setError("⚠️ Error cargando datos");
+      // Opcional: podrías redirigir aquí también si el error es crítico
+      // handleAuthFailure(); 
     } finally {
       setLoading(false);
     }
   };
 
-  // 1️⃣ cargar valores guardados antes que nada
   useEffect(() => {
     const storedLives = localStorage.getItem("livesLeft");
     const storedNext = localStorage.getItem("minutesNext");
@@ -76,7 +89,6 @@ export default function MessageList({ dashboardId }) {
     if (storedNext) setMinutesNext(parseInt(storedNext, 10));
   }, []);
 
-  // 2️⃣ fetch al backend
   useEffect(() => {
     fetchData();
     const interval = setInterval(fetchData, 5000);
@@ -89,6 +101,7 @@ export default function MessageList({ dashboardId }) {
   }, [livesLeft, minutesNext]);
 
   const handleOpenChat = async (chatId) => {
+    // ... (El resto del componente handleOpenChat y el render se mantiene igual)
     let currentToken = localStorage.getItem("token");
     try {
       let res = await fetch(
@@ -111,6 +124,9 @@ export default function MessageList({ dashboardId }) {
               headers: getAuthHeaders(currentToken),
             }
           );
+        } else {
+          handleAuthFailure();
+          return;
         }
       }
 
