@@ -1,3 +1,4 @@
+// src/components/AnonMessageForm.jsx
 "use client";
 import { useState, useEffect } from "react";
 
@@ -7,56 +8,30 @@ const API =
 export default function AnonMessageForm({ publicId, onSent }) {
   const [alias, setAlias] = useState("");
   const [content, setContent] = useState("");
-  const [status, setStatus] = useState(null);
+  const [status, setStatus] = useState("idle"); // idle | loading | success | error
   const [errorMsg, setErrorMsg] = useState("");
-  const [chatUrls, setChatUrls] = useState([]); // múltiples chats guardados
   const [charCount, setCharCount] = useState(0);
+  const [lastChat, setLastChat] = useState(null); // Para mostrar el último chat creado
 
-  // ======================
-  // Cargar chats guardados de localStorage
-  // ======================
-  useEffect(() => {
-    const urls = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key.startsWith(`chat_${publicId}_`)) {
-        const value = localStorage.getItem(key);
-        try {
-          const parsed = JSON.parse(value);
-          urls.push(parsed);
-        } catch {
-          // compatibilidad: si era string plano
-          urls.push({ url: value, alias: "Anon", createdAt: Date.now() });
-        }
-      }
-    }
-    setChatUrls(urls);
-  }, [publicId]);
-
-  // ======================
-  // Validaciones
-  // ======================
   const validateForm = () => {
     if (!content || content.trim().length < 3) {
-      setErrorMsg("El mensaje debe tener al menos 3 caracteres");
+      setErrorMsg("El mensaje debe tener al menos 3 caracteres.");
       return false;
     }
     if (alias.length > 20) {
-      setErrorMsg("El alias no puede superar 20 caracteres");
+      setErrorMsg("El alias no puede superar los 20 caracteres.");
       return false;
     }
     setErrorMsg("");
     return true;
   };
 
-  // ======================
-  // Submit
-  // ======================
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
 
     setStatus("loading");
+    setLastChat(null); // Limpiamos el chat anterior
 
     try {
       const res = await fetch(`${API}/public/${publicId}/messages`, {
@@ -66,34 +41,30 @@ export default function AnonMessageForm({ publicId, onSent }) {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Error enviando mensaje");
+      if (!res.ok) throw new Error(data.error || "Error enviando el mensaje");
 
-      // Reset
+      setStatus("success");
+      
+      if (data.chatUrl) {
+        const newChat = {
+          url: data.chatUrl,
+          alias: alias || "Anónimo",
+          createdAt: Date.now(),
+        };
+        // Guardamos en localStorage para persistencia
+        const key = `chat_${publicId}_${Date.now()}`;
+        localStorage.setItem(key, JSON.stringify(newChat));
+        setLastChat(newChat);
+      }
+      
+      // Limpiamos el formulario después de un éxito
       setContent("");
       setAlias("");
       setCharCount(0);
-      setStatus("success");
 
+      // Opcional: notificar al componente padre
       if (typeof onSent === "function") onSent();
 
-      // Guardar link único
-      if (data.chatId && data.anonToken) {
-        const baseUrl = window.location.origin;
-        const url = `${baseUrl}/chats/${data.anonToken}/${data.chatId}`;
-        const key = `chat_${publicId}_${alias || "anon"}`;
-
-        const chatData = {
-          url,
-          alias: alias || "Anon",
-          createdAt: Date.now(),
-        };
-
-        localStorage.setItem(key, JSON.stringify(chatData));
-
-        setChatUrls((prev) =>
-          prev.find((c) => c.url === url) ? prev : [...prev, chatData]
-        );
-      }
     } catch (err) {
       console.error(err);
       setStatus("error");
@@ -101,20 +72,8 @@ export default function AnonMessageForm({ publicId, onSent }) {
     }
   };
 
-  // ======================
-  // Copiar link
-  // ======================
-  const copyToClipboard = (url) => {
-    navigator.clipboard.writeText(url).then(() => {
-      alert("📋 Link copiado al portapapeles");
-    });
-  };
-
-  // ======================
-  // Render
-  // ======================
   return (
-    <form onSubmit={handleSubmit} style={{ display: "grid", gap: 14 }}>
+    <form onSubmit={handleSubmit} style={{ display: "grid", gap: 14, marginTop: '20px' }}>
       <input
         type="text"
         placeholder="Tu alias (opcional, máx 20)"
@@ -122,93 +81,68 @@ export default function AnonMessageForm({ publicId, onSent }) {
         maxLength={20}
         onChange={(e) => setAlias(e.target.value)}
         style={{
-          padding: 10,
-          border: "1px solid #ccc",
-          borderRadius: 6,
-          fontSize: 14,
+          padding: '12px',
+          border: '1px solid #ccc',
+          borderRadius: 8,
+          fontSize: 16,
         }}
       />
 
-      <textarea
-        placeholder="Escribe tu mensaje anónimo..."
-        value={content}
-        onChange={(e) => {
-          setContent(e.target.value);
-          setCharCount(e.target.value.length);
-        }}
-        required
-        minLength={3}
-        style={{
-          padding: 10,
-          border: "1px solid #ccc",
-          borderRadius: 6,
-          minHeight: 100,
-          fontSize: 14,
-        }}
-      />
-      <div style={{ fontSize: 12, color: "#666", textAlign: "right" }}>
-        {charCount}/500
+      <div style={{ position: 'relative' }}>
+        <textarea
+          placeholder="Escribe tu mensaje anónimo..."
+          value={content}
+          onChange={(e) => {
+            setContent(e.target.value);
+            setCharCount(e.target.value.length);
+          }}
+          required
+          minLength={3}
+          maxLength={500}
+          style={{
+            padding: '12px',
+            border: '1px solid #ccc',
+            borderRadius: 8,
+            minHeight: 120,
+            fontSize: 16,
+            width: '100%',
+            boxSizing: 'border-box',
+            resize: 'vertical',
+          }}
+        />
+        <div style={{ position: 'absolute', bottom: 10, right: 10, fontSize: 12, color: charCount > 500 ? 'red' : '#666' }}>
+          {charCount}/500
+        </div>
       </div>
-
-      {errorMsg && <p style={{ color: "red" }}>⚠️ {errorMsg}</p>}
+      
+      {errorMsg && status === 'error' && <p style={{ color: "red", margin: 0 }}>⚠️ {errorMsg}</p>}
 
       <button
         type="submit"
         disabled={status === "loading"}
         style={{
-          padding: "10px 20px",
-          backgroundColor: status === "loading" ? "#999" : "#4CAF50",
+          padding: "12px 24px",
+          backgroundColor: status === "loading" ? "#ccc" : "#0070f3",
           color: "#fff",
           border: "none",
-          borderRadius: 6,
+          borderRadius: 8,
           cursor: status === "loading" ? "not-allowed" : "pointer",
           fontWeight: "bold",
+          fontSize: '16px',
+          transition: 'background-color 0.2s ease',
         }}
       >
-        {status === "loading" ? "Enviando..." : "Enviar mensaje"}
+        {status === "loading" ? "Enviando..." : "Enviar Mensaje"}
       </button>
 
-      {/* feedback */}
       {status === "success" && (
-        <p style={{ color: "green" }}>✅ Mensaje enviado con éxito</p>
-      )}
-      {status === "error" && (
-        <p style={{ color: "red" }}>❌ Error: {errorMsg || "intenta de nuevo"}</p>
-      )}
-
-      {/* chats guardados */}
-      {chatUrls.length > 0 && (
-        <div style={{ marginTop: 20 }}>
-          <p style={{ fontWeight: "bold" }}>📌 Tus chats guardados:</p>
-          <ul style={{ paddingLeft: 20, listStyle: "square" }}>
-            {chatUrls.map((chat, i) => (
-              <li key={i} style={{ marginBottom: 6 }}>
-                <a
-                  href={chat.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ color: "#0070f3", textDecoration: "underline" }}
-                >
-                  {chat.alias} – {new Date(chat.createdAt).toLocaleString()}
-                </a>{" "}
-                <button
-                  type="button"
-                  onClick={() => copyToClipboard(chat.url)}
-                  style={{
-                    marginLeft: 8,
-                    padding: "2px 6px",
-                    fontSize: 12,
-                    background: "#eee",
-                    border: "1px solid #ccc",
-                    borderRadius: 4,
-                    cursor: "pointer",
-                  }}
-                >
-                  Copiar
-                </button>
-              </li>
-            ))}
-          </ul>
+        <div style={{ padding: '15px', background: 'rgba(47, 187, 70, 0.1)', border: '1px solid #2FBB46', borderRadius: 8, textAlign: 'center' }}>
+          <p style={{ margin: 0, color: "#2FBB46", fontWeight: 'bold' }}>✅ ¡Mensaje enviado con éxito!</p>
+          {lastChat && (
+            <p style={{ marginTop: '10px', fontSize: '14px' }}>
+              Guarda el link de tu chat para ver las respuestas: <a href={lastChat.url} target="_blank" rel="noopener noreferrer" style={{ color: '#0070f3' }}>Ver mi chat</a>
+            </p>
+          )}
         </div>
       )}
     </form>

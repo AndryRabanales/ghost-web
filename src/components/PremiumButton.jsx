@@ -8,18 +8,18 @@ const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.rail
 
 export default function PremiumButton({ creator }) {
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null); // Nuevo estado para errores
+  const [error, setError] = useState(null);
   const router = useRouter();
 
-  const handleSubscribe = async () => {
+  const handlePayment = async () => {
     if (!creator.email) {
-      alert("Para suscribirte a Premium, primero necesitas crear una cuenta para guardar tu compra.");
+      alert("Para ser Premium, primero necesitas registrar una cuenta con tu email.");
       router.push('/register');
       return;
     }
 
     setLoading(true);
-    setError(null); // Limpiamos errores previos
+    setError(null);
 
     try {
       let res = await fetch(`${API}/premium/create-subscription`, {
@@ -41,13 +41,11 @@ export default function PremiumButton({ creator }) {
       if (!res.ok) throw new Error(data.details || "No se pudo generar el link de pago");
       
       if (data.init_point) {
-        // Redirección suave
         window.location.href = data.init_point;
       }
 
     } catch (err) {
-      console.error("❌ Error al suscribirse:", err);
-      // Mostramos un error más amigable
+      console.error("❌ Error al crear pago:", err);
       setError("Hubo un error al conectar con Mercado Pago. Por favor, intenta de nuevo.");
       setLoading(false);
     }
@@ -56,35 +54,34 @@ export default function PremiumButton({ creator }) {
   if (creator?.isPremium) {
     return (
       <div style={{ color: "gold", marginBottom: 8, padding: '10px', background: 'rgba(255, 215, 0, 0.1)', border: '1px solid gold', borderRadius: '8px', textAlign: 'center' }}>
-        ⭐ **¡Ya eres Premium!** Disfruta de respuestas ilimitadas.
+        ⭐ **¡Ya eres Premium!** Disfruta de beneficios ilimitados.
       </div>
     );
   }
 
   return (
     <div style={{ marginBottom: 16, border: '1px solid #0070f3', padding: '20px', borderRadius: '8px', textAlign: 'center', background: '#fafafa' }}>
-      <h3 style={{marginTop: 0, fontSize: '1.2em'}}>¿Te quedas sin vidas?</h3>
-      <p style={{color: '#666'}}>¡Conviértete en Premium para tener respuestas ilimitadas y apoyar el proyecto!</p>
+      <h3 style={{marginTop: 0, fontSize: '1.2em'}}>¿Quieres ser Premium?</h3>
+      <p style={{color: '#666'}}>Realiza un pago único para obtener vidas ilimitadas y apoyar el proyecto.</p>
       
       <button
-        onClick={handleSubscribe}
+        onClick={handlePayment}
         disabled={loading}
         style={{
           display: 'block',
           padding: "12px 24px",
           borderRadius: 8,
           border: "none",
-          background: loading ? "#ccc" : "#0070f3", // Color gris al cargar
+          background: loading ? "#ccc" : "#0070f3",
           color: "#fff",
-          textDecoration: 'none',
           fontWeight: 'bold',
           width: '100%',
           fontSize: '16px',
-          cursor: loading ? 'wait' : 'pointer', // Cursor de espera
-          transition: 'background-color 0.2s ease', // Transición suave
+          cursor: loading ? 'wait' : 'pointer',
+          transition: 'background-color 0.2s ease',
         }}
       >
-        {loading ? 'Generando link de pago...' : '🚀 Hacerme Premium'}
+        {loading ? 'Redirigiendo a Mercado Pago...' : '🚀 Hacerme Premium (Pago Único)'}
       </button>
       
       {error && <p style={{ color: "red", marginTop: '10px', fontSize: '14px' }}>{error}</p>}
