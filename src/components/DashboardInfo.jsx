@@ -79,9 +79,6 @@ export default function DashboardInfo({ creator, onChange }) {
     <div className="dashboard-info-container">
       <div className="dashboard-main-content">
         <div>
-          <h2 className="dashboard-title">
-            Centro de Mando
-          </h2>
           <p className="dashboard-subtitle">
             Bienvenido a tu espacio, <b>{creator.name || 'Creador'}</b>. Aquí gestionas tus conversaciones.
           </p>
