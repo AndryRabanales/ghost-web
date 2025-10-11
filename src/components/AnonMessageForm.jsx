@@ -8,7 +8,7 @@ const API =
 export default function AnonMessageForm({ publicId, onSent }) {
   const [alias, setAlias] = useState("");
   const [content, setContent] = useState("");
-  const [status, setStatus] = useState("idle"); // idle | loading | success | error
+  const [status, setStatus] = useState("idle");
   const [errorMsg, setErrorMsg] = useState("");
   const [charCount, setCharCount] = useState(0);
   const [lastChat, setLastChat] = useState(null);
@@ -39,7 +39,6 @@ export default function AnonMessageForm({ publicId, onSent }) {
       
       if (data.chatUrl) {
         const newChat = { url: data.chatUrl };
-        // Guardamos en localStorage para que el usuario no pierda sus chats
         localStorage.setItem(`chat_${publicId}_${data.chatId}`, JSON.stringify(newChat));
         setLastChat(newChat);
       }
