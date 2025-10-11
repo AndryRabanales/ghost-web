@@ -27,11 +27,34 @@ body {
 
 /*
 ==============================================
-✨ CÓDIGO PARA RESPONSIVIDAD Y COMPACIDAD ✨
+✨ CÓDIGO DEFINITIVO PARA DASHBOARD ELEGANTE ✨
 ==============================================
 */
 
-/* --- Contenedor principal de la página del dashboard --- */
+/* --- Keyframes para Animaciones --- */
+@keyframes fadeInUp { 
+  from { opacity: 0; transform: translateY(20px); } 
+  to { opacity: 1; transform: translateY(0); } 
+}
+
+@keyframes background-pan {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes heart-pulse {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 3px #FE3C72); }
+  50% { transform: scale(1.15); filter: drop-shadow(0 0 10px #FE3C72); }
+}
+
+@keyframes star-glow {
+  0% { text-shadow: 0 0 10px rgba(255,215,0,0.4); }
+  50% { text-shadow: 0 0 25px rgba(255,215,0,0.8); }
+  100% { text-shadow: 0 0 10px rgba(255,215,0,0.4); }
+}
+
+/* --- Contenedor Principal de la Página --- */
 .dashboard-page-container {
   min-height: 100vh;
   max-width: 1100px;
@@ -39,67 +62,161 @@ body {
   padding: 40px 20px;
 }
 
-/* --- Estilos para el "Centro de Mando" --- */
+/* --- Contenedor del "Centro de Mando" --- */
 .dashboard-info-container {
-  --glow-color: rgba(254, 60, 114, 0.3);
-  background: linear-gradient(135deg, #1E1E1E, #2C2C2E);
-  border-radius: 28px;
-  margin-bottom: 5px; /* Margen inferior reducido */
+  background: #1A1A1A;
+  border-radius: 24px;
+  padding: 30px;
+  margin-bottom: 30px;
   border: 1px solid #38383a;
-  box-shadow: 0 0 20px var(--glow-color), 0 15px 40px rgba(0,0,0,0.5);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
-  align-items: stretch;
-  position: relative;
-  overflow: hidden;
+  gap: 30px;
+  align-items: flex-start; /* Alinea los items al inicio */
 }
 
+/* --- CONTENIDO PRINCIPAL (IZQUIERDA) --- */
 .dashboard-main-content {
-  flex: 3 1 100px;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-}
-
-.dashboard-side-content {
-  flex: 2 1 280px;
-  background: rgba(26, 26, 26, 0.8);
-  padding: 10px; /* Padding reducido */
-  border-radius: 20px;
-  border: 1px solid #38383a;
-  backdrop-filter: blur(5px);
-  -webkit-backdrop-filter: blur(5px);
-  display: flex;
-  flex-direction: column;
-  justify-content: center; /* Centrar verticalmente para mejor apariencia */
-  gap: 20px; /* Espacio reducido entre Vidas y Premium */
-}
-
-.dashboard-title {
-  margin-top: 0;
-  margin-bottom: 5px; /* Margen casi nulo */
-  font-size: 32px;
-  color: #fff;
-  font-weight: 800;
-  letter-spacing: -1px;
-  background: linear-gradient(90deg, #FF655B, #FE3C72);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  gap: 3px; /* Espacio uniforme entre bienvenida y links */
 }
 
 .dashboard-subtitle {
-  margin: 0 0 10px; /* Margen inferior reducido */
-  font-size: 16px;
-  color: rgba(255,255,255,0.6);
+  margin: 0;
+  font-size: 18px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.8);
 }
 
-.hearts-container {
-  transition: font-size 0.3s ease;
+.animated-gradient-text b {
+  background: linear-gradient(90deg, #FF655B, #FE3C72, #FF655B);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: background-pan 4s linear infinite;
 }
+
+/* --- SECCIÓN DE LINKS CON ESTILO Y ANIMACIÓN --- */
+.links-section {
+  display: grid;
+  gap: 25px;
+}
+
+.link-input-container {
+  position: relative;
+  background: rgba(34, 34, 37, 0.6); /* Fondo Glassmorphism */
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 16px;
+  padding: 10px;
+  border: 1px solid #38383a;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Borde animado (la magia está aquí) */
+.link-input-container::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;  
+  background: linear-gradient(120deg, transparent, #FE3C72, transparent);
+  -webkit-mask: 
+     linear-gradient(#fff 0 0) content-box, 
+     linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  animation: background-pan 3s linear infinite;
+}
+
+.link-input-container:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+}
+
+.link-input-container:hover::before {
+  opacity: 1;
+}
+
+.link-input-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin-bottom: 12px;
+  font-size: 16px;
+  letter-spacing: 0.5px;
+}
+
+.link-input-icon {
+  font-size: 20px;
+  filter: drop-shadow(0 0 5px rgba(254, 60, 114, 0.7));
+}
+
+.input-wrapper { position: relative; }
+.link-input-field {
+  width: 100%;
+  padding: 5px 18px;
+  background: #121212;
+  border: 1px solid #48484A;
+  border-radius: 10px;
+  color: rgba(255,255,255,0.7);
+  font-size: 15px;
+  font-family: var(--font-mono);
+  outline: none;
+  box-sizing: border-box;
+  transition: all 0.3s ease;
+}
+
+.copy-button {
+  position: absolute; right: 6px; top: 50%;
+  transform: translateY(-50%);
+  padding: 9px 12px; cursor: pointer;
+  background: #38383a; border: none;
+  border-radius: 8px; color: #fff;
+  display: flex; align-items: center; gap: 6px;
+  transition: background-color 0.3s ease;
+}
+.copy-button:hover { background-color: #48484A; }
+
+/* --- CONTENIDO LATERAL (DERECHA) --- */
+.dashboard-side-content {
+  flex: 2 1 80px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ... (Estilos de Vidas, Premium y Mensajes se mantienen igual) ... */
+.lives-status-container { background: #222225; border: 1px solid #38383a; border-radius: 16px; padding: 15px; text-align: center; }
+.lives-status-title { margin: 0 0 10px; color: rgba(255,255,255,0.5); text-transform: uppercase; font-size: 11px; font-weight: 600; letter-spacing: 1px; }
+.hearts-container { display: flex; justify-content: center; gap: 8px; margin-bottom: 10px; }
+.heart-icon { font-size: 20px; transition: opacity 0.3s ease, transform 0.3s ease; }
+.heart-icon.full { animation: heart-pulse 2.5s ease-in-out infinite; opacity: 1; }
+.heart-icon.empty { opacity: 0.2; }
+.next-life-text { font-size: 13px; color: rgba(255,255,255,0.7); }
+.next-life-text strong { color: #fff; background: #38383a; padding: 2px 6px; border-radius: 5px; margin-left: 4px; font-size: 12px; }
+.star-icon { animation: star-glow 3s ease-in-out infinite; font-size: 28px; color: gold; }
+.premium-status-display { animation: fadeInUp 0.5s ease; }
+.premium-status-text { font-weight: bold; font-size: 16px; }
+.premium-status-subtext { font-size: 12px; color: rgba(255,215,0,0.7); }
+.chat-item { display: flex; align-items: center; background: #1E1E1E; border: 1px solid #38383a; border-radius: 12px; margin-bottom: 8px; cursor: pointer; transition: background 0.2s ease, transform 0.2s ease; padding: 12px 18px; }
+.chat-item:hover { background: #2C2C2E; transform: translateY(-2px); }
+.chat-item.disabled { cursor: not-allowed; opacity: 0.6; }
+.chat-item-main { flex-grow: 1; margin-right: 15px; overflow: hidden; }
+.chat-item-alias { font-weight: 600; font-size: 16px; color: #fff; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; margin-bottom: 3px; }
+.chat-item-content { color: rgba(255,255,255,0.6); font-size: 14px; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; margin-bottom: 4px; }
+.chat-item-date { font-size: 12px; color: rgba(255,255,255,0.4); }
+.chat-item-button { padding: 8px 16px; background: linear-gradient(90deg, #FF655B, #FE3C72); color: #fff; border-radius: 8px; font-size: 13px; font-weight: bold; border: none; cursor: pointer; white-space: nowrap; transition: transform 0.2s ease; }
+.chat-item-button:hover { transform: scale(1.05); }
+.chat-item-button:disabled { background: #555; cursor: not-allowed; }
 
 /* ================================================= */
-/* ✨ MEDIA QUERY PARA MÓVILES (LA SOLUCIÓN CLAVE) ✨ */
+/* ✨ CORRECCIÓN RESPONSIVA PARA CELULARES ✨         */
 /* ================================================= */
 @media (max-width: 768px) {
   
@@ -109,99 +226,12 @@ body {
 
   .dashboard-info-container {
     flex-direction: column;
-    padding: 15px;
-    gap: 5px;
-  }
-  
-  .dashboard-title {
-    font-size: 28px;
+    padding: 20px;
+    gap: 25px;
   }
 
-  .dashboard-subtitle {
-    font-size: 15px;
-    margin-bottom: 5px;
+  .dashboard-side-content {
+    flex-direction: column;
+    gap: 15px;
   }
-
-  .hearts-container {
-    font-size: 24px !important;
-  }
-}
-
-/*
-==============================================
-✨ CÓDIGO PARA MENSAJES COMPACTOS ✨
-==============================================
-*/
-
-.chat-item {
-  display: flex;
-  align-items: center;
-  background: #1E1E1E;
-  border: 1px solid #38383a;
-  border-radius: 12px; /* Bordes menos redondeados */
-  margin-bottom: 5px; /* ¡ESPACIO CASI NULO! */
-  cursor: pointer;
-  transition: background 0.2s ease;
-  padding: 10px 15px; /* Padding reducido para hacerlo más delgado */
-}
-
-.chat-item:hover {
-  background: #2C2C2E;
-}
-
-.chat-item.disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.chat-item-main {
-  flex-grow: 1;
-  margin-right: 5px;
-  overflow: hidden;
-}
-
-.chat-item-alias {
-  font-weight: 600; /* Letra menos gruesa */
-  font-size: 15px; /* Letra más pequeña */
-  color: #fff;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  overflow: hidden;
-  margin-bottom: 2px; /* Espacio reducido */
-}
-
-.chat-item-content {
-  color: rgba(255,255,255,0.6);
-  font-size: 13px; /* Letra más pequeña */
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  overflow: hidden;
-  margin-bottom: 3px; /* Espacio reducido */
-}
-
-.chat-item-date {
-  font-size: 11px; /* Letra más pequeña */
-  color: rgba(255,255,255,0.4);
-}
-
-.chat-item-button {
-  padding: 8px 14px; /* Botón más pequeño */
-  background: linear-gradient(90deg, #FF655B, #FE3C72);
-  color: #fff;
-  border-radius: 8px; /* Bordes menos redondeados */
-  font-size: 13px; /* Letra más pequeña */
-  font-weight: bold;
-  border: none;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: transform 0.2s ease;
-}
-
-.chat-item-button:hover {
-  transform: scale(1.05);
-}
-
-.chat-item-button:disabled {
-  background: #555;
-  cursor: not-allowed;
 }

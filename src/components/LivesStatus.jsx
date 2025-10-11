@@ -5,61 +5,40 @@ import React from "react";
 export default function LivesStatus({ creator }) {
   if (!creator) return null;
 
-  const styles = `
-    @keyframes heart-pulse {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.1); }
-      100% { transform: scale(1); }
-    }
-    .heart-icon {
-      animation: heart-pulse 2.5s ease-in-out infinite;
-    }
-    @keyframes star-glow {
-      0% { text-shadow: 0 0 10px rgba(255,215,0,0.4); }
-      50% { text-shadow: 0 0 25px rgba(255,215,0,0.8); }
-      100% { text-shadow: 0 0 10px rgba(255,215,0,0.4); }
-    }
-    .star-icon {
-      animation: star-glow 3s ease-in-out infinite;
-    }
-  `;
+  // Ya no necesitamos el bloque <style> aquí, lo moveremos a globals.css
 
   return (
-    <>
-      <style>{styles}</style>
-      <div style={{ marginBottom: 25, textAlign: 'center' }}>
-        <h4 style={{ margin: '0 0 15px', color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', fontSize: '12px', letterSpacing: '1px' }}>
-          Tu Estado
-        </h4>
-        {creator.isPremium ? (
-          <div style={{ animation: 'fadeIn 0.5s ease' }}>
-            <div className="star-icon" style={{ fontSize: '36px', marginBottom: '8px', color: 'gold' }}>⭐</div>
-            <div style={{fontWeight: 'bold', fontSize: '18px'}}>Cuenta Premium</div>
-            <div style={{ fontSize: '12px', color: 'rgba(255,215,0,0.7)'}}>Vidas Ilimitadas</div>
+    // Aplicamos clases CSS para un control total desde el archivo global
+    <div className="lives-status-container">
+      <h4 className="lives-status-title">
+        Tu Estado
+      </h4>
+      {creator.isPremium ? (
+        <div className="premium-status-display">
+          <div className="star-icon">⭐</div>
+          <div className="premium-status-text">Cuenta Premium</div>
+          <div className="premium-status-subtext">Vidas Ilimitadas</div>
+        </div>
+      ) : (
+        <div className="non-premium-status">
+          <div className="hearts-container">
+            {Array.from({ length: creator.maxLives }).map((_, i) => (
+              <span 
+                key={i} 
+                className={i < creator.lives ? 'heart-icon full' : 'heart-icon empty'}
+              >
+                ❤️
+              </span>
+            ))}
           </div>
-        ) : (
-          <div style={{ animation: 'fadeIn 0.5s ease' }}>
-            <div className="hearts-container" style={{ fontSize: '28px', letterSpacing: '4px', marginBottom: '12px' }}>
-              {Array.from({ length: creator.maxLives }).map((_, i) => (
-                <span key={i} className={i < creator.lives ? 'heart-icon' : ''} style={{ 
-                  display: 'inline-block',
-                  animationDelay: `${i * 0.1}s`,
-                  opacity: i < creator.lives ? 1 : 0.2,
-                  transition: 'opacity 0.5s ease'
-                }}>
-                  ❤️
-                </span>
-              ))}
-            </div>
-            <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.9)' }}>
-              Próxima vida en: 
-              <strong style={{ color: '#fff', letterSpacing: '0.5px', marginLeft: '5px', background: '#38383a', padding: '3px 8px', borderRadius: '6px' }}>
-                {creator.minutesToNextLife > 0 ? `${creator.minutesToNextLife} min` : '¡Ahora!'}
-              </strong>
-            </div>
+          <div className="next-life-text">
+            Próxima vida en: 
+            <strong>
+              {creator.minutesToNextLife > 0 ? `${creator.minutesToNextLife} min` : '¡Ahora!'}
+            </strong>
           </div>
-        )}
-      </div>
-    </>
+        </div>
+      )}
+    </div>
   );
 }
