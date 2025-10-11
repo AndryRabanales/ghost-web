@@ -75,69 +75,14 @@ export default function DashboardInfo({ creator, onChange }) {
 
   if (!creator) return null;
 
-  const containerStyle = {
-      '--glow-color': 'rgba(254, 60, 114, 0.3)',
-      background: 'linear-gradient(135deg, #1E1E1E, #2C2C2E)',
-      borderRadius: '28px', 
-      padding: '35px', 
-      marginBottom: '40px', 
-      border: '1px solid #38383a',
-      boxShadow: '0 0 20px var(--glow-color), 0 15px 40px rgba(0,0,0,0.5)',
-      display: 'flex',
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: '30px',
-      alignItems: 'stretch',
-      position: 'relative',
-      overflow: 'hidden'
-  };
-
-  const mainContentStyle = {
-      flex: '3 1 400px',
-      display: 'flex',
-      flexDirection: 'column',
-      justifyContent: 'space-between',
-  };
-
-  const sideContentStyle = {
-      flex: '2 1 280px',
-      background: 'rgba(26, 26, 26, 0.8)', 
-      padding: '25px', 
-      borderRadius: '20px', 
-      border: '1px solid #38383a',
-      backdropFilter: 'blur(5px)',
-      WebkitBackdropFilter: 'blur(5px)',
-      display: 'flex',
-      flexDirection: 'column',
-      justifyContent: 'space-between',
-  };
-  
-  const welcomeTitleStyle = {
-      marginTop: 0, 
-      marginBottom: '10px', 
-      fontSize: '32px', 
-      color: '#fff', 
-      fontWeight: '800',
-      letterSpacing: '-1px',
-      background: 'linear-gradient(90deg, #FF655B, #FE3C72)',
-      WebkitBackgroundClip: 'text',
-      WebkitTextFillColor: 'transparent',
-  };
-
-  const welcomeSubtitleStyle = {
-    margin: '0 0 35px',
-    fontSize: '16px',
-    color: 'rgba(255,255,255,0.6)'
-  };
-
   return (
-    <div style={containerStyle}>
-      <div style={mainContentStyle}>
+    <div className="dashboard-info-container">
+      <div className="dashboard-main-content">
         <div>
-          <h2 style={welcomeTitleStyle}>
+          <h2 className="dashboard-title">
             Centro de Mando
           </h2>
-          <p style={welcomeSubtitleStyle}>
+          <p className="dashboard-subtitle">
             Bienvenido a tu espacio, <b>{creator.name || 'Creador'}</b>. Aquí gestionas tus conversaciones.
           </p>
         </div>
@@ -162,7 +107,7 @@ export default function DashboardInfo({ creator, onChange }) {
         </div>
       </div>
       
-      <div style={sideContentStyle}>
+      <div className="dashboard-side-content">
         <LivesStatus creator={creator} />
         <PremiumButton creator={creator} onChange={onChange} />
       </div>

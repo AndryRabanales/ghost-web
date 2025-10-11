@@ -60,7 +60,7 @@ export default function PremiumButton({ creator }) {
   }
 
   return (
-    <div style={{ marginBottom: 16, border: '1px solid #0070f3', padding: '20px', borderRadius: '8px', textAlign: 'center', background: '#fafafa' }}>
+    <div style={{ marginBottom: 6, border: '1px solid #0070f3', padding: '10px', borderRadius: '8px', textAlign: 'center', background: '#fafafa' }}>
       <h3 style={{marginTop: 0, fontSize: '1.2em'}}>¿Quieres ser Premium?</h3>
       <p style={{color: '#666'}}>Realiza un pago único para obtener vidas ilimitadas y apoyar el proyecto.</p>
       

@@ -39,7 +39,7 @@ export default function LivesStatus({ creator }) {
           </div>
         ) : (
           <div style={{ animation: 'fadeIn 0.5s ease' }}>
-            <div style={{ fontSize: '28px', letterSpacing: '4px', marginBottom: '12px' }}>
+            <div className="hearts-container" style={{ fontSize: '28px', letterSpacing: '4px', marginBottom: '12px' }}>
               {Array.from({ length: creator.maxLives }).map((_, i) => (
                 <span key={i} className={i < creator.lives ? 'heart-icon' : ''} style={{ 
                   display: 'inline-block',

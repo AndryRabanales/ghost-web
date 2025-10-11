@@ -94,21 +94,19 @@ export default function DashboardPage() {
     return (
         <>
             <style>{pageStyles}</style>
-            <div style={{ minHeight: '100vh' }}>
-                <div style={{ maxWidth: 1100, margin: "0 auto", padding: '40px 20px' }}>
-                    {loading && <FullPageLoader />}
-                    
-                    {!loading && creator && (
-                        <div>
-                            <div className="fade-in-up" style={{ animationDelay: '0.1s' }}>
-                                <DashboardInfo creator={creator} onChange={setCreator} />
-                            </div>
-                            <div className="fade-in-up" style={{ animationDelay: '0.3s' }}>
-                                <MessageList dashboardId={id} />
-                            </div>
+            <div className="dashboard-page-container">
+                {loading && <FullPageLoader />}
+                
+                {!loading && creator && (
+                    <div>
+                        <div className="fade-in-up" style={{ animationDelay: '0.1s' }}>
+                            <DashboardInfo creator={creator} onChange={setCreator} />
                         </div>
-                    )}
-                </div>
+                        <div className="fade-in-up" style={{ animationDelay: '0.3s' }}>
+                            <MessageList dashboardId={id} />
+                        </div>
+                    </div>
+                )}
             </div>
         </>
     );

@@ -24,3 +24,184 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/*
+==============================================
+✨ CÓDIGO PARA RESPONSIVIDAD Y COMPACIDAD ✨
+==============================================
+*/
+
+/* --- Contenedor principal de la página del dashboard --- */
+.dashboard-page-container {
+  min-height: 100vh;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+/* --- Estilos para el "Centro de Mando" --- */
+.dashboard-info-container {
+  --glow-color: rgba(254, 60, 114, 0.3);
+  background: linear-gradient(135deg, #1E1E1E, #2C2C2E);
+  border-radius: 28px;
+  margin-bottom: 5px; /* Margen inferior reducido */
+  border: 1px solid #38383a;
+  box-shadow: 0 0 20px var(--glow-color), 0 15px 40px rgba(0,0,0,0.5);
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: stretch;
+  position: relative;
+  overflow: hidden;
+}
+
+.dashboard-main-content {
+  flex: 3 1 100px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.dashboard-side-content {
+  flex: 2 1 280px;
+  background: rgba(26, 26, 26, 0.8);
+  padding: 10px; /* Padding reducido */
+  border-radius: 20px;
+  border: 1px solid #38383a;
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* Centrar verticalmente para mejor apariencia */
+  gap: 20px; /* Espacio reducido entre Vidas y Premium */
+}
+
+.dashboard-title {
+  margin-top: 0;
+  margin-bottom: 5px; /* Margen casi nulo */
+  font-size: 32px;
+  color: #fff;
+  font-weight: 800;
+  letter-spacing: -1px;
+  background: linear-gradient(90deg, #FF655B, #FE3C72);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.dashboard-subtitle {
+  margin: 0 0 10px; /* Margen inferior reducido */
+  font-size: 16px;
+  color: rgba(255,255,255,0.6);
+}
+
+.hearts-container {
+  transition: font-size 0.3s ease;
+}
+
+/* ================================================= */
+/* ✨ MEDIA QUERY PARA MÓVILES (LA SOLUCIÓN CLAVE) ✨ */
+/* ================================================= */
+@media (max-width: 768px) {
+  
+  .dashboard-page-container {
+    padding: 20px 15px;
+  }
+
+  .dashboard-info-container {
+    flex-direction: column;
+    padding: 15px;
+    gap: 5px;
+  }
+  
+  .dashboard-title {
+    font-size: 28px;
+  }
+
+  .dashboard-subtitle {
+    font-size: 15px;
+    margin-bottom: 5px;
+  }
+
+  .hearts-container {
+    font-size: 24px !important;
+  }
+}
+
+/*
+==============================================
+✨ CÓDIGO PARA MENSAJES COMPACTOS ✨
+==============================================
+*/
+
+.chat-item {
+  display: flex;
+  align-items: center;
+  background: #1E1E1E;
+  border: 1px solid #38383a;
+  border-radius: 12px; /* Bordes menos redondeados */
+  margin-bottom: 5px; /* ¡ESPACIO CASI NULO! */
+  cursor: pointer;
+  transition: background 0.2s ease;
+  padding: 10px 15px; /* Padding reducido para hacerlo más delgado */
+}
+
+.chat-item:hover {
+  background: #2C2C2E;
+}
+
+.chat-item.disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.chat-item-main {
+  flex-grow: 1;
+  margin-right: 5px;
+  overflow: hidden;
+}
+
+.chat-item-alias {
+  font-weight: 600; /* Letra menos gruesa */
+  font-size: 15px; /* Letra más pequeña */
+  color: #fff;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  margin-bottom: 2px; /* Espacio reducido */
+}
+
+.chat-item-content {
+  color: rgba(255,255,255,0.6);
+  font-size: 13px; /* Letra más pequeña */
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  margin-bottom: 3px; /* Espacio reducido */
+}
+
+.chat-item-date {
+  font-size: 11px; /* Letra más pequeña */
+  color: rgba(255,255,255,0.4);
+}
+
+.chat-item-button {
+  padding: 8px 14px; /* Botón más pequeño */
+  background: linear-gradient(90deg, #FF655B, #FE3C72);
+  color: #fff;
+  border-radius: 8px; /* Bordes menos redondeados */
+  font-size: 13px; /* Letra más pequeña */
+  font-weight: bold;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform 0.2s ease;
+}
+
+.chat-item-button:hover {
+  transform: scale(1.05);
+}
+
+.chat-item-button:disabled {
+  background: #555;
+  cursor: not-allowed;
+}

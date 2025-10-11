@@ -6,50 +6,29 @@ import { useRouter } from "next/navigation";
 
 const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
 
+// --- SUBCOMPONENTE ChatItem MODIFICADO ---
+// Se han reemplazado los estilos en línea por `className` para un mejor control en CSS.
 const ChatItem = ({ chat, onOpenChat, disabled, minutesNext }) => {
-  const [isHovered, setIsHovered] = useState(false);
   const last = chat.lastMessage;
-
-  const cardStyle = {
-    display: 'flex', alignItems: 'center', padding: '20px 25px',
-    background: isHovered ? '#2C2C2E' : '#1E1E1E',
-    border: '1px solid #38383a', borderRadius: '18px',
-    marginBottom: '15px', cursor: disabled ? 'not-allowed' : 'pointer',
-    transition: 'transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), background 0.25s ease, box-shadow 0.25s ease',
-    transform: isHovered ? 'scale(1.03) translateZ(0)' : 'scale(1) translateZ(0)',
-    boxShadow: isHovered ? '0 10px 30px rgba(0,0,0,0.3)' : '0 1px 3px rgba(0,0,0,0.2)',
-  };
-
-  const buttonStyle = {
-    padding: "10px 18px",
-    background: disabled ? "#555" : 'linear-gradient(90deg, #FF655B, #FE3C72)',
-    color: "#fff", borderRadius: '12px', fontSize: 14, fontWeight: 'bold',
-    border: "none", cursor: disabled ? "not-allowed" : "pointer",
-    whiteSpace: 'nowrap', transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-    transform: isHovered ? 'scale(1.1)' : 'scale(1)',
-    boxShadow: isHovered ? `0 6px 18px rgba(254, 60, 114, 0.4)` : 'none'
-  };
 
   return (
     <div 
-      style={cardStyle}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      className={`chat-item ${disabled ? 'disabled' : ''}`}
       onClick={() => !disabled && onOpenChat(chat.id)}
     >
-      <div style={{ flexGrow: 1, marginRight: '20px', overflow: 'hidden' }}>
-        <div style={{ fontWeight: 700, fontSize: '18px', marginBottom: 6, color: '#fff', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
+      <div className="chat-item-main">
+        <div className="chat-item-alias">
           {chat.anonAlias || "Anónimo"}
         </div>
-        <div style={{ color: "rgba(255,255,255,0.6)", marginBottom: 8, fontSize: '14px', fontStyle: last ? 'normal' : 'italic', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
+        <div className="chat-item-content">
           {last ? `${last.from === 'creator' ? 'Tú: ' : ''}${last.content}` : "Chat iniciado, sin mensajes"}
         </div>
-        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>
+        <div className="chat-item-date">
           {last ? new Date(last.createdAt).toLocaleString() : new Date(chat.createdAt).toLocaleString()}
         </div>
       </div>
-      <button style={buttonStyle} disabled={disabled}>
-        {chat.isOpened ? "Ver Chat" : (disabled ? `Espera ${minutesNext}m` : "Responder")}
+      <button className="chat-item-button" disabled={disabled}>
+        {chat.isOpened ? "Ver" : (disabled ? `Espera` : "Responder")}
       </button>
     </div>
   );
