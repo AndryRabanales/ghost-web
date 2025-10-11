@@ -58,7 +58,7 @@ export default function DashboardInfo({ creator, onChange }) {
 
   return (
     <div className="dashboard-info-container">
-      {/* CORRECCIÓN: El contenedor principal ahora tiene una estructura limpia para flexbox */}
+      {/* Estructura corregida: un solo flex container */}
       <div className="dashboard-main-content">
         <p className="dashboard-subtitle animated-gradient-text">
           Bienvenido a tu espacio, <b>{creator.name || 'Creador'}</b>.
@@ -67,7 +67,7 @@ export default function DashboardInfo({ creator, onChange }) {
         <div className="links-section">
           <LinkInput 
             icon="✨"
-            label="Link Público (Compártelo)"
+            label="Link Público"
             url={publicUrl}
             type="public"
             onCopy={handleCopy}
@@ -75,7 +75,7 @@ export default function DashboardInfo({ creator, onChange }) {
           />
           <LinkInput 
             icon="🚀"
-            label="Link del Dashboard (Guárdalo)"
+            label="Link del Dashboard"
             url={dashboardUrl}
             type="dash"
             onCopy={handleCopy}

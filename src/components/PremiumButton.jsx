@@ -63,7 +63,7 @@ export default function PremiumButton({ creator }) {
   // --- 👇 INICIAN LOS CAMBIOS DE ESTILO ---
   return (
     <div style={{
-      padding: '20px',
+      padding: '5px',
       borderRadius: '16px',
       textAlign: 'center',
       background: 'linear-gradient(145deg, #2a2a2d, #212123)', // Fondo oscuro
@@ -93,7 +93,7 @@ export default function PremiumButton({ creator }) {
         className="button-shine" // Clase para efecto hover
         style={{
           display: 'block',
-          padding: "12px 24px",
+          padding: "11px 20px",
           borderRadius: '12px',
           border: "none",
           background: loading ? "#555" : 'linear-gradient(90deg, #FF655B, #FE3C72)', // Gradiente rojo
