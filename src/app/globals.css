@@ -27,7 +27,7 @@ body {
 
 /*
 ==============================================
-✨ CÓDIGO DEFINITIVO PARA DASHBOARD ELEGANTE ✨
+✨ CÓDIGO FINAL PARA DASHBOARD ELEGANTE Y CORREGIDO ✨
 ==============================================
 */
 
@@ -74,14 +74,16 @@ body {
   flex-direction: row;
   flex-wrap: wrap;
   gap: 30px;
-  align-items: flex-start; /* Alinea los items al inicio */
+  align-items: flex-start;
 }
 
-/* --- CONTENIDO PRINCIPAL (IZQUIERDA) --- */
+/* --- CONTENIDO PRINCIPAL (IZQUIERDA) - CORREGIDO --- */
 .dashboard-main-content {
   display: flex;
   flex-direction: column;
-  gap: 3px; /* Espacio uniforme entre bienvenida y links */
+  /* 👇 CORRECCIÓN CLAVE: Usamos 'gap' en lugar de 'justify-content'
+     para evitar el espacio enorme y asegurar un espaciado consistente. */
+  gap: 30px;
 }
 
 .dashboard-subtitle {
@@ -107,21 +109,21 @@ body {
 
 .link-input-container {
   position: relative;
-  background: rgba(34, 34, 37, 0.6); /* Fondo Glassmorphism */
+  background: rgba(34, 34, 37, 0.6);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   border-radius: 16px;
-  padding: 10px;
+  padding: 20px;
   border: 1px solid #38383a;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-/* Borde animado (la magia está aquí) */
 .link-input-container::before {
   content: "";
   position: absolute;
   inset: 0;
-  border-radius: 16px;  
+  border-radius: 16px; 
+  padding: 2px; 
   background: linear-gradient(120deg, transparent, #FE3C72, transparent);
   -webkit-mask: 
      linear-gradient(#fff 0 0) content-box, 
@@ -161,7 +163,7 @@ body {
 .input-wrapper { position: relative; }
 .link-input-field {
   width: 100%;
-  padding: 5px 18px;
+  padding: 14px 18px;
   background: #121212;
   border: 1px solid #48484A;
   border-radius: 10px;
@@ -186,12 +188,13 @@ body {
 
 /* --- CONTENIDO LATERAL (DERECHA) --- */
 .dashboard-side-content {
-  flex: 2 1 80px;
+  flex: 2 1 280px;
   display: flex;
   flex-direction: column;
+  gap: 20px;
 }
 
-/* ... (Estilos de Vidas, Premium y Mensajes se mantienen igual) ... */
+/* --- ESTILOS DE VIDAS, PREMIUM Y MENSAJES --- */
 .lives-status-container { background: #222225; border: 1px solid #38383a; border-radius: 16px; padding: 15px; text-align: center; }
 .lives-status-title { margin: 0 0 10px; color: rgba(255,255,255,0.5); text-transform: uppercase; font-size: 11px; font-weight: 600; letter-spacing: 1px; }
 .hearts-container { display: flex; justify-content: center; gap: 8px; margin-bottom: 10px; }
@@ -219,17 +222,14 @@ body {
 /* ✨ CORRECCIÓN RESPONSIVA PARA CELULARES ✨         */
 /* ================================================= */
 @media (max-width: 768px) {
-  
   .dashboard-page-container {
     padding: 20px 15px;
   }
-
   .dashboard-info-container {
     flex-direction: column;
     padding: 20px;
     gap: 25px;
   }
-
   .dashboard-side-content {
     flex-direction: column;
     gap: 15px;
