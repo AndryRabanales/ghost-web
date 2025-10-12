@@ -1,180 +1,522 @@
 @import "tailwindcss";
 
+/*
+================================================================================
+|                                                                              |
+|                       TEMA: HELLFIRE CORE v4 (FINAL BUILD)                     |
+|                                                                              |
+| La culminación de la estética biomecánica. La interfaz es ahora un           |
+| organismo vivo, pulsando con una energía carmesí inestable. Cada píxel       |
+| respira, cada borde sangra luz. Esto es el núcleo del infierno digital.      |
+|                                                                              |
+================================================================================
+*/
+
+/* -------------------------------------------------------------------------- */
+/* SECCIÓN 1: FUENTES Y PALETA DE COLORES "HELLFIRE" */
+/* -------------------------------------------------------------------------- */
+@import url("https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Fira+Code&display=swap");
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Paleta de Colores Definitiva */
+  --background-abyss: #000000;
+  --background-core: #0a0208;
+  --primary-hellfire-red: #ff004c;
+  --secondary-ember-orange: #ff4d00;
+  --glow-accent-crimson: #ff073a;
+  --accent-data-stream: #00c3ff;
+  --text-primary: #f5f5f5;
+  --text-secondary: rgba(235, 235, 245, 0.6);
+  --success-glow: rgba(0, 255, 128, 0.4);
+  --success-solid: #00ff80;
+  --font-main: "Orbitron", sans-serif;
+  --font-mono: "Fira Code", monospace;
+  --border-color-faint: rgba(255, 0, 76, 0.3);
+  --border-color-strong: rgba(255, 0, 76, 0.7);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+/* -------------------------------------------------------------------------- */
+/* SECCIÓN 2: CONFIGURACIÓN BASE Y AMBIENTACIÓN GLOBAL */
+/* -------------------------------------------------------------------------- */
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--background-abyss);
+  color: var(--text-primary);
+  font-family: var(--font-main);
+  overflow-x: hidden;
+  background-image: radial-gradient(
+      circle at 25% 75%,
+      rgba(255, 0, 76, 0.3),
+      transparent 35%
+    ),
+    radial-gradient(
+      circle at 75% 25%,
+      rgba(255, 77, 0, 0.2),
+      transparent 35%
+    );
+  animation: background-pulse 8s ease-in-out infinite;
+}
+
+/* Overlay de "Estática Cósmica" para una textura viva */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23n)"/></svg>');
+  opacity: 0.04;
+  pointer-events: none;
+  z-index: 9998;
+  animation: static-flicker 15s linear infinite;
+}
+
+/* Overlay de "Grid de Neón" que pulsa */
+body::after {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-image: linear-gradient(var(--border-color-faint) 1px, transparent 1px),
+    linear-gradient(to right, var(--border-color-faint) 1px, transparent 1px);
+  background-size: 40px 40px;
+  opacity: 0;
+  pointer-events: none;
+  z-index: -1;
+  animation: grid-pulse 10s ease-in-out infinite;
+}
+
+::selection {
+  background: var(--primary-hellfire-red);
+  color: var(--text-primary);
+  text-shadow: 0 0 10px var(--primary-hellfire-red);
+}
+
+::-webkit-scrollbar { width: 10px; }
+::-webkit-scrollbar-track { background: var(--background-core); }
+::-webkit-scrollbar-thumb {
+  background: var(--primary-hellfire-red);
+  border-radius: 10px;
+  box-shadow: 0 0 15px var(--primary-hellfire-red);
 }
 
 /*
-==============================================
-✨ CÓDIGO ULTRA-COMPACTO PARA EL DASHBOARD ✨
-==============================================
+================================================================================
+|                     SECCIÓN 3: BIBLIOTECA DE ANIMACIONES "VIVAS"                 |
+================================================================================
 */
 
-/* --- Keyframes para Animaciones (se mantienen igual) --- */
-@keyframes fadeInUp { 
-  from { opacity: 0; transform: translateY(20px); } 
-  to { opacity: 1; transform: translateY(0); } 
-}
-@keyframes background-pan {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-@keyframes heart-pulse {
-  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 2px #FE3C72); }
-  50% { transform: scale(1.1); filter: drop-shadow(0 0 6px #FE3C72); }
-}
-@keyframes star-glow {
-  0% { text-shadow: 0 0 8px rgba(255,215,0,0.4); }
-  50% { text-shadow: 0 0 20px rgba(255,215,0,0.7); }
-  100% { text-shadow: 0 0 8px rgba(255,215,0,0.4); }
+@keyframes background-pulse {
+  0%, 100% { background-color: var(--background-abyss); }
+  50% { background-color: var(--background-core); }
 }
 
-/* --- Contenedor Principal de la Página --- */
-.dashboard-page-container {
-  min-height: 100vh;
-  max-width: 600px;
-  margin: 0 auto;
-  padding: 8px 5px; /* Padding reducido */
+@keyframes grid-pulse {
+  0%, 100% { opacity: 0; transform: scale(1); }
+  50% { opacity: 0.08; transform: scale(1.03); }
 }
 
-/* --- Contenedor del "Centro de Mando" --- */
+@keyframes static-flicker {
+  0%, 100% { opacity: 0.04; }
+  50% { opacity: 0.06; }
+}
+
+@keyframes core-heartbeat {
+  0%   { transform: scale(1); box-shadow: 0 0 15px var(--primary-hellfire-red), 0 0 25px var(--secondary-ember-orange); }
+  15%  { transform: scale(1.05); }
+  30%  { transform: scale(1.03); }
+  50%  { transform: scale(1.08); box-shadow: 0 0 40px var(--primary-hellfire-red), 0 0 70px var(--secondary-ember-orange); }
+  70%  { transform: scale(1); }
+  100% { transform: scale(1); box-shadow: 0 0 15px var(--primary-hellfire-red), 0 0 25px var(--secondary-ember-orange); }
+}
+
+@keyframes container-breathing {
+  0%   { border-color: rgba(255, 0, 76, 0.5); box-shadow: 0 0 30px rgba(255, 0, 76, 0.2), inset 0 0 15px rgba(255, 0, 76, 0.2); }
+  50%  { border-color: rgba(255, 0, 76, 1); box-shadow: 0 0 45px rgba(255, 0, 76, 0.4), inset 0 0 20px rgba(255, 0, 76, 0.35); }
+  100% { border-color: rgba(255, 0, 76, 0.5); box-shadow: 0 0 30px rgba(255, 0, 76, 0.2), inset 0 0 15px rgba(255, 0, 76, 0.2); }
+}
+
+@keyframes text-glitch-flicker {
+  0%, 100% { transform: translate(0, 0) skew(0); opacity: 1; }
+  2% { transform: translate(2px, -1px) skew(-1deg); text-shadow: 0 0 10px var(--glow-accent-magenta), 0 0 20px var(--primary-pulse-red); }
+  4% { transform: translate(-2px, 1px) skew(1deg); }
+  6% { transform: translate(0, 0) skew(0); }
+  40% { opacity: 1; }
+  41% { opacity: 0.7; }
+  42% { opacity: 1; }
+  60% { transform: translate(1px, 2px) skew(2deg); }
+  62% { transform: translate(-1px, -2px) skew(-2deg); }
+  64% { transform: translate(0, 0) skew(0); }
+}
+
+@keyframes input-power-cycle {
+  0%   { border-color: var(--primary-hellfire-red); box-shadow: 0 0 20px var(--primary-hellfire-red), inset 0 0 10px rgba(255, 0, 76, 0.4); }
+  50%  { border-color: var(--secondary-ember-orange); box-shadow: 0 0 30px var(--secondary-ember-orange), inset 0 0 15px rgba(255, 77, 0, 0.5); }
+  100% { border-color: var(--primary-hellfire-red); box-shadow: 0 0 20px var(--primary-hellfire-red), inset 0 0 10px rgba(255, 0, 76, 0.4); }
+}
+
+@keyframes blood-pulse {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 4px var(--primary-hellfire-red)); }
+  50% { transform: scale(1.2); filter: drop-shadow(0 0 15px var(--primary-hellfire-red)); }
+}
+
+@keyframes star-flare {
+  0% { transform: scale(1); opacity: 0.8; text-shadow: 0 0 10px #ffd70088; }
+  50% { transform: scale(1.5); opacity: 1; text-shadow: 0 0 40px #ffd700; }
+  100% { transform: scale(1); opacity: 0.8; text-shadow: 0 0 10px #ffd70088; }
+}
+
+@keyframes neuron-flash {
+  0%   { background-position: -200% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+/*
+================================================================================
+|                     SECCIÓN 4: DISEÑO DE FORMULARIOS "HELLFIRE"                |
+================================================================================
+*/
+.form-page-container {
+  display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; position: relative;
+}
+
+.form-card {
+  position: relative; z-index: 2; width: 100%; max-width: 420px; padding: 40px 35px;
+  background: var(--card-bg); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+  border-radius: 24px; border: 2px solid; animation: container-breathing 8s ease-in-out infinite;
+}
+
+.form-card::before, .form-card::after {
+  content: ''; position: absolute; width: 20px; height: 20px; border-color: var(--primary-pulse-red);
+  border-style: solid; animation: core-heartbeat 3s infinite;
+}
+.form-card::before { top: -5px; left: -5px; border-width: 3px 0 0 3px; }
+.form-card::after { bottom: -5px; right: -5px; border-width: 0 3px 3px 0; }
+
+.form-card h1 {
+  font-size: 42px; font-weight: 900; text-align: center; margin: 0 0 30px;
+  color: var(--text-primary); text-shadow: 0 0 10px var(--secondary-flare-magenta), 0 0 20px var(--primary-pulse-red);
+  animation: text-glitch-flicker 5s linear infinite;
+}
+
+.form-grid { display: grid; gap: 20px; }
+.form-grid input, .form-grid textarea {
+  width: 100%; padding: 16px; background: var(--input-bg); border: 2px solid var(--accent-electric-purple);
+  border-radius: 12px; color: var(--text-primary); font-size: 16px; outline: none; box-sizing: border-box;
+  transition: all 0.3s ease; box-shadow: inset 0 0 15px rgba(157, 0, 255, 0.3); font-family: var(--font-mono);
+}
+
+.form-grid input:focus, .form-grid textarea:focus { animation: input-power-cycle 2s linear infinite; }
+
+.form-submit-button {
+  width: 100%; padding: 18px; background: var(--primary-pulse-red); border: none; border-radius: 12px;
+  color: var(--text-primary); font-size: 18px; font-weight: 900; cursor: pointer; outline: none;
+  transition: all 0.2s ease; letter-spacing: 2px; text-transform: uppercase;
+  animation: core-heartbeat 2s ease-in-out infinite;
+}
+.form-submit-button:hover:not(:disabled) { transform: scale(1.05); animation-play-state: paused; }
+.form-submit-button:disabled { background: #333; cursor: wait; box-shadow: none; animation: none; }
+.form-footer-link a:hover { color: #fff; text-shadow: 0 0 20px #fff, 0 0 30px var(--link-color); }
+.form-error {
+  color: var(--primary-pulse-red); text-align: center; font-weight: 700;
+  margin: 10px 0 0; text-shadow: 0 0 10px var(--primary-pulse-red); animation: core-heartbeat 1s 3;
+}
+
+/*
+================================================================================
+|                       SECCIÓN 5: DASHBOARD "HELLFIRE CORE"                     |
+================================================================================
+*/
+
+.dashboard-page-container { max-width: 600px; margin: 0 auto; padding: 8px 5px; }
 .dashboard-info-container {
-  background: #1A1A1A;
-  border-radius: 20px;
-  padding: 10px; /* Padding muy reducido */
-  margin-bottom: 5px; /* Margen inferior reducido */
-  border: 1px solid #38383a;
-  display: flex;
-  flex-direction: column; /* Apilado por defecto para móviles */
-  gap: 6px; /* Espacio entre secciones reducido */
-  align-items: stretch;
+  background: var(--card-bg); border-radius: 20px; padding: 10px; margin-bottom: 5px;
+  border: 2px solid; display: flex; flex-direction: column; gap: 6px; align-items: stretch;
+  animation: container-breathing 7s ease-in-out infinite reverse;
 }
 
-/* --- Contenido Principal (Saludo y Links) --- */
-.dashboard-main-content {
-  display: flex;
-  flex-direction: column;
-  gap: 5px; /* Espacio mínimo entre saludo y links */
-}
-
-.dashboard-subtitle {
-  margin: 0;
-  font-size: 14px; /* Texto más pequeño */
-  font-weight: 500;
-  color: rgba(255,255,255,0.7);
-}
 .animated-gradient-text b {
-  background: linear-gradient(90deg, #FF655B, #FE3C72, #FF655B);
-  background-size: 200% auto;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: background-pan 4s linear infinite;
+  background: linear-gradient(90deg, var(--secondary-flesh-pink), var(--primary-pulse-red), var(--secondary-flare-magenta), var(--secondary-flesh-pink));
+  background-size: 300% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  animation: background-pan 3s linear infinite;
 }
 
-/* --- SECCIÓN DE LINKS COMPACTA --- */
-.links-section {
-  display: grid;
-  gap: 5px; /* Espacio entre links reducido */
-}
-
+/* -------------------------------------------------------------------------- */
+/* RE-DISEÑO TOTAL DE LINKINPUT                       */
+/* -------------------------------------------------------------------------- */
 .link-input-container {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 12px;
   position: relative;
-  border-radius: 12px;
-  padding: 5px; /* Padding de links reducido */
-  background: #222225;
-  border: 1px solid #38383a;
   transition: all 0.3s ease;
 }
-.link-input-container::before { content: ""; position: absolute; inset: 0; border-radius: 12px; padding: 1px; background: linear-gradient(120deg, transparent, #FE3C72, transparent); -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); -webkit-mask-composite: xor; mask-composite: exclude; opacity: 0; transition: opacity 0.4s ease; animation: background-pan 3s linear infinite; }
-.link-input-container:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
-.link-input-container:hover::before { opacity: 1; }
+.link-input-container:hover {
+  border-color: var(--primary-pulse-red);
+  box-shadow: 0 0 20px rgba(255, 0, 76, 0.4);
+}
 
 .link-input-label {
-  display: flex; align-items: center; gap: 8px;
-  font-weight: 600; color: #FFFFFF;
-  margin-bottom: 8px; font-size: 14px; /* Letra más pequeña */
-}
-.link-input-icon { font-size: 16px; }
-.input-wrapper { position: relative; }
-.link-input-field {
-  width: 100%; padding: 4px 14px; /* Input más delgado */
-  background: #121212; border: 1px solid #48484A;
-  border-radius: 8px; color: rgba(255,255,255,0.6);
-  font-size: 13px; font-family: var(--font-mono);
-  box-sizing: border-box;
-}
-.copy-button {
-  position: absolute; right: 5px; top: 50%;
-  transform: translateY(-50%);
-  padding: 4px 10px; /* Botón de copiar más pequeño */
-  font-size: 12px;
-  background: #38383a; border: none;
-  border-radius: 6px; color: #fff;
-  display: flex; align-items: center; gap: 5px; cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-.copy-button:hover { background-color: #48484A; }
-
-/* --- CONTENIDO LATERAL COMPACTO --- */
-.dashboard-side-content {
   display: flex;
-  flex-direction: column;
-  gap: 5px; /* Espacio entre Vidas y Premium reducido */
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+}
+.link-input-label .link-input-icon {
+  animation: blood-pulse 2s infinite;
+  display: inline-block;
 }
 
-/* --- ESTILOS COMPACTOS PARA "TU ESTADO" --- */
-.lives-status-container { background: #222225; border: 1px solid #38383a; border-radius: 16px; padding: 0px; text-align: center; }
-.lives-status-title { margin: 0 0 8px; color: rgba(255,255,255,0.5); text-transform: uppercase; font-size: 10px; letter-spacing: 1px; }
-.hearts-container { display: flex; justify-content: center; gap: 6px; margin-bottom: 8px; }
-.heart-icon { font-size: 18px; } /* Corazones más pequeños */
-.heart-icon.full { animation: heart-pulse 2.5s ease-in-out infinite; }
-.heart-icon.empty { opacity: 0.2; }
-.next-life-text { font-size: 12px; color: rgba(255,255,255,0.6); }
-.next-life-text strong { padding: 2px 6px; margin-left: 4px; font-size: 11px; }
-.star-icon { font-size: 14px; }
-.premium-status-text { font-size: 15px; }
-.premium-status-subtext { font-size: 11px; }
+.input-wrapper {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
 
-/* ... (Estilos de Mensajes se mantienen igual) ... */
-.chat-item { display: flex; align-items: center; background: #1E1E1E; border: 1px solid #38383a; border-radius: 12px; margin-bottom: 8px; cursor: pointer; transition: background 0.2s ease, transform 0.2s ease; padding: 12px 18px; }
-.chat-item:hover { background: #2C2C2E; transform: translateY(-2px); }
-.chat-item-main { flex-grow: 1; margin-right: 15px; overflow: hidden; }
-.chat-item-alias { font-weight: 600; font-size: 16px; margin-bottom: 3px; }
-.chat-item-content { color: rgba(255,255,255,0.6); font-size: 14px; margin-bottom: 4px; }
-.chat-item-date { font-size: 12px; color: rgba(255,255,255,0.4); }
-.chat-item-button { padding: 8px 16px; font-size: 13px; }
+.link-input-field {
+  flex-grow: 1;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+.link-input-field:focus {
+  color: var(--text-primary);
+  border-color: var(--primary-pulse-red);
+  box-shadow: 0 0 15px var(--primary-pulse-red);
+}
 
-/* ================================================= */
-/* ✨ MEDIA QUERY PARA ESCRITORIO (VISTA EN COLUMNAS) ✨ */
-/* ================================================= */
+.copy-button {
+  padding: 8px 12px;
+  font-size: 13px;
+  background: transparent;
+  border: 2px solid var(--primary-pulse-red);
+  border-radius: 8px;
+  color: var(--primary-pulse-red);
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.3s ease;
+  text-shadow: 0 0 10px var(--primary-pulse-red);
+}
+.copy-button:hover {
+  background-color: var(--primary-pulse-red);
+  color: white;
+  box-shadow: 0 0 20px var(--primary-pulse-red);
+}
+
+/* -------------------------------------------------------------------------- */
+
+.lives-status-container {
+  background: rgba(0,0,0,0.2); border: 1px solid var(--accent-electric-purple); border-radius: 16px;
+  padding: 10px; text-align: center; overflow: hidden; box-shadow: inset 0 0 15px rgba(157, 0, 255, 0.3);
+  animation: container-breathing 9s infinite;
+}
+
+.premium-status-display { padding: 8px; animation: core-heartbeat 3s infinite; }
+.star-icon { font-size: 24px; animation: star-flare 2.5s infinite; }
+.heart-icon.full { animation: blood-pulse 1.2s ease-in-out infinite; }
+.heart-icon.empty { opacity: 0.1; filter: grayscale(100%); }
+
+.chat-item {
+  display: flex; align-items: center; background: transparent; border: 1px solid var(--accent-electric-purple);
+  border-radius: 12px; margin-bottom: 8px; cursor: pointer; transition: all 0.3s ease; padding: 12px 18px;
+  position: relative; overflow: hidden; box-shadow: inset 0 0 10px rgba(157, 0, 255, 0.3);
+}
+.chat-item::before {
+  content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 7, 58, 0.4), transparent);
+  animation: neuron-flash 2.5s linear infinite; opacity: 0; transition: opacity 0.4s ease;
+}
+.chat-item:hover::before { opacity: 1; }
+.chat-item:hover {
+  background: rgba(157, 0, 255, 0.1); border-color: var(--primary-pulse-red); transform: scale(1.02);
+  box-shadow: 0 0 20px rgba(255, 7, 58, 0.4), inset 0 0 15px rgba(157, 0, 255, 0.5);
+}
+.chat-item-button:hover { transform: scale(1.1); box-shadow: 0 0 20px var(--primary-pulse-red); }
+
+.dashboard-main-content, .dashboard-side-content {
+    background: rgba(0,0,0,0.1); border-radius: 16px; padding: 5px;
+}
+
+/* -------------------------------------------------------------------------- */
+/* RE-DISEÑO TOTAL DEL BOTÓN PREMIUM                          */
+/* -------------------------------------------------------------------------- */
+.premium-button-container {
+  padding: 3px; border-radius: 18px; position: relative;
+  background: linear-gradient(135deg, var(--primary-pulse-red), var(--accent-electric-purple));
+  animation: background-pan 4s linear infinite;
+}
+.premium-button-inner {
+  background: var(--background-core); padding: 15px; border-radius: 16px; text-align: center;
+}
+.premium-button-title {
+  font-size: 1.2em; font-weight: 900; color: var(--text-primary); margin: 0 0 8px;
+  text-shadow: 0 0 10px var(--secondary-flare-magenta);
+}
+.premium-button-text { color: var(--text-secondary); font-size: 14px; margin: 0 0 16px; }
+.premium-super-button {
+  display: block; width: 100%; padding: 12px 20px; border-radius: 12px; border: none;
+  background: linear-gradient(90deg, var(--secondary-ember-orange), var(--primary-pulse-red));
+  color: #fff; font-weight: bold; font-size: 16px; cursor: pointer;
+  transition: all 0.3s ease; animation: core-heartbeat 2.2s infinite;
+}
+.premium-super-button:hover:not(:disabled) { transform: scale(1.05); }
+
 @media (min-width: 820px) {
-  .dashboard-info-container {
-    flex-direction: row; /* Vuelve a ponerlo en fila en pantallas grandes */
-  }
-
-  .dashboard-side-content {
-    flex: 2 1 280px; /* Restaura el tamaño flexible para escritorio */
-  }
+  .dashboard-info-container { flex-direction: row; }
+  .dashboard-side-content { flex: 0 1 240px; }
 }
+/* ==============================================
+   ✨ ESTILOS ADICIONALES PARA LA APLICACIÓN ✨
+   ============================================== */
+
+/* --- Estilos para Formularios (Login y Registro) --- */
+.form-container {
+  max-width: 400px;
+  margin: 40px auto;
+  padding: 20px;
+  background-color: #1a1a1a;
+  border-radius: 16px;
+  border: 1px solid #38383a;
+}
+
+.form-container h1 {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.form-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.form-input {
+  width: 100%;
+  padding: 12px;
+  background: #2c2c2e;
+  border: 1px solid #48484a;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 16px;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #fe3c72;
+  box-shadow: 0 0 0 3px rgba(254, 60, 114, 0.3);
+}
+
+.form-button {
+  padding: 12px;
+  background: linear-gradient(90deg, #ff655b, #fe3c72);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-weight: bold;
+  font-size: 16px;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-button:disabled {
+  background: #555;
+  cursor: wait;
+}
+
+.form-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(254, 60, 114, 0.3);
+}
+
+.form-link {
+  margin-top: 20px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.form-link a {
+  color: #ff655b;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+/* --- Estilos para la Página de Chat --- */
+.chat-page-container {
+  max-width: 650px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.chat-messages-container {
+  border: 1px solid #38383a;
+  border-radius: 8px;
+  padding: 10px;
+  height: 420px;
+  overflow-y: auto;
+  background: #1a1a1a;
+  margin-bottom: 16px;
+}
+
+.message-bubble {
+  margin-bottom: 10px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  max-width: 80%;
+  word-wrap: break-word;
+}
+
+.message-bubble.creator {
+  background: #3a3a3c;
+  text-align: left;
+  margin-right: auto;
+}
+
+.message-bubble.anon {
+  background: #fe3c72;
+  color: #fff;
+  text-align: left;
+  margin-left: auto;
+}
+
+.message-alias {
+  font-size: 13px;
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+.message-content {
+  font-size: 15px;
+}
+
+.message-timestamp {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 4px;
+}
+
+/* --- Estilos para el Toast de Nuevo Mensaje --- */
+.toast-notification {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #333;
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: 6px;
+  z-index: 9999;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  animation: fadeInUp 0.5s ease;
+}
+

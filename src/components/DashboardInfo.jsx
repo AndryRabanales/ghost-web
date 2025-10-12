@@ -60,9 +60,7 @@ export default function DashboardInfo({ creator, onChange }) {
     <div className="dashboard-info-container">
       {/* Estructura corregida: un solo flex container */}
       <div className="dashboard-main-content">
-        <p className="dashboard-subtitle animated-gradient-text">
-          Bienvenido a tu espacio, <b>{creator.name || 'Creador'}</b>.
-        </p>
+
         
         <div className="links-section">
           <LinkInput 
