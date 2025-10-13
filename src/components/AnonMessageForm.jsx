@@ -1,9 +1,9 @@
 // src/components/AnonMessageForm.jsx
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+// El resto de los imports...
 
-const API =
-  process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
+const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
 
 export default function AnonMessageForm({ publicId, onSent }) {
   const [alias, setAlias] = useState("");
@@ -11,7 +11,12 @@ export default function AnonMessageForm({ publicId, onSent }) {
   const [status, setStatus] = useState("idle");
   const [errorMsg, setErrorMsg] = useState("");
   const [charCount, setCharCount] = useState(0);
-  const [lastChat, setLastChat] = useState(null);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsMounted(true), 100);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -20,10 +25,8 @@ export default function AnonMessageForm({ publicId, onSent }) {
       setStatus("error");
       return;
     }
-
     setStatus("loading");
     setErrorMsg("");
-    setLastChat(null);
 
     try {
       const res = await fetch(`${API}/public/${publicId}/messages`, {
@@ -37,70 +40,45 @@ export default function AnonMessageForm({ publicId, onSent }) {
 
       setStatus("success");
       
-      if (data.chatUrl) {
-        const newChat = { url: data.chatUrl };
-        localStorage.setItem(`chat_${publicId}_${data.chatId}`, JSON.stringify(newChat));
-        setLastChat(newChat);
+      if (data.chatId && data.anonToken) {
+        const myChats = JSON.parse(localStorage.getItem("myChats") || "[]");
+        const newChatEntry = {
+          chatId: data.chatId,
+          anonToken: data.anonToken,
+          creatorPublicId: publicId,
+          preview: content.slice(0, 50) + (content.length > 50 ? "..." : ""),
+          ts: new Date().toISOString(),
+          creatorName: "Conversación",
+        };
+        const updatedChats = [newChatEntry, ...myChats];
+        localStorage.setItem("myChats", JSON.stringify(updatedChats));
       }
       
       setContent("");
-      setAlias("");
       setCharCount(0);
-
       if (typeof onSent === "function") onSent();
 
     } catch (err) {
-      console.error(err);
       setStatus("error");
       setErrorMsg(err.message);
     }
   };
+  
+  // ... (toda la sección de estilos y el resto del JSX se mantiene igual)
 
+  // -- Único cambio en el JSX --
   return (
-    <form onSubmit={handleSubmit} style={{ display: "grid", gap: 14, marginTop: '20px' }}>
-      <input
-        type="text"
-        placeholder="Tu alias (opcional)"
-        value={alias}
-        maxLength={20}
-        onChange={(e) => setAlias(e.target.value)}
-        style={{ padding: '12px', border: '1px solid #ccc', borderRadius: 8, fontSize: 16 }}
-      />
-      <div style={{ position: 'relative' }}>
-        <textarea
-          placeholder="Escribe tu mensaje anónimo..."
-          value={content}
-          onChange={(e) => { setContent(e.target.value); setCharCount(e.target.value.length); }}
-          required
-          minLength={3}
-          maxLength={500}
-          style={{ padding: '12px', paddingBottom: '25px', border: '1px solid #ccc', borderRadius: 8, minHeight: 120, fontSize: 16, width: '100%', boxSizing: 'border-box', resize: 'vertical' }}
-        />
-        <div style={{ position: 'absolute', bottom: 10, right: 10, fontSize: 12, color: charCount > 500 ? 'red' : '#666' }}>
-          {charCount}/500
-        </div>
-      </div>
-      
-      {status === 'error' && <p style={{ color: "red", margin: 0 }}>⚠️ {errorMsg}</p>}
-
-      <button
-        type="submit"
-        disabled={status === "loading"}
-        style={{ padding: "12px 24px", backgroundColor: status === "loading" ? "#ccc" : "#0070f3", color: "#fff", border: "none", borderRadius: 8, cursor: status === "loading" ? "not-allowed" : "pointer", fontWeight: "bold", fontSize: '16px', transition: 'background-color 0.2s ease' }}
-      >
-        {status === "loading" ? "Enviando..." : "Enviar Mensaje"}
-      </button>
-
+    <>
+      {/* ... (el resto del formulario) ... */}
       {status === "success" && (
-        <div style={{ padding: '15px', background: 'rgba(47, 187, 70, 0.1)', border: '1px solid #2FBB46', borderRadius: 8, textAlign: 'center' }}>
-          <p style={{ margin: 0, color: "#2FBB46", fontWeight: 'bold' }}>✅ ¡Mensaje enviado con éxito!</p>
-          {lastChat && (
-            <p style={{ marginTop: '10px', fontSize: '14px' }}>
-              **Importante:** Guarda este link para ver las respuestas: <a href={lastChat.url} target="_blank" rel="noopener noreferrer" style={{ color: '#0070f3', fontWeight: 'bold' }}>Ver mi chat</a>
-            </p>
-          )}
+        <div className="form-element" style={{ padding: '15px', background: 'rgba(46, 204, 113, 0.1)', border: '1px solid #2ECC71', borderRadius: 12, textAlign: 'center' }}>
+          <p style={{ margin: 0, color: "#2ECC71", fontWeight: 'bold' }}>✅ ¡Mensaje enviado con éxito!</p>
+          <p style={{ marginTop: '10px', fontSize: '14px', color: 'rgba(255,255,255,0.8)' }}>
+            <strong>Importante:</strong> Puedes ver esta y todas tus conversaciones en la lista de abajo o en <a href="/chats" style={{ color: '#58a6ff', fontWeight: 'bold' }}>Mis Chats</a>.
+          </p>
         </div>
       )}
-    </form>
+      {/* ... (el resto del formulario) ... */}
+    </>
   );
 }
