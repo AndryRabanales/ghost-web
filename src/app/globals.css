@@ -763,3 +763,54 @@ body::after {
     transform: translateY(-12px);
   }
 }
+
+/*
+================================================================================
+|                     SECCIÓN 6: ESTADO VACÍO DE BANDEJA DE ENTRADA            |
+================================================================================
+*/
+
+.empty-inbox-container {
+  margin-top: 30px;
+  padding: 50px 30px;
+  text-align: center;
+  background: rgba(26, 26, 42, 0.5); /* Coincide con las otras tarjetas */
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+}
+
+.empty-inbox-icon {
+  color: var(--glow-accent-lavender);
+  opacity: 0.4;
+  margin-bottom: 25px;
+  display: inline-block; /* Necesario para que la animación funcione */
+  animation: float-icon 6s ease-in-out infinite;
+}
+
+.empty-inbox-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.empty-inbox-subtitle {
+  font-size: 15px;
+  color: var(--text-secondary);
+  max-width: 300px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+/* Animación sutil para el icono */
+@keyframes float-icon {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-12px);
+  }
+}
