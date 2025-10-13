@@ -17,22 +17,24 @@
 /* -------------------------------------------------------------------------- */
 @import url("https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Fira+Code&display=swap");
 
+/* Reemplaza esto en src/app/globals.css */
+
 :root {
-  /* Paleta de Colores Definitiva */
-  --background-abyss: #000000;
-  --background-core: #0a0208;
-  --primary-hellfire-red: #ff004c;
-  --secondary-ember-orange: #ff4d00;
-  --glow-accent-crimson: #ff073a;
-  --accent-data-stream: #00c3ff;
+  /* Paleta de Colores "GHOSTLY GLASS" (Morado) */
+  --background-abyss: #0d0c22;
+  --background-core: #1a1a2e;
+  --primary-hellfire-red: #8011e2; /* Púrpura principal */
+  --secondary-ember-orange: #5703ff; /* Púrpura oscuro */
+  --glow-accent-crimson: #c9a4ff; /* Púrpura claro para brillos */
+  --accent-data-stream: #000000;
   --text-primary: #f5f5f5;
-  --text-secondary: rgba(235, 235, 245, 0.6);
+  --text-secondary: rgba(235, 235, 245, 0.7);
   --success-glow: rgba(0, 255, 128, 0.4);
   --success-solid: #00ff80;
   --font-main: "Orbitron", sans-serif;
   --font-mono: "Fira Code", monospace;
-  --border-color-faint: rgba(255, 0, 76, 0.3);
-  --border-color-strong: rgba(255, 0, 76, 0.7);
+  --border-color-faint: rgba(142, 45, 226, 0.3);
+  --border-color-strong: rgba(142, 45, 226, 0.7);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -43,20 +45,13 @@ body {
   color: var(--text-primary);
   font-family: var(--font-main);
   overflow-x: hidden;
-  background-image: radial-gradient(
-      circle at 25% 75%,
-      rgba(255, 0, 76, 0.3),
-      transparent 35%
-    ),
-    radial-gradient(
-      circle at 75% 25%,
-      rgba(255, 77, 0, 0.2),
-      transparent 35%
-    );
-  animation: background-pulse 8s ease-in-out infinite;
+  background-image: 
+    radial-gradient(circle at 15% 85%, rgba(142, 68, 173, 0.2), transparent 40%),
+    radial-gradient(circle at 85% 20%, rgba(74, 0, 224, 0.2), transparent 40%);
+  animation: background-pulse 12s ease-in-out infinite;
 }
 
-/* Overlay de "Estática Cósmica" para una textura viva */
+/* Overlay sutil de "ruido" para dar textura */
 body::before {
   content: "";
   position: fixed;
@@ -65,10 +60,9 @@ body::before {
   width: 100vw;
   height: 100vh;
   background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23n)"/></svg>');
-  opacity: 0.04;
+  opacity: 0.03;
   pointer-events: none;
   z-index: 9998;
-  animation: static-flicker 15s linear infinite;
 }
 
 /* Overlay de "Grid de Neón" que pulsa */
@@ -132,11 +126,14 @@ body::after {
   100% { transform: scale(1); box-shadow: 0 0 15px var(--primary-hellfire-red), 0 0 25px var(--secondary-ember-orange); }
 }
 
+/* Reemplaza esto también en src/app/globals.css */
+
 @keyframes container-breathing {
-  0%   { border-color: rgba(255, 0, 76, 0.5); box-shadow: 0 0 30px rgba(255, 0, 76, 0.2), inset 0 0 15px rgba(255, 0, 76, 0.2); }
-  50%  { border-color: rgba(255, 0, 76, 1); box-shadow: 0 0 45px rgba(255, 0, 76, 0.4), inset 0 0 20px rgba(255, 0, 76, 0.35); }
-  100% { border-color: rgba(255, 0, 76, 0.5); box-shadow: 0 0 30px rgba(255, 0, 76, 0.2), inset 0 0 15px rgba(255, 0, 76, 0.2); }
+  0%   { border-color: rgba(142, 45, 226, 0.5); box-shadow: 0 0 30px rgba(142, 45, 226, 0.2), inset 0 0 15px rgba(142, 45, 226, 0.2); }
+  50%  { border-color: rgba(142, 45, 226, 1); box-shadow: 0 0 45px rgba(142, 45, 226, 0.4), inset 0 0 20px rgba(142, 45, 226, 0.35); }
+  100% { border-color: rgba(142, 45, 226, 0.5); box-shadow: 0 0 30px rgba(142, 45, 226, 0.2), inset 0 0 15px rgba(142, 45, 226, 0.2); }
 }
+
 
 @keyframes text-glitch-flicker {
   0%, 100% { transform: translate(0, 0) skew(0); opacity: 1; }
@@ -341,8 +338,8 @@ body::after {
 }
 .chat-item:hover::before { opacity: 1; }
 .chat-item:hover {
-  background: rgba(157, 0, 255, 0.1); border-color: var(--primary-pulse-red); transform: scale(1.02);
-  box-shadow: 0 0 20px rgba(255, 7, 58, 0.4), inset 0 0 15px rgba(157, 0, 255, 0.5);
+  background: rgba(157, 0, 255, 0.1); border-color: var(--primary-hellfire-red); transform: scale(1.02);
+  box-shadow: 0 0 20px rgba(142, 45, 226, 0.4), inset 0 0 15px rgba(157, 0, 255, 0.5);
 }
 .chat-item-button:hover { transform: scale(1.1); box-shadow: 0 0 20px var(--primary-pulse-red); }
 
@@ -520,3 +517,249 @@ body::after {
   animation: fadeInUp 0.5s ease;
 }
 
+
+
+/*
+================================================================================
+|                     SECCIÓN 6: TEMA "GHOSTLY GLASS" (Alternativo)              |
+================================================================================
+*/
+
+/* --- Contenedor de la página de autenticación --- */
+.auth-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 20px;
+  background-color: #0d0c22; /* Un fondo oscuro y profundo */
+  background-image: 
+    radial-gradient(circle at 15% 85%, rgba(108, 99, 255, 0.15), transparent 40%),
+    radial-gradient(circle at 85% 20%, rgba(0, 255, 255, 0.15), transparent 40%);
+}
+
+/* --- Tarjeta de formulario con efecto "Glassmorphism" --- */
+.auth-card {
+  width: 100%;
+  max-width: 420px;
+  padding: 40px 35px;
+  background: rgba(26, 26, 42, 0.6); /* Fondo semi-transparente */
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.auth-card h1 {
+  font-size: 36px;
+  font-weight: 700;
+  text-align: center;
+  margin: 0 0 30px;
+  color: #fff;
+  letter-spacing: -1px;
+}
+
+.auth-form {
+  display: grid;
+  gap: 20px;
+}
+
+/* --- Estilo de los campos de entrada --- */
+.auth-input {
+  width: 100%;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  color: #fff;
+  font-size: 16px;
+  outline: none;
+  box-sizing: border-box;
+  transition: all 0.3s ease;
+  font-family: var(--font-mono);
+}
+
+.auth-input:focus {
+  border-color: rgba(108, 99, 255, 0.8);
+  box-shadow: 0 0 15px rgba(108, 99, 255, 0.3);
+}
+
+/* --- Estilo del botón de envío --- */
+.auth-button {
+  width: 100%;
+  padding: 18px;
+  background: linear-gradient(90deg, #8e2de2, #4a00e0);
+  border: none;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.3s ease;
+  letter-spacing: 0.5px;
+}
+
+.auth-button:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 20px rgba(74, 0, 224, 0.3);
+}
+
+.auth-button:disabled {
+  background: #333;
+  cursor: wait;
+}
+
+/* --- Estilo para el pie de página del formulario --- */
+.auth-footer-link {
+  margin-top: 25px;
+  text-align: center;
+  color: rgba(235, 235, 245, 0.6);
+  font-size: 14px;
+}
+
+.auth-footer-link a {
+  color: #c9a4ff;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s ease;
+}
+
+.auth-footer-link a:hover {
+  color: #fff;
+  text-decoration: underline;
+}
+
+/* --- Mensaje de error --- */
+.auth-error {
+  color: #ff7b7b;
+  text-align: center;
+  font-weight: 600;
+  margin-top: 10px;
+}
+
+/*
+================================================================================
+|                     SECCIÓN 5: SIDEBAR COLAPSABLE                            |
+================================================================================
+*/
+
+.sidebar-container {
+  background: var(--background-core);
+  border-radius: 20px;
+  border: 1px solid var(--border-color-faint);
+  margin-bottom: 25px;
+  overflow: hidden; /* Crucial para que la animación de altura funcione */
+  transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.sidebar-content {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding: 15px;
+  max-height: 1000px; /* Altura máxima para mostrar el contenido */
+  opacity: 1;
+  transition: max-height 0.5s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s ease-in-out, padding 0.5s ease-in-out;
+}
+
+/* Estado colapsado: la magia sucede aquí */
+.sidebar-container.collapsed .sidebar-content {
+  max-height: 0;
+  opacity: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  pointer-events: none; /* Evita interacciones cuando está oculto */
+}
+
+.sidebar-toggle-container {
+  display: flex;
+  justify-content: center;
+  padding: 2px 0; /* Pequeño espacio para el botón */
+}
+
+.sidebar-toggle-button {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+}
+
+.sidebar-toggle-button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-toggle-button svg {
+  width: 28px;
+  height: 28px;
+  color: var(--glow-accent-lavender);
+  transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+/* Rota la flecha cuando el sidebar está colapsado */
+.sidebar-container.collapsed .sidebar-toggle-button svg {
+  transform: rotate(180deg);
+}
+
+/* Cambiamos el nombre del contenedor original para que no entre en conflicto */
+.dashboard-info-container {
+  /* Los estilos que tenía este contenedor ahora están en .sidebar-container */
+  /* Lo dejamos vacío o eliminamos sus estilos anteriores si ya los movimos */
+}
+
+/*
+================================================================================
+|                     SECCIÓN 6: ESTADO VACÍO DE BANDEJA DE ENTRADA            |
+================================================================================
+*/
+
+.empty-inbox-container {
+  margin-top: 30px;
+  padding: 50px 30px;
+  text-align: center;
+  background: rgba(26, 26, 42, 0.5); /* Coincide con las otras tarjetas */
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+}
+
+.empty-inbox-icon {
+  color: var(--glow-accent-lavender);
+  opacity: 0.4;
+  margin-bottom: 25px;
+  display: inline-block; /* Necesario para que la animación funcione */
+  animation: float-icon 6s ease-in-out infinite;
+}
+
+.empty-inbox-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.empty-inbox-subtitle {
+  font-size: 15px;
+  color: var(--text-secondary);
+  max-width: 300px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+/* Animación sutil para el icono */
+@keyframes float-icon {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-12px);
+  }
+}

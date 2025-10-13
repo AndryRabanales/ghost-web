@@ -29,16 +29,12 @@ export default function LoginPage() {
         throw new Error(data.error || "Error al iniciar sesión");
       }
 
-      // Guardar datos en el navegador
       localStorage.setItem("token", data.token);
       localStorage.setItem("publicId", data.publicId);
       
-      // ---- ✨ CORRECCIÓN CLAVE AQUÍ ✨ ----
-      // Usamos el 'dashboardId' que nos da la API para redirigir.
       if (data.dashboardId) {
         router.push(`/dashboard/${data.dashboardId}`);
       } else {
-        // Si por alguna razón no viene, mostramos un error claro.
         setError("No se pudo obtener el ID del dashboard para la redirección.");
       }
 
@@ -50,33 +46,35 @@ export default function LoginPage() {
   };
 
   return (
-    <div style={{ maxWidth: 400, margin: "40px auto", padding: 20 }}>
-      <h1>Iniciar Sesión</h1>
-      <form onSubmit={handleLogin} style={{ display: "grid", gap: 16 }}>
-        <input
-          type="email"
-          placeholder="Tu email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          style={{ padding: 10 }}
-        />
-        <input
-          type="password"
-          placeholder="Tu contraseña"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          style={{ padding: 10 }}
-        />
-        <button type="submit" disabled={loading} style={{ padding: 12, cursor: 'pointer' }}>
-          {loading ? "Ingresando..." : "Iniciar Sesión"}
-        </button>
-        {error && <p style={{ color: "red" }}>{error}</p>}
-      </form>
-      <p style={{marginTop: '20px', textAlign: 'center'}}>
-          ¿No tienes una cuenta? <a href="/register">Regístrate</a>
-      </p>
+    <div className="auth-container">
+      <main className="auth-card">
+        <h1>Iniciar Sesión</h1>
+        <form onSubmit={handleLogin} className="auth-form">
+          <input
+            type="email"
+            placeholder="Tu email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            className="auth-input"
+          />
+          <input
+            type="password"
+            placeholder="Tu contraseña"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            className="auth-input"
+          />
+          <button type="submit" disabled={loading} className="auth-button">
+            {loading ? "Ingresando..." : "Entrar"}
+          </button>
+          {error && <p className="auth-error">{error}</p>}
+        </form>
+        <p className="auth-footer-link">
+          ¿No tienes una cuenta? <a href="/register">Regístrate ahora</a>
+        </p>
+      </main>
     </div>
   );
 }

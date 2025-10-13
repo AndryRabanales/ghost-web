@@ -19,17 +19,15 @@ export default function RegisterPage() {
     setError(null);
 
     try {
-      // ---- ✨ LÓGICA DE ENVÍO DE TOKEN DE INVITADO ✨ ----
       const guestToken = localStorage.getItem("token");
       const headers = { "Content-Type": "application/json" };
       if (guestToken) {
         headers["Authorization"] = `Bearer ${guestToken}`;
       }
-      // ----------------------------------------------------
 
       const res = await fetch(`${API}/auth/register`, {
         method: "POST",
-        headers: headers, // Usamos los headers que preparamos
+        headers: headers,
         body: JSON.stringify({ name, email, password }),
       });
 
@@ -38,7 +36,6 @@ export default function RegisterPage() {
         throw new Error(data.error || "Error al crear la cuenta");
       }
 
-      // Limpiamos cualquier dato viejo y guardamos la nueva sesión permanente
       localStorage.clear(); 
       localStorage.setItem("token", data.token);
       localStorage.setItem("publicId", data.publicId);
@@ -57,41 +54,43 @@ export default function RegisterPage() {
   };
 
   return (
-    <div style={{ maxWidth: 400, margin: "40px auto", padding: 20 }}>
-      <h1>Crear una cuenta</h1>
-      <form onSubmit={handleRegister} style={{ display: "grid", gap: 16 }}>
-        <input
-          type="text"
-          placeholder="Tu nombre"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-          style={{ padding: 10 }}
-        />
-        <input
-          type="email"
-          placeholder="Tu email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          style={{ padding: 10 }}
-        />
-        <input
-          type="password"
-          placeholder="Tu contraseña"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          style={{ padding: 10 }}
-        />
-        <button type="submit" disabled={loading} style={{ padding: 12, cursor: 'pointer' }}>
-          {loading ? "Creando..." : "Registrarse"}
-        </button>
-        {error && <p style={{ color: "red" }}>{error}</p>}
-      </form>
-       <p style={{marginTop: '20px', textAlign: 'center'}}>
+    <div className="auth-container">
+      <main className="auth-card">
+        <h1>Crear Cuenta</h1>
+        <form onSubmit={handleRegister} className="auth-form">
+          <input
+            type="text"
+            placeholder="Tu nombre"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+            className="auth-input"
+          />
+          <input
+            type="email"
+            placeholder="Tu email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            className="auth-input"
+          />
+          <input
+            type="password"
+            placeholder="Crea una contraseña"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            className="auth-input"
+          />
+          <button type="submit" disabled={loading} className="auth-button">
+            {loading ? "Creando..." : "Registrarse"}
+          </button>
+          {error && <p className="auth-error">{error}</p>}
+        </form>
+        <p className="auth-footer-link">
           ¿Ya tienes una cuenta? <a href="/login">Inicia sesión</a>
-      </p>
+        </p>
+      </main>
     </div>
   );
 }

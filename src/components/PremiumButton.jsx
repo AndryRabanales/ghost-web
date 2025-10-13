@@ -51,17 +51,16 @@ export default function PremiumButton({ creator }) {
     }
   };
 
-  // --- ✨ ESTILOS JSX Y KEYFRAMES MEJORADOS ---
   const styles = `
     @keyframes premium-pulse-glow {
       0% {
-        box-shadow: 0 0 15px rgba(254, 60, 114, 0.4), 0 0 5px rgba(255, 101, 91, 0.3);
+        box-shadow: 0 0 15px rgba(142, 45, 226, 0.4), 0 0 5px rgba(74, 0, 224, 0.3);
       }
       50% {
-        box-shadow: 0 0 30px rgba(254, 60, 114, 0.8), 0 0 10px rgba(255, 101, 91, 0.6);
+        box-shadow: 0 0 30px rgba(142, 45, 226, 0.8), 0 0 10px rgba(74, 0, 224, 0.6);
       }
       100% {
-        box-shadow: 0 0 15px rgba(254, 60, 114, 0.4), 0 0 5px rgba(255, 101, 91, 0.3);
+        box-shadow: 0 0 15px rgba(142, 45, 226, 0.4), 0 0 5px rgba(74, 0, 224, 0.3);
       }
     }
 
@@ -79,7 +78,7 @@ export default function PremiumButton({ creator }) {
       padding: 14px 20px;
       border-radius: 12px;
       border: none;
-      background: linear-gradient(90deg, #FF655B, #FE3C72, #ff9691, #FE3C72, #FF655B);
+      background: linear-gradient(90deg, #8e2de2, #4a00e0, #c9a4ff, #4a00e0, #8e2de2);
       background-size: 300% auto;
       color: #fff;
       font-weight: bold;
@@ -96,7 +95,7 @@ export default function PremiumButton({ creator }) {
       left: -150%;
       width: 75%;
       height: 100%;
-      background: linear-gradient(110deg, rgba(255, 255, 255, 0) 40%, rgba(255, 255, 255, 0.25) 50%, rgba(255, 255, 255, 0) 60%);
+      background: linear-gradient(110deg, rgba(255, 255, 255, 0) 40%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0) 60%);
       transform: skewX(-25deg);
       transition: left 1s cubic-bezier(0.2, 0.8, 0.2, 1);
     }
@@ -166,7 +165,7 @@ export default function PremiumButton({ creator }) {
           {loading ? 'Redirigiendo...' : '🚀 Hacerme Premium'}
         </button>
         
-        {error && <p style={{ color: "#FE3C72", marginTop: '10px', fontSize: '14px' }}>{error}</p>}
+        {error && <p style={{ color: "#c9a4ff", marginTop: '10px', fontSize: '14px' }}>{error}</p>}
       </div>
     </>
   );
