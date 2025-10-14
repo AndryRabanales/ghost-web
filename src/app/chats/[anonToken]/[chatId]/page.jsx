@@ -86,14 +86,14 @@ export default function PublicChatPage() {
   };
 
   // 🔌 WebSocket: escuchar mensajes nuevos
-  // 🔌 WebSocket: escuchar mensajes nuevos
 useEffect(() => {
   fetchMessages(); // solo al inicio
 
   const apiBase =
     process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
 
-  // 👇 construyes bien el wsUrl con el anonToken
+  // --- CORRECCIÓN CLAVE AQUÍ ---
+  // La ruta del WebSocket debe ser /ws, no /ws/chat
   const wsUrl =
     apiBase.replace(/^http/, "ws") +
     `/ws?chatId=${chatId}&anonToken=${anonToken}`;
@@ -102,7 +102,7 @@ useEffect(() => {
   wsRef.current = ws;
 
   ws.onopen = () => {
-    console.log(`✅ WS conectado al chat ${chatId} como ${anonAlias}`);
+    console.log(`✅ WS conectado al chat ${chatId} como anónimo`);
   };
 
   ws.onmessage = (event) => {
@@ -110,10 +110,10 @@ useEffect(() => {
       const msg = JSON.parse(event.data);
       if (msg.chatId === chatId) {
         setMessages((prev) => {
-          if (prev.some(m => m.id === msg.id)) {
-            return prev;
-          }
-          return [...prev, msg]
+            if (prev.some(m => m.id === msg.id)) {
+                return prev;
+            }
+            return [...prev, msg];
         });
       }
     } catch {
@@ -122,10 +122,18 @@ useEffect(() => {
   };
 
   ws.onclose = () => {
-    console.log("❌ WS cerrado");
+    console.log("❌ WS cerrado (anónimo)");
+  };
+  
+  ws.onerror = (err) => {
+    console.error("⚠️ Error en WebSocket (anónimo):", err);
   };
 
-  return () => ws.close();
+  return () => {
+    if (wsRef.current) {
+        wsRef.current.close();
+    }
+  };
 }, [chatId, anonToken]);
 
 
@@ -175,14 +183,14 @@ useEffect(() => {
 
         {messages.map((m) => (
           <div
-            key={m.id}
+            key={m.id || Math.random()}
             style={{
               marginBottom: 8,
               textAlign: m.from === "creator" ? "left" : "right",
             }}
           >
             <strong>
-              {m.from === "creator" ? `${creatorName}:` : `${m.alias}:`}
+              {m.from === "creator" ? `${creatorName}:` : `${m.alias || anonAlias}:`}
             </strong>{" "}
             {m.content}
           </div>
