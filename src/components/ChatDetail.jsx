@@ -68,7 +68,7 @@ export default function ChatDetail({ dashboardId, chatId, onBack }) {
 
         fetchChatAndProfile();
 
-        const wsUrl = `${API.replace(/^http/, "ws")}/ws/chat?chatId=${chatId}`;
+        const wsUrl = `${API.replace(/^http/, "ws")}/ws?chatId=${chatId}`;
         const ws = new WebSocket(wsUrl);
         wsRef.current = ws;
         ws.onmessage = (event) => {

@@ -1,6 +1,6 @@
 // src/components/MessageList.jsx
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { refreshToken } from "@/utils/auth";
 import { useRouter } from "next/navigation";
 
@@ -48,6 +48,7 @@ export default function MessageList({ dashboardId }) {
     const [minutesNext, setMinutesNext] = useState(null);
     const [error, setError] = useState(null);
     const router = useRouter();
+    const wsRef = useRef(null);
 
     const getAuthHeaders = (token) => token ? { Authorization: `Bearer ${token}` } : { Authorization: `Bearer ${localStorage.getItem("token")}` };
     const handleAuthFailure = () => { localStorage.clear(); router.push("/login?session=expired"); };
@@ -108,8 +109,23 @@ export default function MessageList({ dashboardId }) {
 
     useEffect(() => {
         fetchData();
-        const interval = setInterval(() => fetchData(), 15000);
-        return () => clearInterval(interval);
+
+        const wsUrl = `${API.replace(/^http/, "ws")}/ws?dashboardId=${dashboardId}`;
+        const ws = new WebSocket(wsUrl);
+        wsRef.current = ws;
+
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            if (data.type === 'new_message') {
+                fetchData();
+            }
+        };
+
+        return () => {
+            if (wsRef.current) {
+                wsRef.current.close();
+            }
+        };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [dashboardId]);
 

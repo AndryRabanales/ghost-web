@@ -96,7 +96,7 @@ useEffect(() => {
   // 👇 construyes bien el wsUrl con el anonToken
   const wsUrl =
     apiBase.replace(/^http/, "ws") +
-    `/ws/chat?chatId=${chatId}&anonToken=${anonToken}`;
+    `/ws?chatId=${chatId}&anonToken=${anonToken}`;
 
   const ws = new WebSocket(wsUrl);
   wsRef.current = ws;
