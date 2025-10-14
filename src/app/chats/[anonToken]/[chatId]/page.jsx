@@ -109,7 +109,12 @@ useEffect(() => {
     try {
       const msg = JSON.parse(event.data);
       if (msg.chatId === chatId) {
-        setMessages((prev) => [...prev, msg]);
+        setMessages((prev) => {
+          if (prev.some(m => m.id === msg.id)) {
+            return prev;
+          }
+          return [...prev, msg]
+        });
       }
     } catch {
       console.log("Mensaje WS no es JSON:", event.data);
@@ -128,18 +133,21 @@ useEffect(() => {
   const handleSend = async (e) => {
     e.preventDefault();
     if (!newMsg.trim()) return;
+    const tempMsg = newMsg;
+    setNewMsg("");
     try {
       const res = await fetch(`${API}/chats/${anonToken}/${chatId}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: newMsg }),
+        body: JSON.stringify({ content: tempMsg }),
       });
       if (!res.ok) throw new Error("No se pudo enviar el mensaje");
-      setNewMsg("");
-      // 👇 ya no hace falta fetchMessages(), el WS debe notificar
+      const actualMessage = await res.json();
+      setMessages((prev) => [...prev, actualMessage]);
     } catch (err) {
       console.error(err);
       setError("⚠️ No se pudo enviar el mensaje");
+      setNewMsg(tempMsg);
     }
   };
 
