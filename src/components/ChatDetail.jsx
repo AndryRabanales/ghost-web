@@ -68,19 +68,12 @@ export default function ChatDetail({ dashboardId, chatId, onBack }) {
 
         fetchChatAndProfile();
 
-        const wsUrl = `${API.replace(/^http/, "ws")}/ws/chat?chatId=${chatId}`;
+        const wsUrl = `${API.replace(/^http/, "ws")}/ws?chatId=${chatId}`;
         const ws = new WebSocket(wsUrl);
         wsRef.current = ws;
         ws.onmessage = (event) => {
             const msg = JSON.parse(event.data);
-            if (msg.chatId === chatId) {
-                setMessages((prev) => {
-                    if (prev.some(m => m.id === msg.id)) {
-                        return prev;
-                    }
-                    return [...prev, msg];
-                });
-            }
+            if (msg.chatId === chatId) setMessages((prev) => [...prev, msg]);
         };
         return () => ws.close();
     }, [chatId, dashboardId]);
@@ -90,12 +83,7 @@ export default function ChatDetail({ dashboardId, chatId, onBack }) {
     }, [messages]);
 
     const handleMessageSent = (newMsg) => {
-        setMessages((prev) => {
-            if (prev.some(m => m.id === newMsg.id)) {
-                return prev;
-            }
-            return [...prev, newMsg];
-        });
+      // Ya no actualizamos el estado aquí, el WebSocket lo hará.
       // Refrescar vidas después de enviar
       fetch(`${API}/creators/me`, { headers: getAuthHeaders() })
           .then(res => res.json())
