@@ -1,7 +1,6 @@
 // src/components/AnonMessageForm.jsx
 "use client";
 import { useState, useEffect } from "react";
-// El resto de los imports...
 
 const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
 
@@ -13,8 +12,11 @@ export default function AnonMessageForm({ publicId, onSent }) {
   const [charCount, setCharCount] = useState(0);
   const [isMounted, setIsMounted] = useState(false);
 
+  // Efecto para activar la animación de entrada
   useEffect(() => {
-    const timer = setTimeout(() => setIsMounted(true), 100);
+    const timer = setTimeout(() => {
+      setIsMounted(true);
+    }, 100); // Un pequeño delay para asegurar que el CSS inicial se aplique
     return () => clearTimeout(timer);
   }, []);
 
@@ -63,22 +65,53 @@ export default function AnonMessageForm({ publicId, onSent }) {
       setErrorMsg(err.message);
     }
   };
-  
-  // ... (toda la sección de estilos y el resto del JSX se mantiene igual)
 
-  // -- Único cambio en el JSX --
   return (
-    <>
-      {/* ... (el resto del formulario) ... */}
+    // Agregamos la clase 'mounted' cuando el componente está listo
+    <div className={`anon-form-container ${isMounted ? 'mounted' : ''}`}>
+      <form onSubmit={handleSubmit} className="form-element-group">
+        <input
+          type="text"
+          placeholder="Tu alias (opcional)"
+          value={alias}
+          onChange={(e) => setAlias(e.target.value)}
+          className="form-input-field"
+        />
+        <textarea
+          placeholder="Escribe tu mensaje anónimo..."
+          value={content}
+          onChange={(e) => {
+            setContent(e.target.value);
+            setCharCount(e.target.value.length);
+          }}
+          className="form-input-field"
+          rows="4"
+          maxLength="500"
+        ></textarea>
+        
+        <div className="char-counter">
+          {charCount} / 500
+        </div>
+
+        <button type="submit" disabled={status === "loading"} className="submit-button">
+          {status === "loading" ? "Enviando..." : "Enviar Mensaje"}
+        </button>
+      </form>
+
+      {status === "error" && (
+        <div className="form-status-message error">
+          <p>{errorMsg}</p>
+        </div>
+      )}
+
       {status === "success" && (
-        <div className="form-element" style={{ padding: '15px', background: 'rgba(46, 204, 113, 0.1)', border: '1px solid #2ECC71', borderRadius: 12, textAlign: 'center' }}>
-          <p style={{ margin: 0, color: "#2ECC71", fontWeight: 'bold' }}>✅ ¡Mensaje enviado con éxito!</p>
-          <p style={{ marginTop: '10px', fontSize: '14px', color: 'rgba(255,255,255,0.8)' }}>
-            <strong>Importante:</strong> Puedes ver esta y todas tus conversaciones en la lista de abajo o en <a href="/chats" style={{ color: '#58a6ff', fontWeight: 'bold' }}>Mis Chats</a>.
+        <div className="form-status-message success">
+          <p>✅ ¡Mensaje enviado con éxito!</p>
+          <p className="sub-text">
+            Puedes ver esta y otras conversaciones en <a href="/chats">Mis Chats</a>.
           </p>
         </div>
       )}
-      {/* ... (el resto del formulario) ... */}
-    </>
+    </div>
   );
 }

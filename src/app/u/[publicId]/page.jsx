@@ -1,32 +1,138 @@
 // src/app/u/[publicId]/page.jsx
 "use client";
 import AnonMessageForm from "@/components/AnonMessageForm";
-import { useEffect, useState } from "react";
-import { useRouter, useParams } from "next/navigation";
+import React, { useEffect, useState, useRef } from "react";
+import { useParams } from "next/navigation";
 
+const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
+
+// --- Componente de la Vista de Chat (integrado en este archivo) ---
+const PublicChatView = ({ chatInfo, onBack }) => {
+  const { anonToken, chatId, creatorName: initialCreatorName } = chatInfo;
+  const [messages, setMessages] = useState([]);
+  const [newMsg, setNewMsg] = useState("");
+  const [creatorName, setCreatorName] = useState(initialCreatorName || "Respuesta");
+  const [anonAlias, setAnonAlias] = useState("Tú");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const bottomRef = useRef(null);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  useEffect(() => {
+    const fetchMessages = async () => {
+      try {
+        setLoading(true);
+        const res = await fetch(`${API}/chats/${anonToken}/${chatId}`);
+        if (!res.ok) throw new Error("No se pudo cargar el chat");
+        const data = await res.json();
+        
+        setMessages(data.messages || []);
+        if (data.creatorName) setCreatorName(data.creatorName);
+        const firstAnon = data.messages.find(m => m.from === "anon");
+        if (firstAnon?.alias) setAnonAlias(firstAnon.alias);
+
+      } catch (err) {
+        setError("⚠️ Error cargando mensajes");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMessages();
+
+    const wsUrl = `${API.replace(/^http/, "ws")}/ws/chat?chatId=${chatId}&anonToken=${anonToken}`;
+    const ws = new WebSocket(wsUrl);
+
+    ws.onmessage = (event) => {
+      try {
+        const msg = JSON.parse(event.data);
+        if (msg.chatId === chatId) {
+          setMessages((prev) => [...prev, msg]);
+        }
+      } catch (e) { console.error("Error procesando WebSocket:", e); }
+    };
+
+    return () => ws.close();
+  }, [chatId, anonToken]);
+
+  const handleSend = async (e) => {
+    e.preventDefault();
+    if (!newMsg.trim()) return;
+
+    try {
+      await fetch(`${API}/chats/${anonToken}/${chatId}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: newMsg }),
+      });
+      setNewMsg("");
+    } catch (err) {
+      setError("⚠️ No se pudo enviar el mensaje");
+    }
+  };
+
+  const Message = ({ msg, creatorName, anonAlias }) => {
+    const isCreator = msg.from === "creator";
+    return (
+      <div className={`message-container ${isCreator ? 'creator' : 'anon'}`}>
+        <span className="message-sender">{isCreator ? creatorName : (msg.alias || anonAlias)}</span>
+        <div className="message-content-bubble">{msg.content}</div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="public-chat-view">
+      <div className="chat-view-header">
+        <h3>Chat con {creatorName}</h3>
+        <button onClick={onBack} className="back-button">← Volver</button>
+      </div>
+      <div className="messages-display">
+        {loading && <p>Cargando mensajes...</p>}
+        {error && <p style={{ color: '#ff7b7b' }}>{error}</p>}
+        {messages.map((m) => (
+          <Message key={m.id || Math.random()} msg={m} creatorName={creatorName} anonAlias={anonAlias} />
+        ))}
+        <div ref={bottomRef} />
+      </div>
+      <form onSubmit={handleSend} className="chat-reply-form">
+        <input
+          type="text"
+          value={newMsg}
+          onChange={(e) => setNewMsg(e.target.value)}
+          placeholder="Escribe una respuesta..."
+          className="form-input-field reply-input"
+        />
+        <button type="submit" disabled={!newMsg.trim()} className="submit-button reply-button">
+          Enviar
+        </button>
+      </form>
+    </div>
+  );
+};
+
+// --- Componente Principal de la Página ---
 export default function PublicPage() {
-  // Obtiene el 'publicId' de la URL de forma segura
   const params = useParams();
   const publicId = params.publicId;
 
   const [myChats, setMyChats] = useState([]);
-  const router = useRouter();
+  const [selectedChat, setSelectedChat] = useState(null);
 
-  // Función para cargar los chats guardados en el navegador
   const loadChats = () => {
     try {
       const stored = JSON.parse(localStorage.getItem("myChats") || "[]");
-      // Muestra solo los chats de la página actual
       const relevantChats = stored.filter(chat => chat.creatorPublicId === publicId);
       relevantChats.sort((a, b) => new Date(b.ts) - new Date(a.ts));
       setMyChats(relevantChats);
     } catch (error) {
       console.error("Error al cargar chats:", error);
-      setMyChats([]);
     }
   };
 
-  // Carga los chats cuando el componente se monta
   useEffect(() => {
     if (publicId) {
       loadChats();
@@ -35,29 +141,25 @@ export default function PublicPage() {
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleString('es-ES', {
-      day: 'numeric', month: 'short',
-      hour: '2-digit', minute: '2-digit'
-    });
+    return date.toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
   };
 
   const pageStyles = `
-    @keyframes gradient-pan {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
-    }
     .page-container {
-      background: linear-gradient(-45deg, #0b021a, #1d103b, #2c1a5c, #3c287c);
+      background: linear-gradient(-45deg, #0d0c22, #1a1a2e, #2c1a5c, #3c287c);
       background-size: 400% 400%;
       animation: gradient-pan 15s ease infinite;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 20px;
-      padding-top: 5vh;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      padding: 40px 20px;
+      font-family: var(--font-main);
+    }
+    @keyframes gradient-pan {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
     }
   `;
 
@@ -65,45 +167,41 @@ export default function PublicPage() {
     <>
       <style>{pageStyles}</style>
       <div className="page-container">
-        <div style={{ maxWidth: 480, width: '100%' }}>
-          <h1 style={{
-            textAlign: 'center', marginBottom: '40px', fontSize: '32px',
-            color: '#fff', fontWeight: 700, textShadow: '0 0 15px rgba(255, 255, 255, 0.3)'
-          }}>
-            Envíame un mensaje anónimo
-          </h1>
-
-          {/* =============================================== */}
-          {/* AQUÍ ESTÁ EL FORMULARIO QUE FALTABA          */}
-          {/* =============================================== */}
-          <AnonMessageForm publicId={publicId} onSent={loadChats} />
-
-          {/* =============================================== */}
-          {/* Y AQUÍ ESTÁ LA LISTA DE CHATS PENDIENTES    */}
-          {/* =============================================== */}
-          {myChats.length > 0 && (
-            <div style={{ marginTop: '50px' }}>
-              <h2 style={{ color: 'white', borderBottom: '1px solid rgba(255,255,255,0.2)', paddingBottom: '15px', marginBottom: '20px', fontSize: '22px' }}>
-                Tus Chats Anteriores
-              </h2>
-              <div style={{ display: "grid", gap: 12 }}>
-                {myChats.map((chat) => (
-                  <div
-                    key={chat.chatId}
-                    className="chat-item"
-                    style={{ animation: 'none' }}
-                    onClick={() => router.push(`/chats/${chat.anonToken}/${chat.chatId}`)}
-                  >
-                    <div className="chat-item-main">
-                      <div className="chat-item-alias">{chat.creatorName || "Anónimo"}</div>
-                      <div className="chat-item-content">"{chat.preview}"</div>
-                      <div className="chat-item-date" style={{fontSize: '12px'}}>{formatDate(chat.ts)}</div>
-                    </div>
-                    <button className="chat-item-button">Abrir</button>
+        <div style={{ maxWidth: 520, width: '100%' }}>
+          {selectedChat ? (
+            <PublicChatView chatInfo={selectedChat} onBack={() => setSelectedChat(null)} />
+          ) : (
+            <>
+              <h1 style={{
+                textAlign: 'center', marginBottom: '40px', fontSize: '36px',
+                color: '#fff', fontWeight: 800, textShadow: '0 0 20px rgba(255, 255, 255, 0.3)',
+                animation: 'fadeInUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards'
+              }}>
+                Envíame un Mensaje Anónimo
+              </h1>
+              <AnonMessageForm publicId={publicId} onSent={loadChats} />
+              {myChats.length > 0 && (
+                <div className="chats-list-section">
+                  <h2 className="chats-list-title">Tus Conversaciones Anteriores</h2>
+                  <div className="chats-list-grid">
+                    {myChats.map((chat) => (
+                      <div
+                        key={chat.chatId}
+                        className="chat-list-item"
+                        onClick={() => setSelectedChat(chat)}
+                      >
+                        <div className="chat-list-item-main">
+                          <div className="chat-list-item-alias">{chat.creatorName || "Conversación"}</div>
+                          <div className="chat-list-item-content">"{chat.preview}"</div>
+                          <div className="chat-list-item-date">{formatDate(chat.ts)}</div>
+                        </div>
+                        <button className="chat-list-item-button">Abrir</button>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
