@@ -83,15 +83,15 @@ export default function ChatDetail({ dashboardId, chatId, onBack }) {
     }, [messages]);
 
     const handleMessageSent = (newMsg) => {
-        setMessages((prev) => [...prev, newMsg]);
-        // Refrescar vidas después de enviar
-        fetch(`${API}/creators/me`, { headers: getAuthHeaders() })
-            .then(res => res.json())
-            .then(data => {
-                setLivesLeft(data.lives);
-                setMinutesNext(data.minutesToNextLife);
-            });
-    };
+      // Ya no actualizamos el estado aquí, el WebSocket lo hará.
+      // Refrescar vidas después de enviar
+      fetch(`${API}/creators/me`, { headers: getAuthHeaders() })
+          .then(res => res.json())
+          .then(data => {
+              setLivesLeft(data.lives);
+              setMinutesNext(data.minutesToNextLife);
+          });
+  };
 
     return (
         <div className="public-chat-view">
