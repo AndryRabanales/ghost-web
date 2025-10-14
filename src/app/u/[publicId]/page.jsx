@@ -77,9 +77,13 @@ const PublicChatView = ({ chatInfo, onBack }) => {
 
   const Message = ({ msg, creatorName, anonAlias }) => {
     const isCreator = msg.from === "creator";
+    // Desde la perspectiva del anónimo, "Tú" eres él.
+    const senderName = isCreator ? creatorName : (msg.alias || anonAlias);
+  
     return (
-      <div className={`message-container ${isCreator ? 'creator' : 'anon'}`}>
-        <span className="message-sender">{isCreator ? creatorName : (msg.alias || anonAlias)}</span>
+      // Lógica invertida: si es del creador, se alinea a la izquierda ('anon'). Si es del anónimo, a la derecha ('creator').
+      <div className={`message-container ${isCreator ? 'anon' : 'creator'}`}>
+        <span className="message-sender">{senderName}</span>
         <div className="message-content-bubble">{msg.content}</div>
       </div>
     );
