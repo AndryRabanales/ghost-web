@@ -12,11 +12,10 @@ export default function AnonMessageForm({ publicId, onSent }) {
   const [charCount, setCharCount] = useState(0);
   const [isMounted, setIsMounted] = useState(false);
 
-  // Efecto para activar la animación de entrada
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsMounted(true);
-    }, 100); // Un pequeño delay para asegurar que el CSS inicial se aplique
+    }, 100);
     return () => clearTimeout(timer);
   }, []);
 
@@ -44,14 +43,19 @@ export default function AnonMessageForm({ publicId, onSent }) {
       
       if (data.chatId && data.anonToken) {
         const myChats = JSON.parse(localStorage.getItem("myChats") || "[]");
+        
+        // --- CAMBIO CLAVE AQUÍ ---
+        // Ahora guardamos el alias que el usuario escribió.
         const newChatEntry = {
           chatId: data.chatId,
           anonToken: data.anonToken,
           creatorPublicId: publicId,
           preview: content.slice(0, 50) + (content.length > 50 ? "..." : ""),
           ts: new Date().toISOString(),
-          creatorName: "Conversación",
+          creatorName: "Conversación", // Mantenemos un nombre de creador por defecto
+          anonAlias: alias || "Anónimo", // Guardamos el alias del anónimo
         };
+        
         const updatedChats = [newChatEntry, ...myChats];
         localStorage.setItem("myChats", JSON.stringify(updatedChats));
       }
@@ -67,7 +71,6 @@ export default function AnonMessageForm({ publicId, onSent }) {
   };
 
   return (
-    // Agregamos la clase 'mounted' cuando el componente está listo
     <div className={`anon-form-container ${isMounted ? 'mounted' : ''}`}>
       <form onSubmit={handleSubmit} className="form-element-group">
         <input
@@ -104,14 +107,7 @@ export default function AnonMessageForm({ publicId, onSent }) {
         </div>
       )}
 
-      {status === "success" && (
-        <div className="form-status-message success">
-          <p>✅ ¡Mensaje enviado con éxito!</p>
-          <p className="sub-text">
-            Puedes ver esta y otras conversaciones en <a href="/chats">Mis Chats</a>.
-          </p>
-        </div>
-      )}
+
     </div>
   );
 }

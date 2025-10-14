@@ -1035,3 +1035,253 @@ body {
 .chat-reply-form { display: flex; gap: 10px; }
 .reply-input { flex-grow: 1; }
 .reply-button { padding: 0 25px; }
+
+
+/* /src/app/globals.css */
+
+/* ... (tus estilos existentes) ... */
+
+/*
+================================================================================
+|           SECCIÓN 10: VISTA DE CHAT DEL DASHBOARD                              |
+================================================================================
+*/
+
+.chat-detail-container {
+  background: rgba(20, 20, 35, 0.7);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  padding: 25px;
+  display: flex;
+  flex-direction: column;
+  height: 85vh; /* Altura más adaptable */
+  max-height: 800px;
+  width: 100%;
+}
+
+.chat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+}
+
+.chat-header h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.status-indicator {
+  font-size: 13px;
+  font-family: var(--font-mono);
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.status-indicator.online {
+  color: #2ECC71;
+}
+
+.chat-messages-container {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 0 10px;
+  margin-bottom: 20px;
+}
+
+.message-bubble-wrapper {
+  display: flex;
+  margin-bottom: 15px;
+  max-width: 85%;
+}
+
+.message-bubble-wrapper.creator {
+  justify-content: flex-end;
+  margin-left: auto;
+}
+
+.message-bubble-wrapper.anon {
+  justify-content: flex-start;
+}
+
+.message-bubble {
+  padding: 10px 15px;
+  border-radius: 18px;
+  color: #fff;
+  line-height: 1.5;
+}
+
+.message-bubble.creator {
+  background: linear-gradient(90deg, #8e2de2, #4a00e0);
+  border-bottom-right-radius: 4px;
+}
+
+.message-bubble.anon {
+  background: #3a3a4c;
+  border-bottom-left-radius: 4px;
+}
+
+.message-alias {
+  font-size: 13px;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.message-timestamp {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: 6px;
+  text-align: right;
+}
+
+.chat-footer {
+  padding-top: 15px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.chat-footer form {
+  display: flex;
+  gap: 10px;
+}
+
+.chat-footer input {
+  flex-grow: 1;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  color: #fff;
+  font-size: 16px;
+  outline: none;
+  padding: 14px 18px;
+  transition: all 0.3s ease;
+}
+
+.chat-footer input:focus {
+  border-color: rgba(142, 45, 226, 0.8);
+  box-shadow: 0 0 20px rgba(142, 45, 226, 0.4);
+}
+
+.chat-footer input:disabled {
+  background: rgba(0,0,0,0.2);
+  cursor: not-allowed;
+}
+
+.chat-footer button {
+  padding: 0 25px;
+  background: linear-gradient(90deg, #8e2de2, #4a00e0);
+  border: none;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.chat-footer button:hover:not(:disabled) {
+  transform: scale(1.05);
+}
+
+.chat-footer button:disabled {
+  background: #3a3a4a;
+  cursor: not-allowed;
+}
+
+/* En src/app/globals.css (deberían estar ya) */
+
+.public-chat-view {
+  background: rgba(20, 20, 35, 0.7);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  padding: 25px;
+  display: flex;
+  flex-direction: column;
+  height: 600px;
+  max-height: 80vh;
+  width: 100%;
+  animation: fadeInUp 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.chat-view-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.messages-display {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding-right: 10px;
+  margin-bottom: 20px;
+}
+
+/* ===== INICIO DEL CÓDIGO CORREGIDO ===== */
+
+/* Contenedor de cada mensaje */
+.message-container {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 15px;
+  max-width: 85%;
+}
+
+/* Mensajes del CREADOR (Tú) - A la derecha y en púrpura */
+.message-container.creator {
+  align-items: flex-end; /* Alinea el texto del nombre a la derecha */
+  margin-left: auto;    /* Empuja todo el bloque del mensaje a la derecha */
+}
+
+/* Mensajes del ANÓNIMO - A la izquierda y en gris */
+.message-container.anon {
+  align-items: flex-start; /* Alinea el texto del nombre a la izquierda */
+  margin-right: auto;   /* Empuja todo el bloque del mensaje a la izquierda */
+}
+
+/* La burbuja de texto */
+.message-content-bubble {
+  padding: 10px 15px;
+  border-radius: 18px;
+  color: #fff;
+  line-height: 1.5;
+  word-wrap: break-word;
+}
+
+/* Color para la burbuja del CREADOR (Tú) */
+.message-container.creator .message-content-bubble {
+  background: linear-gradient(90deg, #8e2de2, #4a00e0);
+  border-bottom-right-radius: 4px;
+}
+
+/* Color para la burbuja del ANÓNIMO */
+.message-container.anon .message-content-bubble {
+  background: #3a3a4c;
+  border-bottom-left-radius: 4px;
+}
+
+/* ===== FIN DEL CÓDIGO CORREGIDO ===== */
+
+.message-sender {
+  font-size: 13px;
+  font-weight: bold;
+  margin-bottom: 5px;
+  padding: 0 10px;
+  color: var(--text-secondary);
+}
+
+/* Contenedor del formulario de respuesta */
+.chat-reply-form {
+  display: flex;
+  gap: 10px;
+}

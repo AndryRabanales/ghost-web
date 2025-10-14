@@ -6,8 +6,9 @@ import { useParams } from "next/navigation";
 
 const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
 
-// --- Componente de la Vista de Chat (integrado en este archivo) ---
+// --- Componente de la Vista de Chat (integrado) ---
 const PublicChatView = ({ chatInfo, onBack }) => {
+    // ... (El código de este componente interno no necesita cambios)
   const { anonToken, chatId, creatorName: initialCreatorName } = chatInfo;
   const [messages, setMessages] = useState([]);
   const [newMsg, setNewMsg] = useState("");
@@ -191,7 +192,9 @@ export default function PublicPage() {
                         onClick={() => setSelectedChat(chat)}
                       >
                         <div className="chat-list-item-main">
-                          <div className="chat-list-item-alias">{chat.creatorName || "Conversación"}</div>
+                          {/* --- CAMBIO CLAVE AQUÍ --- */}
+                          {/* Mostramos el alias guardado en lugar de "Conversación" */}
+                          <div className="chat-list-item-alias">{chat.anonAlias || "Anónimo"}</div>
                           <div className="chat-list-item-content">"{chat.preview}"</div>
                           <div className="chat-list-item-date">{formatDate(chat.ts)}</div>
                         </div>
