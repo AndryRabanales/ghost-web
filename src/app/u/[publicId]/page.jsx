@@ -8,115 +8,130 @@ const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.rail
 
 // --- Componente de la Vista de Chat (integrado) ---
 const PublicChatView = ({ chatInfo, onBack }) => {
-    // ... (El código de este componente interno no necesita cambios)
-  const { anonToken, chatId, creatorName: initialCreatorName } = chatInfo;
-  const [messages, setMessages] = useState([]);
-  const [newMsg, setNewMsg] = useState("");
-  const [creatorName, setCreatorName] = useState(initialCreatorName || "Respuesta");
-  const [anonAlias, setAnonAlias] = useState("Tú");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const bottomRef = useRef(null);
+    const { anonToken, chatId, creatorName: initialCreatorName } = chatInfo;
+    const [messages, setMessages] = useState([]);
+    const [newMsg, setNewMsg] = useState("");
+    const [creatorName, setCreatorName] = useState(initialCreatorName || "Respuesta");
+    const [anonAlias, setAnonAlias] = useState("Tú");
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const bottomRef = useRef(null);
 
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    useEffect(() => {
+        bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, [messages]);
 
-  useEffect(() => {
-    const fetchMessages = async () => {
-      try {
-        setLoading(true);
-        const res = await fetch(`${API}/chats/${anonToken}/${chatId}`);
-        if (!res.ok) throw new Error("No se pudo cargar el chat");
-        const data = await res.json();
-        
-        setMessages(data.messages || []);
-        if (data.creatorName) setCreatorName(data.creatorName);
-        const firstAnon = data.messages.find(m => m.from === "anon");
-        if (firstAnon?.alias) setAnonAlias(firstAnon.alias);
+    useEffect(() => {
+        const fetchMessages = async () => {
+            try {
+                setLoading(true);
+                const res = await fetch(`${API}/chats/${anonToken}/${chatId}`);
+                if (!res.ok) throw new Error("No se pudo cargar el chat");
+                const data = await res.json();
+                
+                setMessages(data.messages || []);
+                if (data.creatorName) setCreatorName(data.creatorName);
+                const firstAnon = data.messages.find(m => m.from === "anon");
+                if (firstAnon?.alias) setAnonAlias(firstAnon.alias);
 
-      } catch (err) {
-        setError("⚠️ Error cargando mensajes");
-      } finally {
-        setLoading(false);
-      }
-    };
+            } catch (err) {
+                setError("⚠️ Error cargando mensajes");
+            } finally {
+                setLoading(false);
+            }
+        };
 
-    fetchMessages();
+        fetchMessages();
 
-    const wsUrl = `${API.replace(/^http/, "ws")}/ws/chat?chatId=${chatId}&anonToken=${anonToken}`;
-    const ws = new WebSocket(wsUrl);
+        // --- CORRECCIÓN CLAVE AQUÍ ---
+        // La ruta del WebSocket debe ser /ws, no /ws/chat
+        const wsUrl = `${API.replace(/^http/, "ws")}/ws?chatId=${chatId}&anonToken=${anonToken}`;
+        const ws = new WebSocket(wsUrl);
 
-    ws.onmessage = (event) => {
-      try {
-        const msg = JSON.parse(event.data);
-        if (msg.chatId === chatId) {
-          setMessages((prev) => [...prev, msg]);
+        ws.onmessage = (event) => {
+            try {
+                const msg = JSON.parse(event.data);
+                if (msg.chatId === chatId) {
+                    setMessages((prev) => {
+                        // Evitar duplicados
+                        if (prev.some(m => m.id === msg.id)) return prev;
+                        return [...prev, msg];
+                    });
+                }
+            } catch (e) { console.error("Error procesando WebSocket:", e); }
+        };
+
+        return () => ws.close();
+    }, [chatId, anonToken]);
+
+    const handleSend = async (e) => {
+        e.preventDefault();
+        if (!newMsg.trim()) return;
+
+        const tempMsgContent = newMsg;
+        setNewMsg(""); // Limpia el input inmediatamente
+
+        try {
+            const res = await fetch(`${API}/chats/${anonToken}/${chatId}/messages`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ content: tempMsgContent }),
+            });
+
+            if (!res.ok) {
+              throw new Error("No se pudo enviar el mensaje");
+            }
+
+            const actualMessage = await res.json();
+            // Actualiza la UI con el mensaje confirmado por el servidor
+            setMessages((prev) => [...prev, actualMessage]);
+
+        } catch (err) {
+            setError("⚠️ No se pudo enviar el mensaje");
+            setNewMsg(tempMsgContent); // Restaura el texto si falla el envío
         }
-      } catch (e) { console.error("Error procesando WebSocket:", e); }
     };
 
-    return () => ws.close();
-  }, [chatId, anonToken]);
+    const Message = ({ msg, creatorName, anonAlias }) => {
+        const isCreator = msg.from === "creator";
+        const senderName = isCreator ? creatorName : (msg.alias || anonAlias);
+    
+        return (
+            <div className={`message-container ${isCreator ? 'anon' : 'creator'}`}>
+                <span className="message-sender">{senderName}</span>
+                <div className="message-content-bubble">{msg.content}</div>
+            </div>
+        );
+    };
 
-  const handleSend = async (e) => {
-    e.preventDefault();
-    if (!newMsg.trim()) return;
-
-    try {
-      await fetch(`${API}/chats/${anonToken}/${chatId}/messages`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: newMsg }),
-      });
-      setNewMsg("");
-    } catch (err) {
-      setError("⚠️ No se pudo enviar el mensaje");
-    }
-  };
-
-  const Message = ({ msg, creatorName, anonAlias }) => {
-    const isCreator = msg.from === "creator";
-    // Desde la perspectiva del anónimo, "Tú" eres él.
-    const senderName = isCreator ? creatorName : (msg.alias || anonAlias);
-  
     return (
-      // Lógica invertida: si es del creador, se alinea a la izquierda ('anon'). Si es del anónimo, a la derecha ('creator').
-      <div className={`message-container ${isCreator ? 'anon' : 'creator'}`}>
-        <span className="message-sender">{senderName}</span>
-        <div className="message-content-bubble">{msg.content}</div>
-      </div>
+        <div className="public-chat-view">
+            <div className="chat-view-header">
+                <h3>Chat con {creatorName}</h3>
+                <button onClick={onBack} className="back-button">← Volver</button>
+            </div>
+            <div className="messages-display">
+                {loading && <p>Cargando mensajes...</p>}
+                {error && <p style={{ color: '#ff7b7b' }}>{error}</p>}
+                {messages.map((m) => (
+                    <Message key={m.id || Math.random()} msg={m} creatorName={creatorName} anonAlias={anonAlias} />
+                ))}
+                <div ref={bottomRef} />
+            </div>
+            <form onSubmit={handleSend} className="chat-reply-form">
+                <input
+                    type="text"
+                    value={newMsg}
+                    onChange={(e) => setNewMsg(e.target.value)}
+                    placeholder="Escribe una respuesta..."
+                    className="form-input-field reply-input"
+                />
+                <button type="submit" disabled={!newMsg.trim()} className="submit-button reply-button">
+                    Enviar
+                </button>
+            </form>
+        </div>
     );
-  };
-
-  return (
-    <div className="public-chat-view">
-      <div className="chat-view-header">
-        <h3>Chat con {creatorName}</h3>
-        <button onClick={onBack} className="back-button">← Volver</button>
-      </div>
-      <div className="messages-display">
-        {loading && <p>Cargando mensajes...</p>}
-        {error && <p style={{ color: '#ff7b7b' }}>{error}</p>}
-        {messages.map((m) => (
-          <Message key={m.id || Math.random()} msg={m} creatorName={creatorName} anonAlias={anonAlias} />
-        ))}
-        <div ref={bottomRef} />
-      </div>
-      <form onSubmit={handleSend} className="chat-reply-form">
-        <input
-          type="text"
-          value={newMsg}
-          onChange={(e) => setNewMsg(e.target.value)}
-          placeholder="Escribe una respuesta..."
-          className="form-input-field reply-input"
-        />
-        <button type="submit" disabled={!newMsg.trim()} className="submit-button reply-button">
-          Enviar
-        </button>
-      </form>
-    </div>
-  );
 };
 
 // --- Componente Principal de la Página ---
