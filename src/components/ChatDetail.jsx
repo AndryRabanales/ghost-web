@@ -73,7 +73,16 @@ export default function ChatDetail({ dashboardId, chatId, onBack }) {
         wsRef.current = ws;
         ws.onmessage = (event) => {
             const msg = JSON.parse(event.data);
-            if (msg.chatId === chatId) setMessages((prev) => [...prev, msg]);
+            if (msg.chatId === chatId) {
+                setMessages((prev) => {
+                    // --- CORRECCIÓN CLAVE AQUÍ ---
+                    // Si el mensaje ya existe en la lista, no lo añadas de nuevo.
+                    if (prev.some(m => m.id === msg.id)) {
+                        return prev;
+                    }
+                    return [...prev, msg];
+                });
+            }
         };
         return () => ws.close();
     }, [chatId, dashboardId]);
@@ -83,7 +92,12 @@ export default function ChatDetail({ dashboardId, chatId, onBack }) {
     }, [messages]);
 
     const handleMessageSent = (newMsg) => {
-      // Ya no actualizamos el estado aquí, el WebSocket lo hará.
+        setMessages((prev) => {
+            if (prev.some(m => m.id === newMsg.id)) {
+                return prev;
+            }
+            return [...prev, newMsg];
+        });
       // Refrescar vidas después de enviar
       fetch(`${API}/creators/me`, { headers: getAuthHeaders() })
           .then(res => res.json())
@@ -107,8 +121,6 @@ export default function ChatDetail({ dashboardId, chatId, onBack }) {
                 ))}
                 <div ref={bottomRef} />
             </div>
-
-            {/* CAMBIO: Se eliminó el <div> que envolvía a MessageForm */}
             <MessageForm
                 dashboardId={dashboardId}
                 chatId={chatId}

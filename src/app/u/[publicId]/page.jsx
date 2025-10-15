@@ -43,8 +43,6 @@ const PublicChatView = ({ chatInfo, onBack }) => {
 
         fetchMessages();
 
-        // --- CORRECCIÓN CLAVE AQUÍ ---
-        // La ruta del WebSocket debe ser /ws, no /ws/chat
         const wsUrl = `${API.replace(/^http/, "ws")}/ws?chatId=${chatId}&anonToken=${anonToken}`;
         const ws = new WebSocket(wsUrl);
 
@@ -53,8 +51,11 @@ const PublicChatView = ({ chatInfo, onBack }) => {
                 const msg = JSON.parse(event.data);
                 if (msg.chatId === chatId) {
                     setMessages((prev) => {
-                        // Evitar duplicados
-                        if (prev.some(m => m.id === msg.id)) return prev;
+                        // --- CORRECCIÓN CLAVE AQUÍ ---
+                        // Si el mensaje ya existe en la lista, no lo añadas de nuevo.
+                        if (prev.some(m => m.id === msg.id)) {
+                            return prev;
+                        }
                         return [...prev, msg];
                     });
                 }
@@ -134,7 +135,7 @@ const PublicChatView = ({ chatInfo, onBack }) => {
     );
 };
 
-// --- Componente Principal de la Página ---
+// --- Componente Principal de la Página (sin cambios) ---
 export default function PublicPage() {
   const params = useParams();
   const publicId = params.publicId;
@@ -211,8 +212,6 @@ export default function PublicPage() {
                         onClick={() => setSelectedChat(chat)}
                       >
                         <div className="chat-list-item-main">
-                          {/* --- CAMBIO CLAVE AQUÍ --- */}
-                          {/* Mostramos el alias guardado en lugar de "Conversación" */}
                           <div className="chat-list-item-alias">{chat.anonAlias || "Anónimo"}</div>
                           <div className="chat-list-item-content">"{chat.preview}"</div>
                           <div className="chat-list-item-date">{formatDate(chat.ts)}</div>
