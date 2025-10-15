@@ -51,11 +51,8 @@ const PublicChatView = ({ chatInfo, onBack }) => {
                 const msg = JSON.parse(event.data);
                 if (msg.chatId === chatId) {
                     setMessages((prev) => {
-                        // --- CORRECCIÓN CLAVE AQUÍ ---
-                        // Si el mensaje ya existe en la lista, no lo añadas de nuevo.
-                        if (prev.some(m => m.id === msg.id)) {
-                            return prev;
-                        }
+                        // Previene duplicados si el mensaje ya existe
+                        if (prev.some(m => m.id === msg.id)) return prev;
                         return [...prev, msg];
                     });
                 }
@@ -82,10 +79,10 @@ const PublicChatView = ({ chatInfo, onBack }) => {
             if (!res.ok) {
               throw new Error("No se pudo enviar el mensaje");
             }
-
-            const actualMessage = await res.json();
-            // Actualiza la UI con el mensaje confirmado por el servidor
-            setMessages((prev) => [...prev, actualMessage]);
+            // --- CORRECCIÓN CLAVE ---
+            // Ya no actualizamos el estado aquí. El WebSocket se encargará de ello.
+            // const actualMessage = await res.json();
+            // setMessages((prev) => [...prev, actualMessage]);
 
         } catch (err) {
             setError("⚠️ No se pudo enviar el mensaje");
