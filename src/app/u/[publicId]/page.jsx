@@ -195,7 +195,7 @@ export default function PublicPage() {
                 color: '#fff', fontWeight: 800, textShadow: '0 0 20px rgba(255, 255, 255, 0.3)',
                 animation: 'fadeInUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards'
               }}>
-                Envíame un Mensaje Anónimo y Chatea en Anónimo 
+                Envíame un Mensaje Anónimo y Abre un Chat Anónimo
               </h1>
               <AnonMessageForm publicId={publicId} onSent={loadChats} />
               {myChats.length > 0 && (
