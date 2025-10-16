@@ -195,12 +195,12 @@ export default function PublicPage() {
                 color: '#fff', fontWeight: 800, textShadow: '0 0 20px rgba(255, 255, 255, 0.3)',
                 animation: 'fadeInUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards'
               }}>
-                Envíame un Mensaje Anónimo
+                Envíame un Mensaje Anónimo y Genera un Nuevo chat
               </h1>
               <AnonMessageForm publicId={publicId} onSent={loadChats} />
               {myChats.length > 0 && (
                 <div className="chats-list-section">
-                  <h2 className="chats-list-title">Tus Conversaciones Anteriores</h2>
+                  <h2 className="chats-list-title">Tus Chats Abiertos</h2>
                   <div className="chats-list-grid">
                     {myChats.map((chat) => (
                       <div
