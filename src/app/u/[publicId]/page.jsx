@@ -191,11 +191,11 @@ export default function PublicPage() {
           ) : (
             <>
               <h1 style={{
-                textAlign: 'center', marginBottom: '10px', fontSize: '22px',
+                textAlign: 'center', marginBottom: '10px', fontSize: '26px',
                 color: '#fff', fontWeight: 800, textShadow: '0 0 20px rgba(255, 255, 255, 0.3)',
                 animation: 'fadeInUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards'
               }}>
-                Envíame un Mensaje Anónimo y Genera un Nuevo chat
+                Envíame un Mensaje Anónimo y Chatea en Anónimo 
               </h1>
               <AnonMessageForm publicId={publicId} onSent={loadChats} />
               {myChats.length > 0 && (
