@@ -70,7 +70,7 @@ export default function DashboardInfo({ creator, onChange }) {
           <div className="links-section">
             <LinkInput 
               icon="✨"
-              label="Link Público"
+              label="Link Público (compártelo en tus redes sociales)"
               url={publicUrl}
               type="public"
               onCopy={handleCopy}
