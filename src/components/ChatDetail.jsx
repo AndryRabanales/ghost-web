@@ -1,8 +1,7 @@
-// src/components/ChatDetail.jsx
 "use client";
 import React, { useEffect, useState, useRef } from "react";
-import { refreshToken } from "@/utils/auth";
-import MessageForm from "@/components/MessageForm";
+import { refreshToken } from "../utils/auth";
+import MessageForm from "./MessageForm";
 
 const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
 
@@ -12,6 +11,7 @@ const MessageBubble = ({ msg, creatorName, anonAlias }) => {
     return (
       <div className={`message-container ${isCreator ? 'creator' : 'anon'}`}>
         <span className="message-sender">{isCreator ? creatorName : (msg.alias || anonAlias)}</span>
+        {/* React sanitiza automáticamente este contenido, por lo que es seguro */}
         <div className="message-content-bubble">{msg.content}</div>
       </div>
     );
@@ -52,9 +52,9 @@ export default function ChatDetail({ dashboardId, chatId, onBack }) {
                 if (chatRes.ok) {
                     const data = await chatRes.json();
                     setMessages(data.messages || []);
-                    if (data.creatorName) setCreatorName(data.creatorName);
-                    const firstAnon = data.messages.find(m => m.from === "anon");
-                    if (firstAnon?.alias) setAnonAlias(firstAnon.alias);
+                    // El `creatorName` del creador siempre es él mismo ("Tú") en esta vista.
+                    // El `anonAlias` sí viene del chat.
+                    setAnonAlias(data.anonAlias || "Anónimo");
                 } else { throw new Error("No se pudo cargar el chat"); }
                 
                 if(profileRes.ok) {
@@ -68,15 +68,25 @@ export default function ChatDetail({ dashboardId, chatId, onBack }) {
 
         fetchChatAndProfile();
 
-        const wsUrl = `${API.replace(/^http/, "ws")}/ws?chatId=${chatId}`;
+        // 👇 --- INICIO DE LA CORRECCIÓN DE SEGURIDAD DE WEBSOCKET --- 👇
+        const token = localStorage.getItem("token"); // 1. Obtener el token JWT
+        if (!token) {
+          console.error("No hay token para la conexión WS, abortando.");
+          setError("Error de autenticación, por favor re-inicia sesión.");
+          return;
+        }
+
+        // 2. Añadir el token a la URL de conexión para autenticar el WebSocket en el backend
+        const wsUrl = `${API.replace(/^http/, "ws")}/ws?dashboardId=${dashboardId}&token=${token}`; 
+        // 👆 --- FIN DE LA CORRECCIÓN DE SEGURIDAD DE WEBSOCKET --- 👆
+
         const ws = new WebSocket(wsUrl);
         wsRef.current = ws;
         ws.onmessage = (event) => {
             const msg = JSON.parse(event.data);
-            if (msg.chatId === chatId) {
+            // El backend ahora podría enviar mensajes de tipo 'message'
+            if (msg.type === 'message' && msg.chatId === chatId) {
                 setMessages((prev) => {
-                    // --- CORRECCIÓN CLAVE AQUÍ ---
-                    // Si el mensaje ya existe en la lista, no lo añadas de nuevo.
                     if (prev.some(m => m.id === msg.id)) {
                         return prev;
                     }
@@ -102,8 +112,10 @@ export default function ChatDetail({ dashboardId, chatId, onBack }) {
       fetch(`${API}/creators/me`, { headers: getAuthHeaders() })
           .then(res => res.json())
           .then(data => {
-              setLivesLeft(data.lives);
-              setMinutesNext(data.minutesToNextLife);
+              if (data) {
+                setLivesLeft(data.lives);
+                setMinutesNext(data.minutesToNextLife);
+              }
           });
   };
 
@@ -131,3 +143,4 @@ export default function ChatDetail({ dashboardId, chatId, onBack }) {
         </div>
     );
 }
+
