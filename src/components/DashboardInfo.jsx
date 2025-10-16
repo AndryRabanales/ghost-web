@@ -42,7 +42,6 @@ const ArrowIcon = () => (
 
 export default function DashboardInfo({ creator, onChange }) {
   const [publicUrl, setPublicUrl] = useState('');
-  const [dashboardUrl, setDashboardUrl] = useState('');
   const [copyStatus, setCopyStatus] = useState({});
   const [isCollapsed, setIsCollapsed] = useState(false); // Estado para controlar el colapso
 
@@ -50,7 +49,6 @@ export default function DashboardInfo({ creator, onChange }) {
     if (creator && typeof window !== 'undefined') {
       const origin = window.location.origin;
       setPublicUrl(`${origin}/u/${creator.publicId}`);
-      setDashboardUrl(`${origin}/dashboard/${creator.id}`);
     }
   }, [creator]);
 
@@ -75,14 +73,6 @@ export default function DashboardInfo({ creator, onChange }) {
               label="Link Público"
               url={publicUrl}
               type="public"
-              onCopy={handleCopy}
-              copyStatus={copyStatus}
-            />
-            <LinkInput 
-              icon="🚀"
-              label="Link del Dashboard"
-              url={dashboardUrl}
-              type="dash"
               onCopy={handleCopy}
               copyStatus={copyStatus}
             />
