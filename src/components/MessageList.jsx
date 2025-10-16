@@ -6,13 +6,56 @@ import { useRouter } from "next/navigation";
 
 const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
 
-// --- SUBCOMPONENTE ChatItem ---
+// --- Iconos para Botones de Chat ---
+const IconResponder = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+  </svg>
+);
+const IconVer = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
+  </svg>
+);
+const IconEspera = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+  </svg>
+);
+
+// --- SUBCOMPONENTE ChatItem (ACTUALIZADO) ---
 const ChatItem = ({ chat, onOpenChat, disabled, minutesNext }) => {
   const last = chat.lastMessage;
 
+  // Determina el contenido del botón
+  const getButtonContent = () => {
+    if (disabled) {
+      return (
+        <>
+          <IconEspera />
+          {minutesNext > 0 ? `${minutesNext}m` : "..."}
+        </>
+      );
+    }
+    if (chat.isOpened) {
+      return (
+        <>
+          <IconVer />
+          Ver
+        </>
+      );
+    }
+    return (
+      <>
+        <IconResponder />
+        Responder
+      </>
+    );
+  };
+
   return (
     <div 
-      className={`chat-item ${disabled ? 'disabled' : ''}`}
+      className={`chat-item ${disabled ? 'disabled' : ''} ${!chat.isOpened ? 'unopened' : ''}`}
       onClick={() => !disabled && onOpenChat(chat.id)}
     >
       <div className="chat-item-main">
@@ -20,14 +63,19 @@ const ChatItem = ({ chat, onOpenChat, disabled, minutesNext }) => {
           {chat.anonAlias || "Anónimo"}
         </div>
         <div className="chat-item-content">
-          {last ? `${last.from === 'creator' ? 'Tú: ' : ''}${last.content}` : "Chat iniciado, sin mensajes"}
+          {last ? (
+            <>
+              {last.from === 'creator' && <span>Tú: </span>}
+              {last.content}
+            </>
+          ) : "Chat iniciado, sin mensajes"}
         </div>
         <div className="chat-item-date">
-          {last ? new Date(last.createdAt).toLocaleString() : new Date(chat.createdAt).toLocaleString()}
+          {last ? new Date(last.createdAt).toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : new Date(chat.createdAt).toLocaleString()}
         </div>
       </div>
       <button className="chat-item-button" disabled={disabled}>
-        {chat.isOpened ? "Ver" : (disabled ? `Espera` : "Responder")}
+        {getButtonContent()}
       </button>
     </div>
   );

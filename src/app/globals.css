@@ -326,23 +326,6 @@ body::after {
 .heart-icon.full { animation: blood-pulse 1.2s ease-in-out infinite; }
 .heart-icon.empty { opacity: 0.1; filter: grayscale(100%); }
 
-.chat-item {
-  display: flex; align-items: center; background: transparent; border: 1px solid var(--accent-electric-purple);
-  border-radius: 12px; margin-bottom: 8px; cursor: pointer; transition: all 0.3s ease; padding: 12px 18px;
-  position: relative; overflow: hidden; box-shadow: inset 0 0 10px rgba(157, 0, 255, 0.3);
-}
-.chat-item::before {
-  content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 7, 58, 0.4), transparent);
-  animation: neuron-flash 2.5s linear infinite; opacity: 0; transition: opacity 0.4s ease;
-}
-.chat-item:hover::before { opacity: 1; }
-.chat-item:hover {
-  background: rgba(157, 0, 255, 0.1); border-color: var(--primary-hellfire-red); transform: scale(1.02);
-  box-shadow: 0 0 20px rgba(142, 45, 226, 0.4), inset 0 0 15px rgba(157, 0, 255, 0.5);
-}
-.chat-item-button:hover { transform: scale(1.1); box-shadow: 0 0 20px var(--primary-pulse-red); }
-
 .dashboard-main-content, .dashboard-side-content {
     background: rgba(0,0,0,0.1); border-radius: 16px; padding: 5px;
 }
@@ -1284,4 +1267,125 @@ body {
 .chat-reply-form {
   display: flex;
   gap: 10px;
+}
+
+/*
+================================================================================
+|       SECCIÓN 5.1: ESTRUCTURA DE ITEMS DE CHAT (BANDEJA DE ENTRADA)          |
+================================================================================
+*/
+
+/* Contenedor principal del item de chat */
+.chat-item {
+  /* ... (tu estilo .chat-item existente en la línea 318 ya está bien) ... */
+  /* Asegurémonos de que tenga space-between */
+  display: flex;
+  align-items: stretch; /* Hacemos que los hijos ocupen toda la altura */
+  justify-content: space-between;
+  gap: 15px; /* Espacio entre el contenido y el botón */
+  padding: 16px 20px; /* Más padding */
+  margin-bottom: 12px; /* Más separación entre items */
+}
+
+/* Estilo para los chats no abiertos (más llamativo) */
+.chat-item.unopened {
+  border-left: 3px solid var(--glow-accent-crimson);
+  background: linear-gradient(90deg, rgba(142, 45, 226, 0.1), transparent 50%);
+}
+
+/* Contenido principal (Alias, Mensaje, Fecha) */
+.chat-item-main {
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* Centra verticalmente el texto */
+  gap: 4px; /* Pequeño espacio entre líneas de texto */
+  flex-grow: 1; /* Hace que ocupe el espacio disponible */
+  overflow: hidden; /* Evita que el texto se desborde */
+}
+
+/* Alias del anónimo */
+.chat-item-alias {
+  font-weight: 700;
+  font-size: 1.1em; /* 17.6px si la base es 16px */
+  color: var(--text-primary);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+/* Contenido del último mensaje */
+.chat-item-content {
+  font-size: 0.9em; /* 14.4px */
+  color: var(--text-secondary);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+/* Estilo para el "Tú:" */
+.chat-item-content span {
+  color: var(--glow-accent-crimson);
+  font-weight: 600;
+}
+
+/* Fecha del último mensaje */
+.chat-item-date {
+  font-size: 0.75em; /* 12px */
+  color: var(--border-color-strong);
+  font-family: var(--font-mono);
+  margin-top: 4px;
+}
+
+/* Botón de Acción (Ver / Responder / Espera) */
+.chat-item-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-shrink: 0; /* Evita que el botón se encoja */
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 700;
+  border-radius: 12px;
+  cursor: pointer;
+  border: none;
+  background-color: var(--primary-hellfire-red);
+  color: var(--text-primary);
+  transition: all 0.3s ease;
+  min-width: 110px; /* Ancho mínimo para consistencia */
+  text-align: center;
+}
+
+.chat-item-button svg {
+  transition: transform 0.3s ease;
+}
+
+/* Animación de hover para el botón */
+.chat-item:not(.disabled) .chat-item-button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 20px var(--primary-hellfire-red);
+}
+
+.chat-item:not(.disabled) .chat-item-button:hover svg {
+  transform: scale(1.1);
+}
+
+/* Estado deshabilitado (sin vidas) */
+.chat-item.disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  filter: grayscale(50%);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.chat-item.disabled .chat-item-button {
+  background-color: #3a3a4c; /* Un color grisáceo de tu tema */
+  color: var(--text-secondary);
+  cursor: not-allowed;
+  animation: none;
+  box-shadow: none;
+}
+
+/* Oculta el brillo de neón en el item deshabilitado */
+.chat-item.disabled::before {
+  opacity: 0 !important;
 }
