@@ -191,7 +191,7 @@ export default function PublicPage() {
           ) : (
             <>
               <h1 style={{
-                textAlign: 'center', marginBottom: '40px', fontSize: '36px',
+                textAlign: 'center', marginBottom: '10px', fontSize: '22px',
                 color: '#fff', fontWeight: 800, textShadow: '0 0 20px rgba(255, 255, 255, 0.3)',
                 animation: 'fadeInUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards'
               }}>
