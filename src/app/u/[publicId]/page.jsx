@@ -94,7 +94,7 @@ const PublicChatView = ({ chatInfo, onBack }) => {
       // Lógica corregida:
       // isCreator es true si el mensaje es del creador
       const isCreator = msg.from === "creator";
-      const senderName = isCreator ? creatorName : (msg.alias || anonAlias);
+      const senderName = isCreator ? creatorName : "Tú";
   
       return (
           // Usamos las MISMAS clases CSS que el chat del dashboard
