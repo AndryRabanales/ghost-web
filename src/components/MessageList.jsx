@@ -164,9 +164,13 @@ export default function MessageList({ dashboardId }) {
 
         ws.onmessage = (event) => {
             const data = JSON.parse(event.data);
-            if (data.type === 'new_message') {
+            // ==================
+            //  👇 ¡AQUÍ ESTÁ EL ARREGLO! 👇
+            // Ahora escucha ambos tipos de eventos para recargar la lista.
+            if (data.type === 'new_message' || data.type === 'message') {
                 fetchData();
             }
+            // ==================
         };
 
         return () => {
