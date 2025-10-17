@@ -25,10 +25,6 @@ const Message = ({ msg, creatorName, anonAlias }) => {
         <div className={`message-bubble ${isCreator ? 'creator' : 'anon'}`}>
           {msg.content}
         </div>
-        
-        <div className="message-timestamp">
-          {new Date(msg.createdAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
-        </div>
       </div>
     </div>
   );

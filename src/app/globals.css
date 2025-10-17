@@ -1527,5 +1527,23 @@ body {
   padding-right: 5px; /* Pequeño espacio */
 }
 
+/* src/app/globals.css */
 
-/* ... (resto de tus estilos .chat-footer, etc.) ... */
+/* Busca la regla existente para .message-content-bubble
+   (puede estar dentro de .public-chat-view o ser global)
+   y asegúrate de que tenga word-wrap */
+
+   .message-content-bubble {
+    padding: 10px 15px;
+    border-radius: 18px;
+    color: #fff;
+    line-height: 1.5;
+    word-wrap: break-word; /* <--- AÑADE O ASEGÚRATE QUE ESTÉ ESTA LÍNEA */
+    /* ...otros estilos que ya tengas... */
+  }
+  
+  /* O si tienes estilos específicos para la vista pública: */
+  .public-chat-view .message-content-bubble {
+     /* ... otros estilos ... */
+     word-wrap: break-word; /* <--- AÑADE O ASEGÚRATE QUE ESTÉ ESTA LÍNEA */
+  }
