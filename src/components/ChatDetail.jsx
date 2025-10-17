@@ -2,29 +2,25 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
 import { refreshToken } from "@/utils/auth";
-import MessageForm from "@/components/MessageForm"; // Importamos el formulario
+import MessageForm from "@/components/MessageForm";
 
 const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
 
 /**
  * Componente para renderizar una sola burbuja de mensaje.
- * Utiliza las clases de globals.css para el estilo.
  */
 const Message = ({ msg, creatorName, anonAlias }) => {
   const isCreator = msg.from === "creator";
   const senderName = isCreator ? creatorName : (msg.alias || anonAlias);
 
   return (
-    // Estas clases (wrapper, alias, bubble) vienen de tu globals.css
     <div className={`message-bubble-wrapper ${isCreator ? 'creator' : 'anon'}`}>
-      <div>
+      <div> {/* Div interno para alineación */}
         <div className="message-alias">{senderName}</div>
-        
-        {/* --- 👇 AQUÍ ESTABA EL ERROR QUE ARREGLÉ --- */}
-        {/* Ahora la burbuja también tiene la clase 'creator' o 'anon' */}
         <div className={`message-bubble ${isCreator ? 'creator' : 'anon'}`}>
           {msg.content}
         </div>
+        {/* --- La hora está quitada, como pediste --- */}
       </div>
     </div>
   );
@@ -35,7 +31,7 @@ const Message = ({ msg, creatorName, anonAlias }) => {
  */
 export default function ChatDetail({ dashboardId, chatId, onBack }) {
   const [messages, setMessages] = useState([]);
-  const [chatInfo, setChatInfo] = useState(null); // Almacenará vidas, alias, etc.
+  const [chatInfo, setChatInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const bottomRef = useRef(null);
@@ -65,7 +61,6 @@ export default function ChatDetail({ dashboardId, chatId, onBack }) {
           headers: getHeaders(token),
         });
 
-        // Refrescar token si está vencido
         if (res.status === 401) {
           const newToken = await refreshToken(localStorage.getItem("publicId"));
           if (newToken) {
@@ -81,7 +76,7 @@ export default function ChatDetail({ dashboardId, chatId, onBack }) {
 
         const data = await res.json();
         setMessages(data.messages || []);
-        setChatInfo(data); // Guardar info (vidas, alias)
+        setChatInfo(data);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -98,7 +93,6 @@ export default function ChatDetail({ dashboardId, chatId, onBack }) {
       return;
     }
 
-    // Tuve que ajustar esta URL también para que coincida con tu plugin
     const wsUrl = `${API.replace(/^http/, "ws")}/ws?dashboardId=${dashboardId}&token=${token}`;
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
@@ -106,10 +100,8 @@ export default function ChatDetail({ dashboardId, chatId, onBack }) {
     ws.onmessage = (event) => {
       try {
         const msg = JSON.parse(event.data);
-        // Escuchar mensajes (tanto del anónimmo como los nuestros)
         if (msg.type === "message" && msg.chatId === chatId) {
           setMessages((prev) => {
-            // Evitar duplicados
             if (prev.some(m => m.id === msg.id)) return prev;
             return [...prev, msg];
           });
@@ -121,7 +113,6 @@ export default function ChatDetail({ dashboardId, chatId, onBack }) {
     
     ws.onerror = (err) => console.error("Error WS (ChatDetail):", err);
 
-    // Limpiar conexión al salir
     return () => {
       if (wsRef.current) wsRef.current.close();
     };
@@ -137,7 +128,6 @@ export default function ChatDetail({ dashboardId, chatId, onBack }) {
     <div className="chat-detail-container">
       <div className="chat-header">
         <h3>Chat con {anonAlias}</h3>
-        {/* El botón de volver usa la prop 'onBack' que le pasamos */}
         <button onClick={onBack} className="back-button">← Volver</button>
       </div>
 
@@ -146,7 +136,7 @@ export default function ChatDetail({ dashboardId, chatId, onBack }) {
           <Message
             key={m.id || Math.random()}
             msg={m}
-            creatorName={"Tú"} // En el dashboard, el creador siempre eres "Tú"
+            creatorName={"Tú"}
             anonAlias={anonAlias}
           />
         ))}
@@ -154,11 +144,10 @@ export default function ChatDetail({ dashboardId, chatId, onBack }) {
       </div>
 
       <div className="chat-footer">
-        {/* Usamos el componente MessageForm que ya tienes */}
         <MessageForm
           dashboardId={dashboardId}
           chatId={chatId}
-          onMessageSent={() => {}} // El WS ya se encarga de actualizar
+          onMessageSent={() => {}}
           livesLeft={chatInfo?.livesLeft ?? 0}
           minutesToNextLife={chatInfo?.minutesToNextLife ?? 0}
         />

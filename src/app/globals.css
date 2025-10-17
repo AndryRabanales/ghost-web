@@ -1439,111 +1439,143 @@ body {
 ================================================================================
 */
 
-/* ... (otros estilos de .chat-detail-container, .chat-header, etc.) ... */
+/* src/app/globals.css */
 
-.chat-messages-container {
+/*
+================================================================================
+|           SECCIÓN DE CHAT UNIFICADA (PARA DASHBOARD Y PÚBLICO)               |
+================================================================================
+*/
+
+/* Contenedor principal del chat (el fondo oscuro) */
+.chat-detail-container,
+.public-chat-view {
+  background: rgba(20, 20, 35, 0.7);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  padding: 25px;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  /* Define una altura. Si es la página anónima, ya tiene una altura en línea. */
+  height: 85vh; 
+  max-height: 800px;
+}
+
+/* Ajuste para la vista anónima que define su altura en línea */
+.public-chat-view {
+  height: 600px; 
+  max-height: 80vh;
+}
+
+/* Encabezado del chat (con título y botón "Volver") */
+.chat-header,
+.chat-view-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+}
+.chat-header h3,
+.chat-view-header h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+}
+.back-button {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.3s ease;
+}
+.back-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Contenedor de mensajes (la parte con scroll) */
+.chat-messages-container,
+.messages-display {
   flex-grow: 1;
   overflow-y: auto;
   padding: 0 10px;
   margin-bottom: 20px;
 }
 
+/* ===== ESTILOS UNIFICADOS PARA LAS BURBUJAS DE MENSAJE ===== */
+
+/* 1. El Wrapper (controla la alineación DERECHA/IZQUIERDA) */
 .message-bubble-wrapper {
-  display: flex; /* Mantiene flexbox */
+  display: flex;
+  flex-direction: column; /* Apila el div interno */
   margin-bottom: 15px;
   max-width: 85%; /* Límite para que no ocupe toda la pantalla */
 }
 
-/* Contenedor INTERNO (el div que tiene alias y burbuja) */
-/* Asegúrate de que este div pueda crecer */
+/* El div interno (controla el ANCHO y la ALINEACIÓN DEL ALIAS) */
 .message-bubble-wrapper > div {
-  display: flex;          /* Para controlar el alias y la burbuja */
-  flex-direction: column; /* Alias arriba, burbuja abajo */
-  width: fit-content;    /* <--- CLAVE: Permite que se ajuste al contenido */
-  max-width: 100%;       /* Para que no se desborde del wrapper */
+  display: flex;
+  flex-direction: column;
+  width: fit-content;    /* <-- CLAVE: Se estira lo necesario */
+  max-width: 100%;       /* <-- CLAVE: Para que no se pase del wrapper */
 }
 
-/* Wrapper para mensajes del CREADOR (Tú) */
+/* Wrapper del Creador (Tú / Morado) */
 .message-bubble-wrapper.creator {
-  justify-content: flex-end; /* Mueve TODO el wrapper a la derecha */
-  margin-left: auto;        /* Empuja desde la izquierda */
-}
-/* Alinea el contenido INTERNO del creador a la derecha */
-.message-bubble-wrapper.creator > div {
-  align-items: flex-end;  /* <--- CLAVE: Alinea alias y burbuja a la derecha DENTRO del div */
+  align-items: flex-end;   /* Mueve el div interno a la derecha */
+  margin-left: auto;     /* Empuja todo el bloque a la derecha */
 }
 
-
-/* Wrapper para mensajes del ANÓNIMO */
+/* Wrapper del Anónimo (Gris) */
 .message-bubble-wrapper.anon {
-  justify-content: flex-start; /* Mueve TODO el wrapper a la izquierda */
-  margin-right: auto;         /* Empuja desde la derecha */
-}
-/* Alinea el contenido INTERNO del anónimo a la izquierda */
-.message-bubble-wrapper.anon > div {
-   align-items: flex-start; /* Esto es lo normal, alinea a la izquierda */
+  align-items: flex-start; /* Mueve el div interno a la izquierda */
+  margin-right: auto;    /* Empuja todo el bloque a la izquierda */
 }
 
+/* 2. El Alias (Nombre) */
+.message-alias {
+  font-size: 13px;
+  font-weight: bold;
+  margin-bottom: 5px;
+  color: var(--text-secondary);
+  padding: 0 5px;
+}
 
-/* La burbuja del mensaje */
+/* 3. La Burbuja (controla el color y el RECORTE DE TEXTO) */
 .message-bubble {
   padding: 10px 15px;
   border-radius: 18px;
   color: #fff;
   line-height: 1.5;
-  word-wrap: break-word; /* Para textos largos */
-  max-width: 100%;      /* Asegura que no se desborde */
+  word-wrap: break-word; /* <--- CLAVE: Recorta el texto largo */
+  max-width: 100%;
 }
 
-/* Colores y bordes específicos */
 .message-bubble.creator {
   background: linear-gradient(90deg, #8e2de2, #4a00e0);
-  border-bottom-right-radius: 4px; /* Esquina característica */
+  border-bottom-right-radius: 4px;
 }
 
 .message-bubble.anon {
   background: #3a3a4c;
-  border-bottom-left-radius: 4px; /* Esquina característica */
+  border-bottom-left-radius: 4px;
 }
 
-/* Alias (Nombre del remitente) */
-.message-alias {
-  font-size: 13px;
-  font-weight: bold;
-  margin-bottom: 5px;
-  color: var(--text-secondary); /* Color más sutil para el alias */
-  padding: 0 5px; /* Pequeño padding para que no pegue al borde */
-  /* NO necesita text-align aquí, lo controla el align-items del div padre */
-}
-
-
-/* Timestamp (Hora) */
+/* 4. Timestamp (Hora) - Solo se mostrará si existe en el HTML */
 .message-timestamp {
   font-size: 11px;
   color: rgba(255, 255, 255, 0.6);
   margin-top: 6px;
-  /* Alineación del timestamp */
-  align-self: flex-end; /* Siempre a la derecha del contenedor interno */
-  padding-right: 5px; /* Pequeño espacio */
+  padding-right: 5px;
+  /* Se alinea a la derecha del div interno */
+  align-self: flex-end; 
 }
-
-/* src/app/globals.css */
-
-/* Busca la regla existente para .message-content-bubble
-   (puede estar dentro de .public-chat-view o ser global)
-   y asegúrate de que tenga word-wrap */
-
-   .message-content-bubble {
-    padding: 10px 15px;
-    border-radius: 18px;
-    color: #fff;
-    line-height: 1.5;
-    word-wrap: break-word; /* <--- AÑADE O ASEGÚRATE QUE ESTÉ ESTA LÍNEA */
-    /* ...otros estilos que ya tengas... */
-  }
-  
-  /* O si tienes estilos específicos para la vista pública: */
-  .public-chat-view .message-content-bubble {
-     /* ... otros estilos ... */
-     word-wrap: break-word; /* <--- AÑADE O ASEGÚRATE QUE ESTÉ ESTA LÍNEA */
-  }

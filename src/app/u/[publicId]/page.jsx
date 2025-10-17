@@ -91,16 +91,24 @@ const PublicChatView = ({ chatInfo, onBack }) => {
     };
 
     const Message = ({ msg, creatorName, anonAlias }) => {
-        const isCreator = msg.from === "creator";
-        const senderName = isCreator ? creatorName : (msg.alias || anonAlias);
-    
-        return (
-            <div className={`message-container ${isCreator ? 'anon' : 'creator'}`}>
-                <span className="message-sender">{senderName}</span>
-                <div className="message-content-bubble">{msg.content}</div>
-            </div>
-        );
-    };
+      // Lógica corregida:
+      // isCreator es true si el mensaje es del creador
+      const isCreator = msg.from === "creator";
+      const senderName = isCreator ? creatorName : (msg.alias || anonAlias);
+  
+      return (
+          // Usamos las MISMAS clases CSS que el chat del dashboard
+          <div className={`message-bubble-wrapper ${isCreator ? 'creator' : 'anon'}`}>
+              <div> {/* Div interno para alineación */}
+                  <div className="message-alias">{senderName}</div>
+                  <div className={`message-bubble ${isCreator ? 'creator' : 'anon'}`}>
+                      {msg.content}
+                  </div>
+                  {/* Aquí no hay timestamp, lo cual es correcto */}
+              </div>
+          </div>
+      );
+  };
 
     return (
         <div className="public-chat-view">
