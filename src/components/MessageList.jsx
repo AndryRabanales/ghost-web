@@ -158,20 +158,33 @@ export default function MessageList({ dashboardId }) {
     useEffect(() => {
         fetchData();
 
-        const wsUrl = `${API.replace(/^http/, "ws")}/ws?dashboardId=${dashboardId}`;
+        // --- Esta parte ya estaba bien ---
+        const token = localStorage.getItem("token");
+        if (!token) {
+            console.error("No hay token para la conexión WS, abortando.");
+            return;
+        }
+        const wsUrl = `${API.replace(/^http/, "ws")}/ws?dashboardId=${dashboardId}&token=${token}`;
         const ws = new WebSocket(wsUrl);
         wsRef.current = ws;
+        // --- Fin de la parte que estaba bien ---
 
+
+        // ==================
+        //  👇 ¡ESTE ERA EL ERROR FINAL! 👇
+        // ==================
         ws.onmessage = (event) => {
             const data = JSON.parse(event.data);
-            // ==================
-            //  👇 ¡AQUÍ ESTÁ EL ARREGLO! 👇
-            // Ahora escucha ambos tipos de eventos para recargar la lista.
+            
+            // ANTES: if (data.type === 'new_message') {
+            // AHORA: Escucha 'new_message' (para chats nuevos) Y 'message' (para mensajes en chats existentes)
             if (data.type === 'new_message' || data.type === 'message') {
                 fetchData();
             }
-            // ==================
         };
+        // ==================
+        //  👆 ¡FIN DEL ARREGLO! 👆
+        // ==================
 
         return () => {
             if (wsRef.current) {
