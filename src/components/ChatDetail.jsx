@@ -19,7 +19,13 @@ const Message = ({ msg, creatorName, anonAlias }) => {
     <div className={`message-bubble-wrapper ${isCreator ? 'creator' : 'anon'}`}>
       <div>
         <div className="message-alias">{senderName}</div>
-        <div className="message-bubble">{msg.content}</div>
+        
+        {/* --- 👇 AQUÍ ESTABA EL ERROR QUE ARREGLÉ --- */}
+        {/* Ahora la burbuja también tiene la clase 'creator' o 'anon' */}
+        <div className={`message-bubble ${isCreator ? 'creator' : 'anon'}`}>
+          {msg.content}
+        </div>
+        
         <div className="message-timestamp">
           {new Date(msg.createdAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
         </div>
@@ -96,6 +102,7 @@ export default function ChatDetail({ dashboardId, chatId, onBack }) {
       return;
     }
 
+    // Tuve que ajustar esta URL también para que coincida con tu plugin
     const wsUrl = `${API.replace(/^http/, "ws")}/ws?dashboardId=${dashboardId}&token=${token}`;
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
