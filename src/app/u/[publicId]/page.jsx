@@ -98,15 +98,14 @@ const PublicChatView = ({ chatInfo, onBack }) => {
   
       return (
           // Usamos las MISMAS clases CSS que el chat del dashboard
-          <div className={`message-bubble-wrapper ${isCreator ? 'creator' : 'anon'}`}>
-              <div> {/* Div interno para alineación */}
-                  <div className="message-alias">{senderName}</div>
-                  <div className={`message-bubble ${isCreator ? 'creator' : 'anon'}`}>
-                      {msg.content}
-                  </div>
-                  {/* Aquí no hay timestamp, lo cual es correcto */}
-              </div>
-          </div>
+          <div className={`message-bubble-wrapper ${isCreator ? 'anon' : 'creator'}`}> {/* <-- CAMBIO AQUÍ */}
+    <div> {/* Div interno para alineación */}
+        <div className="message-alias">{senderName}</div>
+        <div className={`message-bubble ${isCreator ? 'anon' : 'creator'}`}> {/* <-- CAMBIO AQUÍ */}
+            {msg.content}
+        </div>
+    </div>
+</div>
       );
   };
 
