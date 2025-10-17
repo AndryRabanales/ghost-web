@@ -1428,3 +1428,104 @@ body {
 .chat-item.disabled::before {
   opacity: 0 !important;
 }
+
+/* src/app/globals.css */
+
+/* ... (tus otros estilos) ... */
+
+/*
+================================================================================
+|           SECCIÓN 10: VISTA DE CHAT DEL DASHBOARD (CORREGIDO)                 |
+================================================================================
+*/
+
+/* ... (otros estilos de .chat-detail-container, .chat-header, etc.) ... */
+
+.chat-messages-container {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 0 10px;
+  margin-bottom: 20px;
+}
+
+.message-bubble-wrapper {
+  display: flex; /* Mantiene flexbox */
+  margin-bottom: 15px;
+  max-width: 85%; /* Límite para que no ocupe toda la pantalla */
+}
+
+/* Contenedor INTERNO (el div que tiene alias y burbuja) */
+/* Asegúrate de que este div pueda crecer */
+.message-bubble-wrapper > div {
+  display: flex;          /* Para controlar el alias y la burbuja */
+  flex-direction: column; /* Alias arriba, burbuja abajo */
+  width: fit-content;    /* <--- CLAVE: Permite que se ajuste al contenido */
+  max-width: 100%;       /* Para que no se desborde del wrapper */
+}
+
+/* Wrapper para mensajes del CREADOR (Tú) */
+.message-bubble-wrapper.creator {
+  justify-content: flex-end; /* Mueve TODO el wrapper a la derecha */
+  margin-left: auto;        /* Empuja desde la izquierda */
+}
+/* Alinea el contenido INTERNO del creador a la derecha */
+.message-bubble-wrapper.creator > div {
+  align-items: flex-end;  /* <--- CLAVE: Alinea alias y burbuja a la derecha DENTRO del div */
+}
+
+
+/* Wrapper para mensajes del ANÓNIMO */
+.message-bubble-wrapper.anon {
+  justify-content: flex-start; /* Mueve TODO el wrapper a la izquierda */
+  margin-right: auto;         /* Empuja desde la derecha */
+}
+/* Alinea el contenido INTERNO del anónimo a la izquierda */
+.message-bubble-wrapper.anon > div {
+   align-items: flex-start; /* Esto es lo normal, alinea a la izquierda */
+}
+
+
+/* La burbuja del mensaje */
+.message-bubble {
+  padding: 10px 15px;
+  border-radius: 18px;
+  color: #fff;
+  line-height: 1.5;
+  word-wrap: break-word; /* Para textos largos */
+  max-width: 100%;      /* Asegura que no se desborde */
+}
+
+/* Colores y bordes específicos */
+.message-bubble.creator {
+  background: linear-gradient(90deg, #8e2de2, #4a00e0);
+  border-bottom-right-radius: 4px; /* Esquina característica */
+}
+
+.message-bubble.anon {
+  background: #3a3a4c;
+  border-bottom-left-radius: 4px; /* Esquina característica */
+}
+
+/* Alias (Nombre del remitente) */
+.message-alias {
+  font-size: 13px;
+  font-weight: bold;
+  margin-bottom: 5px;
+  color: var(--text-secondary); /* Color más sutil para el alias */
+  padding: 0 5px; /* Pequeño padding para que no pegue al borde */
+  /* NO necesita text-align aquí, lo controla el align-items del div padre */
+}
+
+
+/* Timestamp (Hora) */
+.message-timestamp {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: 6px;
+  /* Alineación del timestamp */
+  align-self: flex-end; /* Siempre a la derecha del contenedor interno */
+  padding-right: 5px; /* Pequeño espacio */
+}
+
+
+/* ... (resto de tus estilos .chat-footer, etc.) ... */
