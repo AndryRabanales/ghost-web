@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "GhostMessage",
+  title: "GhostMessages",
   // --- 👇 AÑADE ESTO ---
   icons: {
     icon: '/icon.png', // Asegúrate de que tu PNG se llame icon.png y esté en src/app/
