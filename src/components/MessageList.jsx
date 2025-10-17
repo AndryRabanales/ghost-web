@@ -158,33 +158,32 @@ export default function MessageList({ dashboardId }) {
     useEffect(() => {
         fetchData();
 
-        // --- Esta parte ya estaba bien ---
+        // ==================
+        //  👇 CORRECCIÓN 1: AÑADIR EL TOKEN A LA CONEXIÓN
+        // ==================
         const token = localStorage.getItem("token");
         if (!token) {
             console.error("No hay token para la conexión WS, abortando.");
             return;
         }
+        
+        // Añadimos el token como parámetro para que el backend te autentique
         const wsUrl = `${API.replace(/^http/, "ws")}/ws?dashboardId=${dashboardId}&token=${token}`;
         const ws = new WebSocket(wsUrl);
         wsRef.current = ws;
-        // --- Fin de la parte que estaba bien ---
-
 
         // ==================
-        //  👇 ¡ESTE ERA EL ERROR FINAL! 👇
+        //  👇 CORRECCIÓN 2: ESCUCHAR EL TIPO DE MENSAJE CORRECTO
         // ==================
         ws.onmessage = (event) => {
             const data = JSON.parse(event.data);
             
-            // ANTES: if (data.type === 'new_message') {
-            // AHORA: Escucha 'new_message' (para chats nuevos) Y 'message' (para mensajes en chats existentes)
+            // Tu backend (corregido) envía 'message'
+            // Tu frontend (antes) solo escuchaba 'new_message'
             if (data.type === 'new_message' || data.type === 'message') {
                 fetchData();
             }
         };
-        // ==================
-        //  👆 ¡FIN DEL ARREGLO! 👆
-        // ==================
 
         return () => {
             if (wsRef.current) {
