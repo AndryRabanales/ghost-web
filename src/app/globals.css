@@ -253,7 +253,7 @@ body::after {
 }
 .link-input-container:hover {
   border-color: var(--primary-pulse-red);
-  box-shadow: 0 0 20px rgba(255, 0, 76, 0.4);
+  box-shadow: 0 0 20px rgba(129, 0, 215, 0.4);
 }
 
 .link-input-label {
