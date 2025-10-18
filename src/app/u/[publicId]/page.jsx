@@ -89,25 +89,26 @@ const PublicChatView = ({ chatInfo, onBack }) => {
             setNewMsg(tempMsgContent); // Restaura el texto si falla el envío
         }
     };
+// src/app/u/[publicId]/page.jsx (dentro de PublicChatView)
+const Message = ({ msg, creatorName, anonAlias }) => {
+  // isCreator es true si el mensaje es del creador
+  const isCreator = msg.from === "creator";
+  // Si el mensaje es del creador (oponente) le ponemos su nombre. Si no, es "Tú" (el anónimo)
+  const senderName = isCreator ? creatorName : "Tú";
 
-    const Message = ({ msg, creatorName, anonAlias }) => {
-      // Lógica corregida:
-      // isCreator es true si el mensaje es del creador
-      const isCreator = msg.from === "creator";
-      const senderName = isCreator ? creatorName : "Tú";
-  
-      return (
-          // Usamos las MISMAS clases CSS que el chat del dashboard
-          <div className={`message-bubble-wrapper ${isCreator ? 'anon' : 'creator'}`}> {/* <-- CAMBIO AQUÍ */}
-    <div> {/* Div interno para alineación */}
-        <div className="message-alias">{senderName}</div>
-        <div className={`message-bubble ${isCreator ? 'anon' : 'creator'}`}> {/* <-- CAMBIO AQUÍ */}
-            {msg.content}
+  return (
+      // CLAVE: Si el mensaje es del 'anon' (el usuario viendo la pantalla),
+      // le aplicamos la clase 'creator' (alineación derecha y morado)
+      <div className={`message-bubble-wrapper ${msg.from === 'anon' ? 'creator' : 'anon'}`}> 
+        <div> 
+            <div className="message-alias">{senderName}</div>
+            <div className={`message-bubble ${msg.from === 'anon' ? 'creator' : 'anon'}`}>
+                {msg.content}
+            </div>
         </div>
-    </div>
-</div>
-      );
-  };
+      </div>
+  );
+};
 
     return (
         <div className="public-chat-view">

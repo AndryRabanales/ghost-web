@@ -9,18 +9,25 @@ const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.rail
 /**
  * Componente para renderizar una sola burbuja de mensaje.
  */
+// src/components/ChatDetail.jsx
+
+/**
+ * Componente para renderizar una sola burbuja de mensaje.
+ */
 const Message = ({ msg, creatorName, anonAlias }) => {
   const isCreator = msg.from === "creator";
+  // En el dashboard, el creador es el usuario que ve la pantalla ("Tú")
   const senderName = isCreator ? creatorName : (msg.alias || anonAlias);
 
   return (
+    // CLAVE: Si el mensaje es del 'creator' (Tú en el dashboard),
+    // le aplicamos la clase 'creator' (alineación derecha y morado)
     <div className={`message-bubble-wrapper ${isCreator ? 'creator' : 'anon'}`}>
       <div> {/* Div interno para alineación */}
         <div className="message-alias">{senderName}</div>
         <div className={`message-bubble ${isCreator ? 'creator' : 'anon'}`}>
           {msg.content}
         </div>
-        {/* --- La hora está quitada, como pediste --- */}
       </div>
     </div>
   );

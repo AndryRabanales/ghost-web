@@ -1502,6 +1502,14 @@ body {
   background: rgba(255, 255, 255, 0.2);
 }
 
+/* src/app/globals.css (dentro de la sección de estilos unificados) */
+
+/*
+================================================================================
+|           SECCIÓN DE CHAT UNIFICADA (ALINEACIÓN CORREGIDA)                   |
+================================================================================
+*/
+
 /* Contenedor de mensajes (la parte con scroll) */
 .chat-messages-container,
 .messages-display {
@@ -1511,43 +1519,44 @@ body {
   margin-bottom: 20px;
 }
 
-/* ===== ESTILOS UNIFICADOS PARA LAS BURBUJAS DE MENSAJE ===== */
-
 /* 1. El Wrapper (controla la alineación DERECHA/IZQUIERDA) */
 .message-bubble-wrapper {
   display: flex;
-  flex-direction: column; /* Apila el div interno */
+  flex-direction: column; 
   margin-bottom: 15px;
-  max-width: 85%; /* Límite para que no ocupe toda la pantalla */
+  max-width: 85%; 
 }
 
-/* El div interno (controla el ANCHO y la ALINEACIÓN DEL ALIAS) */
+/* El div interno (controla el ANCHO y la ALINEACIÓN DEL ALIAS/TIMESTAMP) */
 .message-bubble-wrapper > div {
   display: flex;
   flex-direction: column;
-  width: fit-content;    /* <-- CLAVE: Se estira lo necesario */
-  max-width: 100%;       /* <-- CLAVE: Para que no se pase del wrapper */
+  width: fit-content;    /* Se estira lo necesario */
+  max-width: 100%;       
 }
 
-/* Wrapper del Creador (Tú / Morado) */
+/* Wrapper del Creador (Tú en dashboard/Anónimo en vista pública) -> A LA DERECHA */
 .message-bubble-wrapper.creator {
   align-items: flex-end;   /* Mueve el div interno a la derecha */
   margin-left: auto;     /* Empuja todo el bloque a la derecha */
 }
 
-/* Wrapper del Anónimo (Gris) */
+/* Wrapper del Anónimo (Anónimo en dashboard/Creador en vista pública) -> A LA IZQUIERDA */
 .message-bubble-wrapper.anon {
   align-items: flex-start; /* Mueve el div interno a la izquierda */
   margin-right: auto;    /* Empuja todo el bloque a la izquierda */
 }
 
-/* 2. El Alias (Nombre) */
+/* 2. El Alias (Nombre) - Alineado según el wrapper */
 .message-alias {
   font-size: 13px;
   font-weight: bold;
   margin-bottom: 5px;
   color: var(--text-secondary);
   padding: 0 5px;
+}
+.message-bubble-wrapper.creator .message-alias {
+  align-self: flex-end; /* Alinea el nombre "Tú" a la derecha */
 }
 
 /* 3. La Burbuja (controla el color y el RECORTE DE TEXTO) */
@@ -1556,26 +1565,17 @@ body {
   border-radius: 18px;
   color: #fff;
   line-height: 1.5;
-  word-wrap: break-word; /* <--- CLAVE: Recorta el texto largo */
+  word-wrap: break-word; 
   max-width: 100%;
 }
 
 .message-bubble.creator {
   background: linear-gradient(90deg, #8e2de2, #4a00e0);
-  border-bottom-right-radius: 4px;
+  border-bottom-right-radius: 4px; /* Recorte para estilo chat */
 }
 
 .message-bubble.anon {
   background: #3a3a4c;
-  border-bottom-left-radius: 4px;
+  border-bottom-left-radius: 4px; /* Recorte para estilo chat */
 }
-
-/* 4. Timestamp (Hora) - Solo se mostrará si existe en el HTML */
-.message-timestamp {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.6);
-  margin-top: 6px;
-  padding-right: 5px;
-  /* Se alinea a la derecha del div interno */
-  align-self: flex-end; 
-}
+/* Fin de las correcciones de CSS */
