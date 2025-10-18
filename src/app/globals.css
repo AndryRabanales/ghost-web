@@ -149,9 +149,9 @@ body::after {
 }
 
 @keyframes input-power-cycle {
-  0%   { border-color: var(--primary-hellfire-red); box-shadow: 0 0 20px var(--primary-hellfire-red), inset 0 0 10px rgba(255, 0, 76, 0.4); }
-  50%  { border-color: var(--secondary-ember-orange); box-shadow: 0 0 30px var(--secondary-ember-orange), inset 0 0 15px rgba(255, 77, 0, 0.5); }
-  100% { border-color: var(--primary-hellfire-red); box-shadow: 0 0 20px var(--primary-hellfire-red), inset 0 0 10px rgba(255, 0, 76, 0.4); }
+  0%   { border-color: var(--primary-hellfire-red); box-shadow: 0 0 20px var(--primary-hellfire-red), inset 0 0 10px rgba(119, 0, 255, 0.4); }
+  50%  { border-color: var(--secondary-ember-orange); box-shadow: 0 0 30px var(--secondary-ember-orange), inset 0 0 15px rgba(104, 0, 231, 0.5); }
+  100% { border-color: var(--primary-hellfire-red); box-shadow: 0 0 20px var(--primary-hellfire-red), inset 0 0 10px rgba(143, 0, 209, 0.4); }
 }
 
 @keyframes blood-pulse {
