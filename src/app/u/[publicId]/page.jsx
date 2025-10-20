@@ -2,12 +2,14 @@
 "use client";
 import AnonMessageForm from "@/components/AnonMessageForm";
 import React, { useEffect, useState, useRef } from "react";
-import { useParams } from "next/navigation";
+// 👇 Importa useRouter
+import { useParams, useRouter } from "next/navigation";
 
 const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
 
-// --- Componente de la Vista de Chat (integrado) ---
+// --- Componente de la Vista de Chat (integrado - sin cambios internos) ---
 const PublicChatView = ({ chatInfo, onBack }) => {
+    // ... (contenido existente del componente PublicChatView sin cambios)
     const { anonToken, chatId, creatorName: initialCreatorName } = chatInfo;
     const [messages, setMessages] = useState([]);
     const [newMsg, setNewMsg] = useState("");
@@ -28,7 +30,7 @@ const PublicChatView = ({ chatInfo, onBack }) => {
                 const res = await fetch(`${API}/chats/${anonToken}/${chatId}`);
                 if (!res.ok) throw new Error("No se pudo cargar el chat");
                 const data = await res.json();
-                
+
                 setMessages(data.messages || []);
                 if (data.creatorName) setCreatorName(data.creatorName);
                 const firstAnon = data.messages.find(m => m.from === "anon");
@@ -51,7 +53,6 @@ const PublicChatView = ({ chatInfo, onBack }) => {
                 const msg = JSON.parse(event.data);
                 if (msg.chatId === chatId) {
                     setMessages((prev) => {
-                        // Previene duplicados si el mensaje ya existe
                         if (prev.some(m => m.id === msg.id)) return prev;
                         return [...prev, msg];
                     });
@@ -67,7 +68,7 @@ const PublicChatView = ({ chatInfo, onBack }) => {
         if (!newMsg.trim()) return;
 
         const tempMsgContent = newMsg;
-        setNewMsg(""); // Limpia el input inmediatamente
+        setNewMsg("");
 
         try {
             const res = await fetch(`${API}/chats/${anonToken}/${chatId}/messages`, {
@@ -79,36 +80,28 @@ const PublicChatView = ({ chatInfo, onBack }) => {
             if (!res.ok) {
               throw new Error("No se pudo enviar el mensaje");
             }
-            // --- CORRECCIÓN CLAVE ---
-            // Ya no actualizamos el estado aquí. El WebSocket se encargará de ello.
-            // const actualMessage = await res.json();
-            // setMessages((prev) => [...prev, actualMessage]);
-
+            // WebSocket se encargará de actualizar los mensajes
         } catch (err) {
             setError("⚠️ No se pudo enviar el mensaje");
-            setNewMsg(tempMsgContent); // Restaura el texto si falla el envío
+            setNewMsg(tempMsgContent);
         }
     };
-// src/app/u/[publicId]/page.jsx (dentro de PublicChatView)
-const Message = ({ msg, creatorName, anonAlias }) => {
-  // isCreator es true si el mensaje es del creador
-  const isCreator = msg.from === "creator";
-  // Si el mensaje es del creador (oponente) le ponemos su nombre. Si no, es "Tú" (el anónimo)
-  const senderName = isCreator ? creatorName : "Tú";
 
-  return (
-      // CLAVE: Si el mensaje es del 'anon' (el usuario viendo la pantalla),
-      // le aplicamos la clase 'creator' (alineación derecha y morado)
-      <div className={`message-bubble-wrapper ${msg.from === 'anon' ? 'creator' : 'anon'}`}> 
-        <div> 
-            <div className="message-alias">{senderName}</div>
-            <div className={`message-bubble ${msg.from === 'anon' ? 'creator' : 'anon'}`}>
-                {msg.content}
+    const Message = ({ msg, creatorName, anonAlias }) => {
+      const isCreator = msg.from === "creator";
+      const senderName = isCreator ? creatorName : "Tú";
+
+      return (
+          <div className={`message-bubble-wrapper ${msg.from === 'anon' ? 'creator' : 'anon'}`}>
+            <div>
+                <div className="message-alias">{senderName}</div>
+                <div className={`message-bubble ${msg.from === 'anon' ? 'creator' : 'anon'}`}>
+                    {msg.content}
+                </div>
             </div>
-        </div>
-      </div>
-  );
-};
+          </div>
+      );
+    };
 
     return (
         <div className="public-chat-view">
@@ -140,14 +133,18 @@ const Message = ({ msg, creatorName, anonAlias }) => {
     );
 };
 
-// --- Componente Principal de la Página (sin cambios) ---
+
+// --- Componente Principal de la Página ---
 export default function PublicPage() {
   const params = useParams();
   const publicId = params.publicId;
+  // 👇 Inicializa useRouter
+  const router = useRouter();
 
   const [myChats, setMyChats] = useState([]);
   const [selectedChat, setSelectedChat] = useState(null);
 
+  // ... (loadChats, useEffect, formatDate sin cambios)
   const loadChats = () => {
     try {
       const stored = JSON.parse(localStorage.getItem("myChats") || "[]");
@@ -181,6 +178,7 @@ export default function PublicPage() {
       align-items: center;
       padding: 40px 20px;
       font-family: var(--font-main);
+      position: relative; /* Añadido para posicionar el botón */
     }
     @keyframes gradient-pan {
       0% { background-position: 0% 50%; }
@@ -193,6 +191,17 @@ export default function PublicPage() {
     <>
       <style>{pageStyles}</style>
       <div className="page-container">
+        {/* 👇 Botón para ir al dashboard/inicio */}
+        <button
+            onClick={() => router.push('/')}
+            className="to-dashboard-button"
+            title="Ir a mi espacio"
+         >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="24" height="24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+        </button>
+
         <div style={{ maxWidth: 520, width: '100%' }}>
           {selectedChat ? (
             <PublicChatView chatInfo={selectedChat} onBack={() => setSelectedChat(null)} />

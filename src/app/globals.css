@@ -1579,3 +1579,41 @@ body {
   border-bottom-left-radius: 4px; /* Recorte para estilo chat */
 }
 /* Fin de las correcciones de CSS */
+
+/* src/app/globals.css */
+
+/* ... (tus estilos existentes) ... */
+
+/*
+================================================================================
+|           SECCIÓN EXTRA: Botón para ir al Dashboard (Página Anónima)          |
+================================================================================
+*/
+
+.to-dashboard-button {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: var(--glow-accent-crimson); /* Púrpura claro */
+  padding: 8px; /* Padding más pequeño */
+  border-radius: 50%; /* Hacerlo circular */
+  cursor: pointer;
+  display: flex; /* Para centrar el icono */
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  z-index: 10; /* Asegura que esté visible */
+}
+
+.to-dashboard-button:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  transform: scale(1.1);
+  box-shadow: 0 0 15px var(--glow-accent-crimson);
+}
+
+.to-dashboard-button svg {
+  width: 20px; /* Tamaño del icono */
+  height: 20px;
+}
