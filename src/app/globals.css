@@ -1584,36 +1584,57 @@ body {
 
 /* ... (tus estilos existentes) ... */
 
+/* src/app/globals.css */
+
+/* ... (tus estilos existentes) ... */
+
 /*
 ================================================================================
-|           SECCIÓN EXTRA: Botón para ir al Dashboard (Página Anónima)          |
+|       SECCIÓN 11: ENLACE "CREAR TU ESPACIO" (PÁGINA ANÓNIMA)                 |
 ================================================================================
 */
 
-.to-dashboard-button {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  background-color: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: var(--glow-accent-crimson); /* Púrpura claro */
-  padding: 8px; /* Padding más pequeño */
-  border-radius: 50%; /* Hacerlo circular */
-  cursor: pointer;
-  display: flex; /* Para centrar el icono */
+.create-space-link-container {
+  text-align: center;
+  margin-top: 35px; /* Espacio después del formulario anónimo */
+  margin-bottom: 30px; /* Espacio antes de la lista de chats (si existe) */
+  opacity: 0; /* Para la animación */
+}
+
+.create-space-link {
+  display: inline-flex; /* Para alinear el icono y el texto */
   align-items: center;
-  justify-content: center;
+  gap: 8px; /* Espacio entre icono y texto */
+  padding: 10px 18px;
+  background-color: rgba(255, 255, 255, 0.08); /* Fondo sutil */
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  color: var(--glow-accent-crimson); /* Color púrpura claro */
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
   transition: all 0.3s ease;
-  z-index: 10; /* Asegura que esté visible */
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
-.to-dashboard-button:hover {
-  background-color: rgba(255, 255, 255, 0.2);
+.create-space-link:hover {
+  background-color: rgba(142, 45, 226, 0.2); /* Fondo púrpura más intenso al pasar el mouse */
+  border-color: var(--glow-accent-crimson);
+  color: #fff; /* Texto blanco al pasar el mouse */
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(142, 45, 226, 0.3);
+}
+
+.create-space-link svg {
+  transition: transform 0.3s ease;
+}
+
+.create-space-link:hover svg {
   transform: scale(1.1);
-  box-shadow: 0 0 15px var(--glow-accent-crimson);
 }
 
-.to-dashboard-button svg {
-  width: 20px; /* Tamaño del icono */
-  height: 20px;
+/* Reutilizamos la animación de entrada */
+.staggered-fade-in-up {
+  opacity: 0;
+  animation: fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }

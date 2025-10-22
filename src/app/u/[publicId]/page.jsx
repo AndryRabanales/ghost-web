@@ -215,6 +215,14 @@ export default function PublicPage() {
                 Envíame un Mensaje Anónimo y Abre un Chat Anónimo
               </h1>
               <AnonMessageForm publicId={publicId} onSent={loadChats} />
+              <div className="create-space-link-container staggered-fade-in-up" style={{ animationDelay: '0.8s' }}>
+                <a href="/" className="create-space-link">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="20" height="20">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Crear tu propio espacio
+                </a>
+              </div>
               {myChats.length > 0 && (
                 <div className="chats-list-section">
                   <h2 className="chats-list-title">Tus Chats Abiertos</h2>
