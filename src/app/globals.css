@@ -1638,3 +1638,40 @@ body {
   opacity: 0;
   animation: fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
+
+/* Dentro de src/app/globals.css */
+
+.hearts-container {
+  display: flex;          /* Usa flexbox */
+  justify-content: center;/* Centra los iconos */
+  align-items: center;    /* Alinea verticalmente */
+  gap: 2px;             /* Espacio pequeño entre iconos SVG */
+  /* Quita flex-wrap: nowrap; si lo tenías, ya no es tan crítico con SVG */
+  /* Quita overflow: hidden; si lo tenías */
+}
+
+/* Estilo para los SVG de corazón */
+.heart-svg {
+  width: 1.4rem;  /* Controla el tamaño del SVG (ajústalo) */
+  height: 1.4rem; /* Controla el tamaño del SVG (ajústalo) */
+  color: var(--primary-hellfire-red); /* Color base del corazón (borde y relleno) */
+  transition: all 0.3s ease; /* Transición suave para opacidad/efectos */
+}
+
+/* SVG vacío (solo borde) */
+.heart-svg.empty {
+  fill: none; /* Sin relleno */
+  opacity: 0.3; /* Más transparente */
+  color: var(--text-secondary); /* Color del borde más tenue */
+}
+
+/* SVG lleno (con relleno y animación) */
+.heart-svg.filled {
+  fill: currentColor; /* Relleno con el color base */
+  /* Mantenemos la animación de pulso si la tenías */
+  animation: blood-pulse 1.2s ease-in-out infinite; 
+}
+
+/* Puedes quitar la media query que ajustaba font-size si ya no es necesaria */
+/* O ajustarla para cambiar width/height del SVG si aún lo necesitas */
+/* @media (max-width: 400px) { ... } */
