@@ -25,7 +25,7 @@ const IconEspera = () => (
 
 // --- SUBCOMPONENTE ChatItem (SIN CAMBIOS) ---
 const ChatItem = ({ chat, onOpenChat, disabled, minutesNext }) => {
-  const last = chat.lastMessage;
+  const preview = chat.previewMessage;
 
   // Determina el contenido del botón
   const getButtonContent = () => {
@@ -54,24 +54,25 @@ const ChatItem = ({ chat, onOpenChat, disabled, minutesNext }) => {
   };
 
   return (
-    <div 
+    <div
       className={`chat-item ${disabled ? 'disabled' : ''} ${!chat.isOpened ? 'unopened' : ''}`}
-      onClick={() => !disabled && onOpenChat(chat.id)} // <-- Esta es la función de click correcta
+      onClick={() => !disabled && onOpenChat(chat.id)}
     >
       <div className="chat-item-main">
         <div className="chat-item-alias">
+          {/* Esto sigue usando el alias del chat, está bien */}
           {chat.anonAlias || "Anónimo"}
         </div>
         <div className="chat-item-content">
-          {last ? (
-            <>
-              {last.from === 'creator' && <span>Tú: </span>}
-              {last.content}
-            </>
-          ) : "Chat iniciado, sin mensajes"}
+          {/* Usa 'preview.content' */}
+          {preview ? preview.content : "Chat iniciado, sin mensajes"}
         </div>
         <div className="chat-item-date">
-          {last ? new Date(last.createdAt).toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : new Date(chat.createdAt).toLocaleString()}
+          {/* Usa 'preview.createdAt' o la fecha de creación del chat */}
+          {preview
+            ? new Date(preview.createdAt).toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+            : new Date(chat.createdAt).toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+          }
         </div>
       </div>
       <button className="chat-item-button" disabled={disabled}>
