@@ -1275,6 +1275,12 @@ body {
 ================================================================================
 */
 
+/*
+================================================================================
+|       SECCIÓN 5.1: ESTRUCTURA DE ITEMS DE CHAT (BANDEJA DE ENTRADA)          |
+================================================================================
+*/
+
 /* Nueva animación para el borde de chats no leídos */
 @keyframes pulse-border {
   0%, 100% { 
@@ -1290,10 +1296,11 @@ body {
 /* Contenedor principal del item de chat */
 .chat-item {
   display: flex;
-  align-items: center; /* <-- ESTE ES EL CAMBIO CLAVE para el tamaño del botón */
+  align-items: center; 
   justify-content: space-between;
   gap: 15px; 
-  padding: 16px 20px; 
+  padding: 10px 20px; /* AJUSTE: Padding vertical de 10px */
+  min-height: auto; /* CRÍTICO: La altura no debe ser forzada */
   margin-bottom: 12px; 
   background: transparent;
   border: 1px solid var(--border-color-faint);
@@ -1326,12 +1333,23 @@ body {
   animation: pulse-border 2.5s ease-in-out infinite; /* Animación pulsante */
 }
 
+/* Estilo para los chats con nueva respuesta (Carmesí) */
+.chat-item.new-reply {
+  padding: 10px 20px; /* Mantiene la consistencia del padding */
+  min-height: auto; 
+  
+  /* Aplica el estilo carmesí */
+  border-left: 3px solid var(--notification-red-base); 
+  background: linear-gradient(90deg, rgba(255, 22, 65, 0.1), transparent 50%);
+  animation: pulse-new-reply 2.5s ease-in-out infinite; 
+}
+
 /* Contenido principal (Alias, Mensaje, Fecha) */
 .chat-item-main {
   display: flex;
   flex-direction: column;
   justify-content: center; 
-  gap: 4px; 
+  gap: 2px; /* ⬅️ CRÍTICO: Reducir a 2px para que las 3 líneas sean visibles y se ordenen */
   flex-grow: 1; 
   overflow: hidden; 
 }
@@ -1374,7 +1392,7 @@ body {
   justify-content: center;
   gap: 8px;
   flex-shrink: 0; 
-  padding: 10px 16px; /* Padding vertical más pequeño */
+  padding: 7px 16px; /* ⬅️ AJUSTE: Padding vertical compacto para el botón */
   font-size: 14px;
   font-weight: 700;
   border-radius: 12px;
@@ -1395,9 +1413,9 @@ body {
 
 /* Animación de hover para el botón */
 .chat-item:not(.disabled) .chat-item-button:hover {
-  transform: scale(1.05) translateY(-2px); /* Lo levanta un poco */
-  box-shadow: 0 6px 25px rgba(74, 0, 224, 0.5); /* Sombra más intensa */
-  filter: brightness(1.2); /* Lo hace brillar */
+  transform: scale(1.05) translateY(-2px);
+  box-shadow: 0 6px 25px rgba(74, 0, 224, 0.5); 
+  filter: brightness(1.2); 
 }
 
 .chat-item:not(.disabled) .chat-item-button:hover svg {
@@ -1428,7 +1446,6 @@ body {
 .chat-item.disabled::before {
   opacity: 0 !important;
 }
-
 /* src/app/globals.css */
 
 /* ... (tus otros estilos) ... */
