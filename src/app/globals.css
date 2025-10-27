@@ -126,10 +126,7 @@ body::after {
   100% { transform: scale(1); box-shadow: 0 0 15px var(--primary-hellfire-red), 0 0 25px var(--secondary-ember-orange); }
 }
 
-@keyframes fadeInUp { 
-    from { opacity: 0; transform: translateY(25px); } 
-    to { opacity: 1; transform: translateY(0); } 
-}
+/* Reemplaza esto también en src/app/globals.css */
 
 @keyframes container-breathing {
   0%   { border-color: rgba(142, 45, 226, 0.5); box-shadow: 0 0 30px rgba(142, 45, 226, 0.2), inset 0 0 15px rgba(142, 45, 226, 0.2); }
@@ -232,7 +229,7 @@ body::after {
 
 .dashboard-page-container { max-width: 600px; margin: 0 auto; padding: 8px 5px; }
 .dashboard-info-container {
-  background: var(--background-core); border-radius: 20px; padding: 10px; margin-bottom: 5px;
+  background: var(--card-bg); border-radius: 20px; padding: 10px; margin-bottom: 5px;
   border: 2px solid; display: flex; flex-direction: column; gap: 6px; align-items: stretch;
   animation: container-breathing 7s ease-in-out infinite reverse;
 }
@@ -355,7 +352,7 @@ body::after {
   color: #fff; font-weight: bold; font-size: 16px; cursor: pointer;
   transition: all 0.3s ease; animation: core-heartbeat 2.2s infinite;
 }
-.premium-super-button:hover:not(:disabled) { transform: scale(1.05); animation-play-state: paused; }
+.premium-super-button:hover:not(:disabled) { transform: scale(1.05); }
 
 @media (min-width: 820px) {
   .dashboard-info-container { flex-direction: row; }
@@ -839,9 +836,11 @@ body::after {
 
 /* /src/app/globals.css */
 
+@import "tailwindcss";
+
 /*
 ================================================================================
-|                       TEMA: GHOSTLY GLASS (Final)                              |
+|                       TEMA: HELLFIRE CORE v4 (FINAL BUILD)                     |
 ================================================================================
 */
 @import url("https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Fira+Code&display=swap");
@@ -849,9 +848,9 @@ body::after {
 :root {
   --background-abyss: #0d0c22;
   --background-core: #1a1a2e;
-  --primary-hellfire-red: #8e2de2; /* Púrpura principal */
-  --secondary-ember-orange: #4a00e0; /* Púrpura oscuro */
-  --glow-accent-crimson: #c9a4ff; /* Púrpura claro para brillos */
+  --primary-hellfire-red: #8011e2;
+  --secondary-ember-orange: #5703ff;
+  --glow-accent-crimson: #c9a4ff;
   --accent-data-stream: #000000;
   --text-primary: #f5f5f5;
   --text-secondary: rgba(235, 235, 245, 0.7);
@@ -874,7 +873,7 @@ body {
   animation: background-pulse 12s ease-in-out infinite;
 }
 
-/* ... (tus estilos base y animaciones que ya tenías) ... */
+/* ... (el resto de tus estilos base y animaciones que ya tenías) ... */
 
 @keyframes fadeInUp { 
     from { opacity: 0; transform: translateY(25px); } 
@@ -1021,6 +1020,490 @@ body {
 .reply-button { padding: 0 25px; }
 
 
+/* /src/app/globals.css */
+
+/* ... (tus estilos existentes) ... */
+
+/*
+================================================================================
+|           SECCIÓN 10: VISTA DE CHAT DEL DASHBOARD                              |
+================================================================================
+*/
+
+.chat-detail-container {
+  background: rgba(20, 20, 35, 0.7);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  padding: 25px;
+  display: flex;
+  flex-direction: column;
+  height: 85vh; /* Altura más adaptable */
+  max-height: 800px;
+  width: 100%;
+}
+
+.chat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+}
+
+.chat-header h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.status-indicator {
+  font-size: 13px;
+  font-family: var(--font-mono);
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.status-indicator.online {
+  color: #2ECC71;
+}
+
+.chat-messages-container {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 0 10px;
+  margin-bottom: 20px;
+}
+
+.message-bubble-wrapper {
+  display: flex;
+  margin-bottom: 15px;
+  max-width: 85%;
+}
+
+.message-bubble-wrapper.creator {
+  justify-content: flex-end;
+  margin-left: auto;
+}
+
+.message-bubble-wrapper.anon {
+  justify-content: flex-start;
+}
+
+.message-bubble {
+  padding: 10px 15px;
+  border-radius: 18px;
+  color: #fff;
+  line-height: 1.5;
+}
+
+.message-bubble.creator {
+  background: linear-gradient(90deg, #8e2de2, #4a00e0);
+  border-bottom-right-radius: 4px;
+}
+
+.message-bubble.anon {
+  background: #3a3a4c;
+  border-bottom-left-radius: 4px;
+}
+
+.message-alias {
+  font-size: 13px;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.message-timestamp {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: 6px;
+  text-align: right;
+}
+
+.chat-footer {
+  padding-top: 15px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.chat-footer form {
+  display: flex;
+  gap: 10px;
+}
+
+.chat-footer input {
+  flex-grow: 1;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  color: #fff;
+  font-size: 16px;
+  outline: none;
+  padding: 14px 18px;
+  transition: all 0.3s ease;
+}
+
+.chat-footer input:focus {
+  border-color: rgba(142, 45, 226, 0.8);
+  box-shadow: 0 0 20px rgba(142, 45, 226, 0.4);
+}
+
+.chat-footer input:disabled {
+  background: rgba(0,0,0,0.2);
+  cursor: not-allowed;
+}
+
+.chat-footer button {
+  padding: 0 25px;
+  background: linear-gradient(90deg, #8e2de2, #4a00e0);
+  border: none;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.chat-footer button:hover:not(:disabled) {
+  transform: scale(1.05);
+}
+
+.chat-footer button:disabled {
+  background: #3a3a4a;
+  cursor: not-allowed;
+}
+
+/* En src/app/globals.css (deberían estar ya) */
+
+.public-chat-view {
+  background: rgba(20, 20, 35, 0.7);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  padding: 25px;
+  display: flex;
+  flex-direction: column;
+  height: 600px;
+  max-height: 80vh;
+  width: 100%;
+  animation: fadeInUp 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.chat-view-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.messages-display {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding-right: 10px;
+  margin-bottom: 20px;
+}
+
+/* ===== INICIO DEL CÓDIGO CORREGIDO ===== */
+
+/* Contenedor de cada mensaje */
+.message-container {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 15px;
+  max-width: 85%;
+}
+
+/* Mensajes del CREADOR (Tú) - A la derecha y en púrpura */
+.message-container.creator {
+  align-items: flex-end; /* Alinea el texto del nombre a la derecha */
+  margin-left: auto;    /* Empuja todo el bloque del mensaje a la derecha */
+}
+
+/* Mensajes del ANÓNIMO - A la izquierda y en gris */
+.message-container.anon {
+  align-items: flex-start; /* Alinea el texto del nombre a la izquierda */
+  margin-right: auto;   /* Empuja todo el bloque del mensaje a la izquierda */
+}
+
+/* La burbuja de texto */
+.message-content-bubble {
+  padding: 10px 15px;
+  border-radius: 18px;
+  color: #fff;
+  line-height: 1.5;
+  word-wrap: break-word;
+}
+
+/* Color para la burbuja del CREADOR (Tú) */
+.message-container.creator .message-content-bubble {
+  background: linear-gradient(90deg, #8e2de2, #4a00e0);
+  border-bottom-right-radius: 4px;
+}
+
+/* Color para la burbuja del ANÓNIMO */
+.message-container.anon .message-content-bubble {
+  background: #3a3a4c;
+  border-bottom-left-radius: 4px;
+}
+
+/* ===== FIN DEL CÓDIGO CORREGIDO ===== */
+
+.message-sender {
+  font-size: 13px;
+  font-weight: bold;
+  margin-bottom: 5px;
+  padding: 0 10px;
+  color: var(--text-secondary);
+}
+
+/* Contenedor del formulario de respuesta */
+.chat-reply-form {
+  display: flex;
+  gap: 10px;
+}
+
+/*
+================================================================================
+|       SECCIÓN 5.1: ESTRUCTURA DE ITEMS DE CHAT (BANDEJA DE ENTRADA)          |
+================================================================================
+*/
+
+/* Nueva animación para el borde de chats no leídos */
+@keyframes pulse-border {
+  0%, 100% { 
+    border-left-color: var(--glow-accent-crimson);
+    box-shadow: inset 5px 0 15px -5px var(--glow-accent-crimson);
+  }
+  50% { 
+    border-left-color: var(--border-color-strong);
+    box-shadow: inset 3px 0 5px -5px var(--border-color-strong);
+  }
+}
+
+/* Contenedor principal del item de chat */
+.chat-item {
+  display: flex;
+  align-items: center; /* <-- ESTE ES EL CAMBIO CLAVE para el tamaño del botón */
+  justify-content: space-between;
+  gap: 15px; 
+  padding: 16px 20px; 
+  margin-bottom: 12px; 
+  background: transparent;
+  border: 1px solid var(--border-color-faint);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 0 10px rgba(157, 0, 255, 0.3);
+}
+.chat-item::before {
+  content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(201, 164, 255, 0.1), transparent);
+  animation: neuron-flash 3.5s linear infinite; opacity: 0; transition: opacity 0.4s ease;
+}
+.chat-item:not(.disabled):hover {
+  transform: translateY(-4px) scale(1.02);
+  background: rgba(40, 40, 60, 0.7);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  border-color: var(--glow-accent-crimson); /* Borde brillante al pasar el mouse */
+}
+.chat-item:not(.disabled):hover::before {
+  opacity: 1; /* Muestra el barrido de luz al pasar el mouse */
+}
+
+/* Estilo para los chats no abiertos (más llamativo) */
+.chat-item.unopened {
+  border-left: 3px solid var(--glow-accent-crimson);
+  background: linear-gradient(90deg, rgba(142, 45, 226, 0.1), transparent 50%);
+  animation: pulse-border 2.5s ease-in-out infinite; /* Animación pulsante */
+}
+
+/* Contenido principal (Alias, Mensaje, Fecha) */
+.chat-item-main {
+  display: flex;
+  flex-direction: column;
+  justify-content: center; 
+  gap: 4px; 
+  flex-grow: 1; 
+  overflow: hidden; 
+}
+
+/* Alias del anónimo */
+.chat-item-alias {
+  font-weight: 700;
+  font-size: 1.1em; 
+  color: var(--text-primary);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+/* Contenido del último mensaje */
+.chat-item-content {
+  font-size: 0.9em; 
+  color: var(--text-secondary);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+.chat-item-content span {
+  color: var(--glow-accent-crimson);
+  font-weight: 600;
+}
+
+/* Fecha del último mensaje */
+.chat-item-date {
+  font-size: 0.75em; 
+  color: var(--border-color-strong);
+  font-family: var(--font-mono);
+  margin-top: 4px;
+}
+
+/* Botón de Acción (Ver / Responder / Espera) */
+.chat-item-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-shrink: 0; 
+  padding: 10px 16px; /* Padding vertical más pequeño */
+  font-size: 14px;
+  font-weight: 700;
+  border-radius: 12px;
+  cursor: pointer;
+  border: none;
+  /* Fondo con gradiente "espectacular" */
+  background: linear-gradient(90deg, var(--primary-hellfire-red), var(--secondary-ember-orange));
+  color: var(--text-primary);
+  transition: all 0.3s ease;
+  min-width: 110px; 
+  text-align: center;
+  box-shadow: 0 4px 15px rgba(74, 0, 224, 0.3);
+}
+
+.chat-item-button svg {
+  transition: transform 0.3s ease;
+}
+
+/* Animación de hover para el botón */
+.chat-item:not(.disabled) .chat-item-button:hover {
+  transform: scale(1.05) translateY(-2px); /* Lo levanta un poco */
+  box-shadow: 0 6px 25px rgba(74, 0, 224, 0.5); /* Sombra más intensa */
+  filter: brightness(1.2); /* Lo hace brillar */
+}
+
+.chat-item:not(.disabled) .chat-item-button:hover svg {
+  transform: scale(1.1);
+}
+
+/* Estado deshabilitado (sin vidas) */
+.chat-item.disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  filter: grayscale(50%);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.chat-item.disabled .chat-item-button {
+  background: #3a3a4c; 
+  color: var(--text-secondary);
+  cursor: not-allowed;
+  animation: none;
+  box-shadow: none;
+}
+
+.chat-item.disabled::before {
+  opacity: 0 !important;
+}
+
+/* Oculta el brillo de neón en el item deshabilitado */
+.chat-item.disabled::before {
+  opacity: 0 !important;
+}
+
+/* src/app/globals.css */
+
+/* ... (tus otros estilos) ... */
+
+/*
+================================================================================
+|           SECCIÓN 10: VISTA DE CHAT DEL DASHBOARD (CORREGIDO)                 |
+================================================================================
+*/
+
+/* src/app/globals.css */
+
+/*
+================================================================================
+|           SECCIÓN DE CHAT UNIFICADA (PARA DASHBOARD Y PÚBLICO)               |
+================================================================================
+*/
+
+/* Contenedor principal del chat (el fondo oscuro) */
+.chat-detail-container,
+.public-chat-view {
+  background: rgba(20, 20, 35, 0.7);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  padding: 25px;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  /* Define una altura. Si es la página anónima, ya tiene una altura en línea. */
+  height: 85vh; 
+  max-height: 800px;
+}
+
+/* Ajuste para la vista anónima que define su altura en línea */
+.public-chat-view {
+  height: 600px; 
+  max-height: 80vh;
+}
+
+/* Encabezado del chat (con título y botón "Volver") */
+.chat-header,
+.chat-view-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+}
+.chat-header h3,
+.chat-view-header h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+}
+.back-button {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.3s ease;
+}
+.back-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* src/app/globals.css (dentro de la sección de estilos unificados) */
+
 /*
 ================================================================================
 |           SECCIÓN DE CHAT UNIFICADA (ALINEACIÓN CORREGIDA)                   |
@@ -1097,6 +1580,14 @@ body {
 }
 /* Fin de las correcciones de CSS */
 
+/* src/app/globals.css */
+
+/* ... (tus estilos existentes) ... */
+
+/* src/app/globals.css */
+
+/* ... (tus estilos existentes) ... */
+
 /*
 ================================================================================
 |       SECCIÓN 11: ENLACE "CREAR TU ESPACIO" (PÁGINA ANÓNIMA)                 |
@@ -1148,11 +1639,15 @@ body {
   animation: fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
+/* Dentro de src/app/globals.css */
+
 .hearts-container {
   display: flex;          /* Usa flexbox */
   justify-content: center;/* Centra los iconos */
   align-items: center;    /* Alinea verticalmente */
   gap: 2px;             /* Espacio pequeño entre iconos SVG */
+  /* Quita flex-wrap: nowrap; si lo tenías, ya no es tan crítico con SVG */
+  /* Quita overflow: hidden; si lo tenías */
 }
 
 /* Estilo para los SVG de corazón */
@@ -1173,8 +1668,17 @@ body {
 /* SVG lleno (con relleno y animación) */
 .heart-svg.filled {
   fill: currentColor; /* Relleno con el color base */
+  /* Mantenemos la animación de pulso si la tenías */
   animation: blood-pulse 1.2s ease-in-out infinite; 
 }
+
+/* Puedes quitar la media query que ajustaba font-size si ya no es necesaria */
+/* O ajustarla para cambiar width/height del SVG si aún lo necesitas */
+/* @media (max-width: 400px) { ... } */
+
+/* src/app/globals.css */
+
+ /* ... tus otros estilos ... */
 
  /* Indicador de Nuevo Mensaje */
  .new-reply-indicator {
@@ -1208,79 +1712,4 @@ body {
   font-weight: bold;
   animation: point-down 1.5s ease-in-out infinite;
   cursor: default; /* Para que no parezca clickeable */
-}
-
-/*
-================================================================================
-|       SECCIÓN 12: AGONÍA Y OBSESIÓN POR LA RESPUESTA ANÓNIMA                 |
-================================================================================
-*/
-
-/* Contenedor de espera que reemplaza el input */
-.waiting-for-reply-container {
-  text-align: center;
-  padding: 20px;
-  border-radius: 12px;
-  /* El color púrpura claro con un borde que pulsa */
-  border: 1px dashed var(--glow-accent-crimson);
-  background: rgba(142, 45, 226, 0.1);
-  color: var(--text-secondary);
-  font-family: var(--font-main);
-  animation: border-glitch 4s infinite;
-  transition: all 0.5s ease;
-  margin-top: 20px;
-}
-
-.waiting-for-reply-container p {
-  font-weight: 600;
-  margin-bottom: 15px;
-  color: var(--glow-accent-crimson);
-  /* Pequeño parpadeo en el texto */
-  animation: text-glitch-flicker 10s linear infinite;
-}
-
-.pulse-dots {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-}
-
-.pulse-dots span {
-  display: block;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background-color: var(--secondary-ember-orange);
-  /* Animación de pulso obsesiva */
-  animation: pulse-dot 1.5s infinite ease-in-out both;
-}
-
-.pulse-dots span:nth-child(2) {
-  animation-delay: 0.2s;
-}
-
-.pulse-dots span:nth-child(3) {
-  animation-delay: 0.4s;
-}
-
-/* Animaciones para la Agonía */
-@keyframes pulse-dot {
-  0%, 80%, 100% {
-    transform: scale(0);
-    opacity: 0.5;
-  }
-  40% {
-    transform: scale(1.1);
-    background-color: var(--primary-hellfire-red);
-    opacity: 1;
-  }
-}
-
-/* Simula un fallo de conexión o nerviosismo en el borde */
-@keyframes border-glitch {
-  0% { border-color: var(--glow-accent-crimson); }
-  25% { border-color: var(--primary-hellfire-red); }
-  50% { border-color: var(--glow-accent-crimson); }
-  75% { border-color: var(--secondary-ember-orange); }
-  100% { border-color: var(--glow-accent-crimson); }
 }

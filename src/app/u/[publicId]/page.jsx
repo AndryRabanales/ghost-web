@@ -33,12 +33,6 @@ const PublicChatView = ({ chatInfo, onBack }) => {
             localStorage.setItem("myChats", JSON.stringify(updatedChats));
         } catch (e) { console.error("Error updating localStorage:", e); }
     }, [chatId, anonToken]);
-    
-    // --- NUEVO: Función para determinar el remitente del último mensaje ---
-    const getLastMessageSender = useCallback(() => {
-        if (messages.length === 0) return 'none';
-        return messages[messages.length - 1].from;
-    }, [messages]);
 
     useEffect(() => {
         markChatAsRead(); 
@@ -115,32 +109,13 @@ const PublicChatView = ({ chatInfo, onBack }) => {
         if (!newMsg.trim()) return;
         const tempMsgContent = newMsg;
         setNewMsg(""); 
-        
-        // OPTIMIZACIÓN Y AGONÍA: Agregar mensaje inmediatamente para pasar a estado de espera
-        const tempId = Date.now().toString();
-        setMessages(prev => [...prev, {
-            id: tempId,
-            from: 'anon',
-            content: tempMsgContent,
-            createdAt: new Date().toISOString(),
-        }]);
-
         try {
             const res = await fetch(`${API}/chats/${anonToken}/${chatId}/messages`, {
                 method: "POST", headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ content: tempMsgContent }),
             });
-            if (!res.ok) { 
-                const d = await res.json(); 
-                // Eliminar mensaje temporal si falla la API
-                setMessages(prev => prev.filter(m => m.id !== tempId));
-                throw new Error(d.error || "Error enviando"); 
-            }
-        } catch (err) { 
-            console.error("Error enviando:", err); 
-            setError("⚠️ Error al enviar."); 
-            setNewMsg(tempMsgContent); 
-        }
+            if (!res.ok) { const d = await res.json(); throw new Error(d.error || "Error enviando"); }
+        } catch (err) { console.error("Error enviando:", err); setError("⚠️ Error al enviar."); setNewMsg(tempMsgContent); }
     };
 
     // Componente Message interno para esta vista
@@ -159,9 +134,6 @@ const PublicChatView = ({ chatInfo, onBack }) => {
         );
     };
 
-    // CLAVE: Determinar si el último mensaje fue del anónimo
-    const waitingForCreatorReply = getLastMessageSender() === 'anon';
-
     // Renderizado de PublicChatView
     return (
         <div className="public-chat-view">
@@ -177,23 +149,15 @@ const PublicChatView = ({ chatInfo, onBack }) => {
                 ))}
                 <div ref={bottomRef} />
             </div>
-            {/* --- Renderizado Condicional que genera la obsesión --- */}
-            {waitingForCreatorReply ? (
-                 <div className="waiting-for-reply-container">
-                    <p>⏳ El Creador aún no ha respondido. ¡Vuelve pronto y no te olvides de revisar!</p>
-                    <div className="pulse-dots"><span></span><span></span><span></span></div>
-                 </div>
-            ) : (
-                <form onSubmit={handleSend} className="chat-reply-form">
-                    <input
-                        type="text" value={newMsg} onChange={(e) => setNewMsg(e.target.value)}
-                        placeholder="Escribe una respuesta..." className="form-input-field reply-input"
-                    />
-                    <button type="submit" disabled={!newMsg.trim()} className="submit-button reply-button">
-                        Enviar
-                    </button>
-                </form>
-            )}
+            <form onSubmit={handleSend} className="chat-reply-form">
+                <input
+                    type="text" value={newMsg} onChange={(e) => setNewMsg(e.target.value)}
+                    placeholder="Escribe una respuesta..." className="form-input-field reply-input"
+                />
+                <button type="submit" disabled={!newMsg.trim()} className="submit-button reply-button">
+                    Enviar
+                </button>
+            </form>
         </div>
     );
 };
