@@ -1394,9 +1394,9 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: 8px;
   flex-shrink: 0; 
-  padding: 2px 6px; 
+  padding: 7px 16px; 
   font-size: 14px;
   font-weight: 700;
   border-radius: 12px;
@@ -1406,7 +1406,7 @@ body {
   background: linear-gradient(90deg, var(--primary-hellfire-red), var(--secondary-ember-orange));
   color: var(--text-primary);
   transition: all 0.3s ease;
-  max-width: 120px; /* ⬅️ AÑADIR/AJUSTAR ESTA LÍNEA para forzar el ancho */
+  min-width: 120px; /* ⬅️ AÑADIR/AJUSTAR ESTA LÍNEA para forzar el ancho */
   text-align: center;
   box-shadow: 0 4px 15px rgba(74, 0, 224, 0.3);
 }
