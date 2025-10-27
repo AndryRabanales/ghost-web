@@ -23,87 +23,74 @@ const IconEspera = () => (
   </svg>
 );
 
-// --- SUBCOMPONENTE ChatItem (SIN CAMBIOS) ---
-// src/components/MessageList.jsx
-
-// ... (Resto de Iconos)
-
-// --- SUBCOMPONENTE ChatItem (CORREGIDO) ---
+// --- SUBCOMPONENTE ChatItem (CON CORRECCIÓN DE ESPACIOS) ---
 const ChatItem = ({ chat, onOpenChat, disabled, minutesNext }) => {
-    const preview = chat.previewMessage;
-  
-    // Determina el contenido del botón
-    const getButtonContent = () => {
-      if (disabled) {
-        return (
-          <>
-            <IconEspera />
-            {minutesNext > 0 ? `${minutesNext}m` : "..."}
-          </>
-        );
-      }
-      // Chat con nueva respuesta del anónimo
-      if (chat.anonReplied) {
-        return (
-          <>
-            <IconResponder />
-            Responder
-          </>
-        );
-      }
-  
-      // Chat ya abierto
-      if (chat.isOpened) {
-        return (
-          <>
-            <IconVer />
-            Ver
-          </>
-        );
-      }
-  
-      // Chat inicial no abierto (primer mensaje)
-      return (
-        <>
-          <IconResponder />
-          Responder
-        </>
-      );
-    };
-  
-    return (
-      <div
-        // ⬅️ AÑADIDO: Si anonReplied es true, añade la clase 'new-reply' para el pulso/color.
-        className={`chat-item ${disabled ? 'disabled' : ''} ${chat.anonReplied ? 'new-reply' : ''} ${!chat.isOpened ? 'unopened' : ''}`}
-        onClick={() => !disabled && onOpenChat(chat.id)}
-      >
-        <div className="chat-item-main">
-          <div className="chat-item-alias">
-            {/* Alias del anónimo */}
-            {chat.anonAlias || "Anónimo"}
-            
-            {/* ⬅️ AÑADIDO: Indicador Visual "Nuevo mensaje" */}
-            {chat.anonReplied && <span className="new-reply-indicator">Nuevo mensaje</span>}
-            
-          </div>
-          <div className="chat-item-content">
-            {/* Usa 'preview.content' */}
-            {preview ? preview.content : "Chat iniciado, sin mensajes"}
-          </div>
-          <div className="chat-item-date">
-            {/* Usa 'preview.createdAt' o la fecha de creación del chat */}
-            {preview
-              ? new Date(preview.createdAt).toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
-              : new Date(chat.createdAt).toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
-            }
-          </div>
-        </div>
-        <button className="chat-item-button" disabled={disabled}>
-          {getButtonContent()}
-        </button>
-      </div>
-    );
+  const preview = chat.previewMessage;
+
+  // Determina el contenido del botón
+  const getButtonContent = () => {
+    if (disabled) {
+      return (
+        <>
+          <IconEspera />
+          {minutesNext > 0 ? `${minutesNext}m` : "..."}
+        </>
+      );
+    }
+    if (chat.anonReplied) {
+      return (
+        <>
+          <IconResponder />
+          Responder
+        </>
+      );
+    }
+
+    if (chat.isOpened) {
+      return (<><IconVer />Ver</>); // ⬅️ CORRECCIÓN APLICADA AQUÍ: Compactado en una sola línea
+    }
+
+    return (
+      <>
+        <IconResponder />
+        Responder
+      </>
+    );
   };
+
+  return (
+    <div
+      // 💡 CAMBIO CLAVE 2: Clase condicional para el estilo de notificación
+      className={`chat-item ${disabled ? 'disabled' : ''} ${chat.anonReplied ? 'new-reply' : ''} ${!chat.isOpened && !chat.anonReplied ? 'unopened' : ''}`}
+      onClick={() => !disabled && onOpenChat(chat.id)}
+    >
+      <div className="chat-item-main">
+        <div className="chat-item-alias">
+          {/* Esto sigue usando el alias del chat, está bien */}
+          {chat.anonAlias || "Anónimo"}
+          {/* 💡 CAMBIO CLAVE 3: Muestra el indicador de texto */}
+          {chat.anonReplied && <span className="new-reply-indicator">Nuevo mensaje</span>}
+        </div>
+        <div className="chat-item-content">
+          {/* Usa 'preview.content' */}
+          {preview ? preview.content : "Chat iniciado, sin mensajes"}
+        </div>
+        <div className="chat-item-date">
+          {/* Usa 'preview.createdAt' o la fecha de creación del chat */}
+          {preview
+            ? new Date(preview.createdAt).toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+            : new Date(chat.createdAt).toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+          }
+        </div>
+      </div>
+      <button className="chat-item-button" disabled={disabled}>
+        {getButtonContent()}
+      </button>
+    </div>
+  );
+};
+
+// ... (Resto del componente MessageList)
 // --- Icono de Fantasma para la bandeja vacía (SIN CAMBIOS) ---
 const EmptyInboxIcon = () => (
   <svg className="empty-inbox-icon" width="64" height="64" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
