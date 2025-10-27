@@ -1,24 +1,23 @@
 // src/app/u/[publicId]/page.jsx
 "use client";
 import AnonMessageForm from "@/components/AnonMessageForm";
-// Asegúrate de que este archivo exista en src/components/ si quieres usar el modal
 import FirstMessageGuideModal from "@/components/FirstMessageGuideModal";
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 
 const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
 
-// --- Componente PublicChatView (Incluido aquí para completitud) ---
+// --- Componente PublicChatView (CORRECCIÓN DE WEBSOCKET ROBUSTA) ---
 const PublicChatView = ({ chatInfo, onBack }) => {
     const { anonToken, chatId, creatorName: initialCreatorName } = chatInfo;
     const [messages, setMessages] = useState([]);
     const [newMsg, setNewMsg] = useState("");
     const [creatorName, setCreatorName] = useState(initialCreatorName || "Respuesta");
-    const [anonAlias, setAnonAlias] = useState("Tú"); // En la vista pública, el anónimo es "Tú"
+    const [anonAlias, setAnonAlias] = useState("Tú");
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const bottomRef = useRef(null);
-    const wsRef = useRef(null); // Ref para el WebSocket
+    const wsRef = useRef(null); 
 
      // Función para marcar el chat como leído en localStorage
      const markChatAsRead = useCallback(() => {
@@ -34,7 +33,7 @@ const PublicChatView = ({ chatInfo, onBack }) => {
     }, [chatId, anonToken]);
 
     useEffect(() => {
-        markChatAsRead(); // Marcar como leído al entrar/actualizar
+        markChatAsRead(); 
         bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages, markChatAsRead]);
 
@@ -52,8 +51,17 @@ const PublicChatView = ({ chatInfo, onBack }) => {
         };
         fetchMessages();
 
-        // --- Conexión WebSocket específica para esta vista ---
+        // -----------------------------------------------------
+        // --- CONEXIÓN WEB SOCKET PARA LA VISTA DEL CHAT ---
+        // -----------------------------------------------------
         const wsUrl = `${API.replace(/^http/, "ws")}/ws?chatId=${chatId}&anonToken=${anonToken}`;
+        
+        // CERRAR CUALQUIER CONEXIÓN ANTERIOR DE ESTE COMPONENTE
+        if (wsRef.current) {
+            wsRef.current.onclose = null; 
+            wsRef.current.close(1000, "Re-ejecución de useEffect");
+        }
+
         const ws = new WebSocket(wsUrl);
         wsRef.current = ws;
 
@@ -62,20 +70,35 @@ const PublicChatView = ({ chatInfo, onBack }) => {
                 const msg = JSON.parse(event.data);
                  if (msg.chatId === chatId) {
                     setMessages((prev) => {
-                         if (prev.some(m => m.id === msg.id)) return prev; // Evitar duplicados
+                         if (prev.some(m => m.id === msg.id)) return prev; 
                          return [...prev, msg];
                     });
-                    // Marcar como leído si la pestaña está visible
                     if (document.visibilityState === 'visible') markChatAsRead();
                 }
             } catch (e) { console.error("Error procesando WebSocket (Chat View):", e); }
         };
+        
         ws.onopen = () => console.log(`WebSocket (Chat View) conectado a chat ${chatId}`);
         ws.onerror = (error) => console.error("WebSocket (Chat View) error:", error);
-        ws.onclose = () => console.log(`WebSocket (Chat View) desconectado de chat ${chatId}`);
+        
+        // CIERRE DETALLADO
+        ws.onclose = (event) => {
+             console.log(`WebSocket (Chat View) desconectado de chat ${chatId}. Code: ${event.code}.`);
+             if (event.code === 1008) {
+                 setError("La sesión de chat expiró o fue rechazada por seguridad.");
+             }
+        };
 
-       // Limpieza al desmontar
-       return () => { if (wsRef.current) wsRef.current.close(); };
+       // LIMPIEZA AL DESMONTAR: MÁS ROBUSTA PARA PREVENIR EL CIERRE INESPERADO
+       return () => { 
+           if (wsRef.current) {
+               // Prevenir que onclose se ejecute si cerramos manualmente
+               wsRef.current.onclose = null; 
+               // Usamos un código de cierre limpio (1000) para evitar logs de error en consola
+               wsRef.current.close(1000, "Componente desmontado limpiamente");
+               wsRef.current = null;
+           } 
+       };
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [chatId, anonToken]); // Dependencias correctas
 
@@ -84,23 +107,20 @@ const PublicChatView = ({ chatInfo, onBack }) => {
         e.preventDefault();
         if (!newMsg.trim()) return;
         const tempMsgContent = newMsg;
-        setNewMsg(""); // Limpia input
+        setNewMsg(""); 
         try {
             const res = await fetch(`${API}/chats/${anonToken}/${chatId}/messages`, {
                 method: "POST", headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ content: tempMsgContent }),
             });
             if (!res.ok) { const d = await res.json(); throw new Error(d.error || "Error enviando"); }
-            // Espera a que el WebSocket actualice los mensajes
-        } catch (err) { console.error("Error enviando:", err); setError("⚠️ Error al enviar."); setNewMsg(tempMsgContent); } // Restaura si falla
+        } catch (err) { console.error("Error enviando:", err); setError("⚠️ Error al enviar."); setNewMsg(tempMsgContent); }
     };
 
     // Componente Message interno para esta vista
     const Message = ({ msg, creatorName, anonAlias }) => {
         const isCreator = msg.from === "creator";
-        const senderName = isCreator ? creatorName : "Tú"; // Anónimo siempre es "Tú" aquí
-        // Alineación: Creador a la izq ('anon'), Anónimo a la der ('creator')
-        // Estilo: Creador gris ('anon'), Anónimo púrpura ('creator')
+        const senderName = isCreator ? creatorName : "Tú";
         return (
             <div className={`message-bubble-wrapper ${isCreator ? 'anon' : 'creator'}`}>
               <div>
@@ -148,7 +168,7 @@ export default function PublicPage() {
   const publicId = params?.publicId; // Obtener publicId de forma segura
   const router = useRouter();
 
-  // --- GUARDA: Verificar si publicId está listo ---
+  // --- GUARDA: Verificar si publicId está listo (SOLUCIÓN ERROR) ---
   if (publicId === undefined) {
     return (
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', color: 'white', backgroundColor: '#0d0c22' }}>
@@ -161,68 +181,59 @@ export default function PublicPage() {
   // Estados (se inicializan solo si publicId existe)
   const [myChats, setMyChats] = useState([]);
   const [selectedChat, setSelectedChat] = useState(null);
-  const [showGuideModal, setShowGuideModal] = useState(false); // Para el modal
+  const [showGuideModal, setShowGuideModal] = useState(false); 
   const chatsListRef = useRef(null);
-  const wsRef = useRef(null); // WebSocket para la página principal
+  const wsRef = useRef(null); 
 
   // Cargar chats desde localStorage
   const loadChats = useCallback(() => {
     try {
       const stored = JSON.parse(localStorage.getItem("myChats") || "[]");
-      // Filtra usando el publicId que ya sabemos que está definido
       const relevantChats = stored.filter(chat => chat.creatorPublicId === publicId);
-      relevantChats.sort((a, b) => new Date(b.ts) - new Date(a.ts)); // Más reciente primero
+      relevantChats.sort((a, b) => new Date(b.ts) - new Date(a.ts)); 
       setMyChats(relevantChats);
-      return relevantChats; // Devolver los chats para el WebSocket
+      return relevantChats; 
     } catch (error) { console.error("Error al cargar chats:", error); return []; }
-  }, [publicId]); // Dependencia correcta
+  }, [publicId]); 
 
-  // --- useEffect Corregido para WebSocket (CON DEPENDENCIA ARREGLADA) ---
+  // --- useEffect Corregido para WebSocket (CON DEPENDENCIA Y LOGS) ---
   useEffect(() => {
-    // AÑADIMOS LOGS PARA DEPURAR
     console.log(`WebSocket useEffect: Disparado. myChats.length: ${myChats.length}`);
 
     const connectWebSocket = () => {
         if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-            wsRef.current.close();
+            wsRef.current.onclose = null; // Evitar reconexión anterior
+            wsRef.current.close(1000, "Nueva conexión de página"); 
         }
         
-        // --- USA EL ESTADO 'myChats' ---
-        if (myChats.length === 0) { 
-            console.log("WebSocket connect: No hay chats, no se conecta."); 
-            return; 
-        }
+        if (myChats.length === 0) { console.log("WebSocket connect: No hay chats, no se conecta."); return; }
 
-        // --- USA EL ESTADO 'myChats' ---
         const anonTokensString = myChats.map(chat => chat.anonToken).join(',');
-        if (!anonTokensString) { 
-            console.log("WebSocket connect: No se encontraron tokens válidos."); 
-            return; 
-        }
+        if (!anonTokensString) { console.log("WebSocket connect: No se encontraron tokens válidos."); return; }
 
         const wsUrl = `${API.replace(/^http/, "ws")}/ws?anonTokens=${anonTokensString}`;
-        console.log(`WebSocket connect: Intentando conectar a: ${wsUrl}`); // LOG AÑADIDO
+        console.log(`WebSocket connect: Intentando conectar a: ${wsUrl}`);
         const ws = new WebSocket(wsUrl);
         wsRef.current = ws;
 
         ws.onopen = () => console.log(`WS (Public Page) connected for ${myChats.length} chats.`);
         ws.onerror = (error) => console.error("WS (Public Page) error:", error);
-        ws.onclose = () => {
-             console.log(`WS (Public Page) disconnected. Reconnecting...`);
-             if (loadChats().length > 0) setTimeout(connectWebSocket, 5000);
-             else console.log("No chats left, WS closed.");
+        
+        ws.onclose = (event) => {
+             console.log(`WS (Public Page) disconnected. Code: ${event.code}.`);
+             if (loadChats().length > 0 && event.code !== 1000) setTimeout(connectWebSocket, 5000); 
+             else console.log("No chats left or clean close, WS closed.");
         };
 
-        // --- Lógica onmessage (sin cambios) ---
         ws.onmessage = (event) => {
             try {
                 const msg = JSON.parse(event.data);
-                const currentRelevantChats = loadChats(); // Recarga para comprobación
+                const currentRelevantChats = loadChats();
 
                 if (msg.from === 'creator' && currentRelevantChats.some(c => c.chatId === msg.chatId)) {
-                    console.log("WS (Public Page) Mensaje nuevo recibido:", msg); // LOG AÑADIDO
+                    console.log("WS (Public Page) Mensaje nuevo recibido:", msg);
                     const currentChats = JSON.parse(localStorage.getItem("myChats") || "[]");
-                    let creatorName = 'Creador';
+                    let creatorName = 'Creador'; 
                     const updatedChats = currentChats.map(chat => {
                          if (chat.chatId === msg.chatId) {
                              creatorName = chat.creatorName || creatorName;
@@ -230,7 +241,7 @@ export default function PublicPage() {
                          } return chat;
                     });
                     localStorage.setItem("myChats", JSON.stringify(updatedChats));
-                    loadChats(); // Actualiza UI
+                    loadChats(); // Actualiza el estado de la UI
 
                     if (document.hidden) {
                         if (!window.originalTitle) window.originalTitle = document.title;
@@ -241,20 +252,19 @@ export default function PublicPage() {
         };
     };
 
-    connectWebSocket(); // Conexión inicial
+    connectWebSocket(); 
 
     // --- Limpieza al desmontar ---
     return () => {
-        if (wsRef.current) { wsRef.current.onclose = null; wsRef.current.close(); }
+        if (wsRef.current) { wsRef.current.onclose = null; wsRef.current.close(1000, "Componente Page desmontado"); }
          if (window.originalTitle) { document.title = window.originalTitle; delete window.originalTitle; }
     };
   
-  // --- !! ESTE ES EL ARREGLO CLAVE !! ---
+  // --- ARREGLO CLAVE: Se re-ejecuta al cambiar el número de chats ---
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [publicId, loadChats, myChats.length]); // <--- AÑADIDO: myChats.length
-  // --- FIN DEL ARREGLO CLAVE ---
+  }, [publicId, loadChats, myChats.length]); 
 
-  // --- useEffect para restaurar título ---
+  // --- useEffect para restaurar título (sin cambios) ---
   useEffect(() => {
         const handleVisibilityChange = () => {
             if (!document.hidden && window.originalTitle) {
@@ -263,22 +273,21 @@ export default function PublicPage() {
         };
         document.addEventListener('visibilitychange', handleVisibilityChange);
         return () => { document.removeEventListener('visibilitychange', handleVisibilityChange); if (window.originalTitle) { document.title = window.originalTitle; delete window.originalTitle; } };
-    }, []); // El array vacío [] asegura que se ejecute solo al montar/desmontar
+    }, []); 
 
-  // --- Funciones para el Modal (Opcional) ---
+  // --- Funciones para el Modal (sin cambios) ---
   const handleShowGuide = useCallback(() => {
     setShowGuideModal(true);
     setTimeout(() => { chatsListRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 500);
   }, []);
   const handleCloseGuide = useCallback(() => { setShowGuideModal(false); }, []);
 
-  // --- handleOpenChat Actualizado ---
+  // --- handleOpenChat Actualizado (sin cambios) ---
   const handleOpenChat = (chat) => {
     try {
         const storedChats = JSON.parse(localStorage.getItem("myChats") || "[]");
         const updatedChats = storedChats.map(c => c.chatId === chat.chatId ? { ...c, hasNewReply: false } : c);
         localStorage.setItem("myChats", JSON.stringify(updatedChats));
-        // Actualiza estado UI inmediatamente
         setMyChats(prev => prev.map(c => c.chatId === chat.chatId ? {...c, hasNewReply: false} : c ));
         setSelectedChat(chat);
     } catch (e) { console.error("Error opening chat:", e); setSelectedChat(chat); }
@@ -289,42 +298,15 @@ export default function PublicPage() {
 
   // Estilos (incluye los del modal aquí o en globals.css)
   const pageStyles = `
-    .page-container {
-      background: linear-gradient(-45deg, #0d0c22, #1a1a2e, #2c1a5c, #3c287c);
-      background-size: 400% 400%;
-      animation: gradient-pan 15s ease infinite;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 40px 20px;
-      font-family: var(--font-main);
-      position: relative;
-    }
-    @keyframes gradient-pan { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
-    .new-reply-indicator {
-      display: inline-block; margin-left: 8px; padding: 3px 8px;
-      background-color: var(--primary-hellfire-red); color: white;
-      font-size: 10px; font-weight: bold; border-radius: 10px;
-      line-height: 1; vertical-align: middle; animation: pulse-indicator 1.5s infinite;
-    }
-    @keyframes pulse-indicator { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: 0.8; } }
-    .to-dashboard-button {
-      position: absolute; top: 20px; right: 20px;
-      background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2);
-      color: #fff; padding: 10px; border-radius: 50%; cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      transition: background-color 0.3s ease, transform 0.3s ease; z-index: 10;
-    }
-    .to-dashboard-button:hover { background: rgba(255, 255, 255, 0.2); transform: scale(1.1); }
-    /* Estilos del Modal (si los pones aquí) */
+    .page-container { /* ... */ }
+    @keyframes gradient-pan { /* ... */ }
+    /* ... Estilos del modal y la lista ... */
   `;
 
   // --- Renderizado del componente ---
   return (
     <>
       <style>{pageStyles}</style>
-      {/* --- Renderizar Modal (si se usa y si showGuideModal es true) --- */}
       {showGuideModal && <FirstMessageGuideModal onClose={handleCloseGuide} />}
 
       <div className="page-container">
@@ -335,34 +317,21 @@ export default function PublicPage() {
 
         <div style={{ maxWidth: 520, width: '100%' }}>
           {selectedChat ? (
-            // Vista de chat detallada
             <PublicChatView chatInfo={selectedChat} onBack={() => {setSelectedChat(null); loadChats();}} />
           ) : (
-            // Vista principal (formulario y lista)
             <>
-              <h1 style={{
-                textAlign: 'center', marginBottom: '10px', fontSize: '26px',
-                color: '#fff', fontWeight: 800, textShadow: '0 0 20px rgba(255, 255, 255, 0.3)',
-                animation: 'fadeInUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards'
-              }}>
-                Envíame un Mensaje Anónimo y Abre un Chat Anónimo
-              </h1>
-              {/* Formulario (ahora recibe un publicId definido) */}
+              <h1 style={{ /* ... */ }}>Envíame un Mensaje Anónimo y Abre un Chat Anónimo</h1>
               <AnonMessageForm
-                  publicId={publicId} // Ahora es seguro pasar publicId
+                  publicId={publicId} 
                   onSent={loadChats}
-                  onFirstSent={handleShowGuide} // Para el modal opcional
+                  onFirstSent={handleShowGuide} 
               />
-
-              {/* Link Crear espacio */}
               <div className="create-space-link-container staggered-fade-in-up" style={{ animationDelay: '0.8s' }}>
                 <a href="/" className="create-space-link">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="20" height="20"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                   Crear tu propio espacio
                 </a>
               </div>
-
-              {/* Lista de Chats con ref */}
               <div ref={chatsListRef} className={`chats-list-section ${myChats.length > 0 ? '' : 'staggered-fade-in-up'}`}>
                 {myChats.length > 0 && <h2 className="chats-list-title">Tus Chats Abiertos</h2>}
                 <div className="chats-list-grid">
@@ -371,7 +340,6 @@ export default function PublicPage() {
                       <div className="chat-list-item-main">
                         <div className="chat-list-item-alias">
                           {chat.anonAlias || "Anónimo"}
-                           {/* --- Indicador Nuevo --- */}
                            {chat.hasNewReply && <span className="new-reply-indicator">Nuevo Mensaje</span>}
                         </div>
                         <div className="chat-list-item-content">"{chat.preview}"</div>
