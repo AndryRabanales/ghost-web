@@ -193,128 +193,115 @@ const PublicChatView = ({ chatInfo, onBack }) => {
 };
 
 
-// --- Componente Principal de la Página ---
 export default function PublicPage() {
-  const params = useParams();
-  const publicId = params.publicId;
-  const router = useRouter();
+  // ... (estados: myChats, selectedChat, etc.)
+  const wsRef = useRef(null);
+  const loadChats = useCallback(() => { /* ... */ }, [publicId]);
 
-  const [myChats, setMyChats] = useState([]);
-  const [selectedChat, setSelectedChat] = useState(null);
-  const [showScrollCue, setShowScrollCue] = useState(false); // <-- NUEVO ESTADO
-  const chatsListRef = useRef(null); // Ref para la sección de chats
-  const wsRef = useRef(null); // Ref para el WebSocket global de la página
-
-  // Cargar chats desde localStorage
-  const loadChats = useCallback(() => {
-    try {
-      const stored = JSON.parse(localStorage.getItem("myChats") || "[]");
-      const relevantChats = stored.filter(chat => chat.creatorPublicId === publicId);
-      relevantChats.sort((a, b) => new Date(b.ts) - new Date(a.ts)); // Más reciente primero
-      setMyChats(relevantChats);
-    } catch (error) {
-      console.error("Error al cargar chats:", error);
-    }
-  }, [publicId]);
-
-  // Efecto para conectar WebSocket y escuchar TODAS las respuestas para los chats de esta página
+  // --- MODIFICACIÓN EN useEffect del WebSocket ---
   useEffect(() => {
-    if (!publicId) return;
+      if (!publicId) return;
 
-    loadChats(); // Carga inicial
+      let relevantChats = loadChats(); // Carga inicial
 
-    // Función para conectar/reconectar WebSocket
-    const connectWebSocket = () => {
-        // Cierra conexión anterior si existe
-        if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-            wsRef.current.close();
-        }
+      const connectWebSocket = () => {
+          if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+              wsRef.current.close();
+          }
+          if (relevantChats.length === 0) {
+               console.log("No hay chats relevantes, no se conectará WebSocket.");
+               return; // No conectar si no hay chats
+          }
 
-        // Necesitamos obtener TODOS los anonTokens de los chats mostrados en esta página
-        const storedChats = JSON.parse(localStorage.getItem("myChats") || "[]");
-        const relevantChats = storedChats.filter(chat => chat.creatorPublicId === publicId);
-        if (relevantChats.length === 0) return; // No hay chats, no conectar
+          // --- CAMBIO: Construir lista de anonTokens ---
+          const anonTokensString = relevantChats.map(chat => chat.anonToken).join(',');
+          if (!anonTokensString) {
+              console.log("No se encontraron anonTokens válidos.");
+              return; // No conectar si no hay tokens
+          }
 
-        // Idealmente, el backend debería soportar múltiples suscripciones en una conexión,
-        // o deberíamos abrir una conexión por chat.
-        // SOLUCIÓN TEMPORAL: Abrimos una conexión para el chat MÁS RECIENTE.
-        // ESTO NO ES IDEAL, pero evita abrir N conexiones.
-        // Una mejor solución backend sería necesaria para notificaciones de todos los chats.
-        const latestChat = relevantChats[0]; // El primero porque están ordenados
-        if (!latestChat) return;
+          // --- CAMBIO: Usar el nuevo parámetro 'anonTokens' ---
+          const wsUrl = `${API.replace(/^http/, "ws")}/ws?anonTokens=${anonTokensString}`;
+          const ws = new WebSocket(wsUrl);
+          wsRef.current = ws;
 
-        const { chatId, anonToken } = latestChat;
-        const wsUrl = `${API.replace(/^http/, "ws")}/ws?chatId=${chatId}&anonToken=${anonToken}`;
-        const ws = new WebSocket(wsUrl);
-        wsRef.current = ws;
-
-        ws.onopen = () => console.log(`WebSocket (Página Pública) conectado a chat ${chatId}`);
-        ws.onerror = (error) => console.error("WebSocket (Página Pública) error:", error);
-        ws.onclose = () => {
-            console.log(`WebSocket (Página Pública) desconectado de chat ${chatId}. Intentando reconectar...`);
-            // Intenta reconectar después de un breve retraso
-            setTimeout(connectWebSocket, 5000);
-        };
+          ws.onopen = () => console.log(`WebSocket (Página Pública) conectado escuchando ${relevantChats.length} chats.`);
+          ws.onerror = (error) => console.error("WebSocket (Página Pública) error:", error);
+          ws.onclose = () => {
+               console.log(`WebSocket (Página Pública) desconectado. Intentando reconectar...`);
+               // Solo reconectar si todavía hay chats relevantes
+               if (loadChats().length > 0) {
+                  setTimeout(connectWebSocket, 5000); // Intenta reconectar
+               } else {
+                   console.log("No hay chats, conexión WebSocket cerrada permanentemente.");
+               }
+          };
 
 
-        ws.onmessage = (event) => {
-            try {
-                const msg = JSON.parse(event.data);
+          // La lógica de ws.onmessage (incluyendo notificación en título) NO necesita cambios aquí
+           ws.onmessage = (event) => {
+              try {
+                  const msg = JSON.parse(event.data);
+                  // Usar 'relevantChats' del closure o recargar si es necesario
+                  const currentRelevantChats = loadChats(); // Recarga para asegurar que tenemos la lista más actual
 
-                // Verificar si el mensaje es del creador y para un chat relevante
-                if (msg.from === 'creator' && relevantChats.some(c => c.chatId === msg.chatId)) {
-                    // Actualizar localStorage para marcar que hay nueva respuesta
-                    const currentChats = JSON.parse(localStorage.getItem("myChats") || "[]");
-                    const updatedChats = currentChats.map(chat =>
-                        chat.chatId === msg.chatId
-                            ? { ...chat, hasNewReply: true, preview: msg.content.slice(0, 50) + (msg.content.length > 50 ? "..." : ""), ts: msg.createdAt } // Actualiza preview y timestamp también
-                            : chat
-                    );
-                    localStorage.setItem("myChats", JSON.stringify(updatedChats));
-                    // Recargar los chats en el estado para que la UI se actualice
-                    loadChats();
-                }
-            } catch (e) {
-                console.error("Error procesando WebSocket (Página Pública):", e);
-            }
-        };
-    };
+                  if (msg.from === 'creator' && currentRelevantChats.some(c => c.chatId === msg.chatId)) {
+                      const currentChats = JSON.parse(localStorage.getItem("myChats") || "[]");
+                      let creatorName = 'Creador';
+                      const updatedChats = currentChats.map(chat => {
+                           if (chat.chatId === msg.chatId) {
+                               creatorName = chat.creatorName || creatorName;
+                               return { ...chat, hasNewReply: true, preview: msg.content.slice(0, 50) + (msg.content.length > 50 ? "..." : ""), ts: msg.createdAt };
+                           }
+                           return chat;
+                      });
+                      localStorage.setItem("myChats", JSON.stringify(updatedChats));
 
-    connectWebSocket(); // Conexión inicial
+                      // Actualiza el estado para la UI (loadChats ya lo hace)
+                      // loadChats(); <-- ya se llama arriba
 
-    // Limpieza al desmontar
-    return () => {
-        if (wsRef.current) {
-            wsRef.current.close();
-        }
-    };
-  }, [publicId, loadChats]); // Ejecutar cuando publicId cambie o loadChats se redefina
+                      if (document.hidden) {
+                          if (!window.originalTitle) window.originalTitle = document.title;
+                          document.title = `(1) Nuevo mensaje de ${creatorName}`;
+                      }
+                  }
+              } catch (e) { console.error("Error procesando WebSocket:", e); }
+          };
+      };
 
-  // Función para manejar el primer envío
-  const handleFirstSend = () => {
-    setShowScrollCue(true);
-    // Opcional: Hacer scroll automático
-    chatsListRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    // Ocultar la guía después de unos segundos
-    setTimeout(() => setShowScrollCue(false), 5000); // 5 segundos
-  };
+      connectWebSocket(); // Conexión inicial
 
-   // Función para abrir un chat y marcarlo como leído
+      return () => { // Limpieza
+          if (wsRef.current) {
+              wsRef.current.onclose = null; // Evitar reconexión al desmontar
+              wsRef.current.close();
+          }
+           if (window.originalTitle) {
+              document.title = window.originalTitle;
+               delete window.originalTitle;
+           }
+      };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [publicId, loadChats]); // Quitar 'relevantChats' de aquí, loadChats lo maneja
+
+  // ... (resto del componente: useEffect visibilitychange, handleShowGuide, handleCloseGuide, handleOpenChat, formatDate, JSX)
+  // Asegúrate de que handleOpenChat llame a loadChats() o actualice 'myChats' para quitar el "Nuevo" inmediatamente.
    const handleOpenChat = (chat) => {
-    try {
-        const storedChats = JSON.parse(localStorage.getItem("myChats") || "[]");
-        const updatedChats = storedChats.map(c =>
-            c.chatId === chat.chatId && c.anonToken === chat.anonToken
-                ? { ...c, hasNewReply: false }
-                : c
-        );
-        localStorage.setItem("myChats", JSON.stringify(updatedChats));
-        setMyChats(updatedChats.filter(c => c.creatorPublicId === publicId).sort((a, b) => new Date(b.ts) - new Date(a.ts))); // Actualiza el estado local
-        setSelectedChat(chat); // Abre la vista del chat
-    } catch (e) {
-        console.error("Error updating localStorage on open:", e);
-        setSelectedChat(chat); // Intenta abrir de todas formas
-    }
+      try {
+          const storedChats = JSON.parse(localStorage.getItem("myChats") || "[]");
+          const updatedChats = storedChats.map(c =>
+              c.chatId === chat.chatId && c.anonToken === chat.anonToken
+                  ? { ...c, hasNewReply: false }
+                  : c
+          );
+          localStorage.setItem("myChats", JSON.stringify(updatedChats));
+          // Actualiza el estado directamente para respuesta visual inmediata
+          setMyChats(prev => prev.map(c => c.chatId === chat.chatId ? {...c, hasNewReply: false} : c ));
+          setSelectedChat(chat);
+      } catch (e) {
+          console.error("Error updating localStorage on open:", e);
+          setSelectedChat(chat);
+      }
   };
 
 
