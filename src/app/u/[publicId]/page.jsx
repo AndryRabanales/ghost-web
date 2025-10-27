@@ -177,55 +177,61 @@ export default function PublicPage() {
     } catch (error) { console.error("Error al cargar chats:", error); return []; }
   }, [publicId]); // Dependencia correcta
 
-  // --- useEffect Corregido para WebSocket ---
+  // --- useEffect Corregido para WebSocket (CON DEPENDENCIA ARREGLADA) ---
   useEffect(() => {
-    let relevantChats = loadChats(); // Carga inicial y obtiene los chats
+    // AÑADIMOS LOGS PARA DEPURAR
+    console.log(`WebSocket useEffect: Disparado. myChats.length: ${myChats.length}`);
 
     const connectWebSocket = () => {
-        // Cierra conexión anterior si existe
-        if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) wsRef.current.close();
-        // No conectar si no hay chats
-        if (relevantChats.length === 0) { console.log("No chats, WS not connecting."); return; }
+        if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+            wsRef.current.close();
+        }
+        
+        // --- USA EL ESTADO 'myChats' ---
+        if (myChats.length === 0) { 
+            console.log("WebSocket connect: No hay chats, no se conecta."); 
+            return; 
+        }
 
-        // --- Construir lista de anonTokens ---
-        const anonTokensString = relevantChats.map(chat => chat.anonToken).join(',');
-        if (!anonTokensString) { console.log("No valid anonTokens found."); return; }
+        // --- USA EL ESTADO 'myChats' ---
+        const anonTokensString = myChats.map(chat => chat.anonToken).join(',');
+        if (!anonTokensString) { 
+            console.log("WebSocket connect: No se encontraron tokens válidos."); 
+            return; 
+        }
 
-        // --- Usar el nuevo parámetro 'anonTokens' ---
         const wsUrl = `${API.replace(/^http/, "ws")}/ws?anonTokens=${anonTokensString}`;
+        console.log(`WebSocket connect: Intentando conectar a: ${wsUrl}`); // LOG AÑADIDO
         const ws = new WebSocket(wsUrl);
         wsRef.current = ws;
 
-        ws.onopen = () => console.log(`WS (Public Page) connected for ${relevantChats.length} chats.`);
+        ws.onopen = () => console.log(`WS (Public Page) connected for ${myChats.length} chats.`);
         ws.onerror = (error) => console.error("WS (Public Page) error:", error);
         ws.onclose = () => {
              console.log(`WS (Public Page) disconnected. Reconnecting...`);
-             // Reconectar solo si aún hay chats (llama a loadChats para verificar)
              if (loadChats().length > 0) setTimeout(connectWebSocket, 5000);
              else console.log("No chats left, WS closed.");
         };
 
-        // --- Lógica onmessage para actualizar "Nuevo" y título ---
+        // --- Lógica onmessage (sin cambios) ---
         ws.onmessage = (event) => {
             try {
                 const msg = JSON.parse(event.data);
-                // Recarga la lista actual de chats relevantes para asegurar la comprobación correcta
-                const currentRelevantChats = loadChats();
+                const currentRelevantChats = loadChats(); // Recarga para comprobación
 
                 if (msg.from === 'creator' && currentRelevantChats.some(c => c.chatId === msg.chatId)) {
+                    console.log("WS (Public Page) Mensaje nuevo recibido:", msg); // LOG AÑADIDO
                     const currentChats = JSON.parse(localStorage.getItem("myChats") || "[]");
-                    let creatorName = 'Creador'; // Default name
+                    let creatorName = 'Creador';
                     const updatedChats = currentChats.map(chat => {
                          if (chat.chatId === msg.chatId) {
-                             creatorName = chat.creatorName || creatorName; // Usa el nombre guardado si existe
-                             // Actualiza flag, preview y timestamp
+                             creatorName = chat.creatorName || creatorName;
                              return { ...chat, hasNewReply: true, preview: msg.content.slice(0, 50) + (msg.content.length > 50 ? "..." : ""), ts: msg.createdAt };
                          } return chat;
                     });
                     localStorage.setItem("myChats", JSON.stringify(updatedChats));
-                    loadChats(); // Actualiza el estado de la UI (ya llama a setMyChats)
+                    loadChats(); // Actualiza UI
 
-                    // --- Notificación en título ---
                     if (document.hidden) {
                         if (!window.originalTitle) window.originalTitle = document.title;
                         document.title = `(1) Nuevo mensaje de ${creatorName}`;
@@ -240,31 +246,23 @@ export default function PublicPage() {
     // --- Limpieza al desmontar ---
     return () => {
         if (wsRef.current) { wsRef.current.onclose = null; wsRef.current.close(); }
-         // Limpiar título al desmontar
          if (window.originalTitle) { document.title = window.originalTitle; delete window.originalTitle; }
     };
+  
+  // --- !! ESTE ES EL ARREGLO CLAVE !! ---
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [publicId, loadChats]); // Dependencias correctas
+  }, [publicId, loadChats, myChats.length]); // <--- AÑADIDO: myChats.length
+  // --- FIN DEL ARREGLO CLAVE ---
 
   // --- useEffect para restaurar título ---
   useEffect(() => {
         const handleVisibilityChange = () => {
-            // Si la pestaña NO está oculta Y habíamos guardado un título original...
             if (!document.hidden && window.originalTitle) {
-                document.title = window.originalTitle; // Restaura el título
-                delete window.originalTitle; // Limpia la variable global
-                // Opcional: Podrías marcar chats como leídos aquí si quieres
-                // loadChats(); // O una lógica más específica
+                document.title = window.originalTitle; delete window.originalTitle;
             }
         };
-        // Añade el listener cuando el componente se monta
         document.addEventListener('visibilitychange', handleVisibilityChange);
-        // Limpieza: elimina el listener cuando el componente se desmonta
-        return () => {
-            document.removeEventListener('visibilitychange', handleVisibilityChange);
-            // Asegúrate de limpiar el título si el componente se desmonta mientras la pestaña está inactiva
-            if (window.originalTitle) { document.title = window.originalTitle; delete window.originalTitle; }
-        };
+        return () => { document.removeEventListener('visibilitychange', handleVisibilityChange); if (window.originalTitle) { document.title = window.originalTitle; delete window.originalTitle; } };
     }, []); // El array vacío [] asegura que se ejecute solo al montar/desmontar
 
   // --- Funciones para el Modal (Opcional) ---
