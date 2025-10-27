@@ -181,52 +181,55 @@ export default function PublicPage() {
   }
   // --- FIN DE LA GUARDA ---
 
-  // Estados
-  const [myChats, setMyChats] = useState([]);
-  const [selectedChat, setSelectedChat] = useState(null);
-  const [showGuideModal, setShowGuideModal] = useState(false); 
-  const chatsListRef = useRef(null);
-  const wsRef = useRef(null); 
+// Estados
+const [myChats, setMyChats] = useState([]);
+const [selectedChat, setSelectedChat] = useState(null);
+const [showGuideModal, setShowGuideModal] = useState(false); 
 
-  // Ref para rastrear el estado actual de selectedChat sin forzar la reconexión de WS
-  const selectedChatRef = useRef(selectedChat);
-  useEffect(() => {
-    selectedChatRef.current = selectedChat;
-  }, [selectedChat]);
+// NUEVOS ESTADOS Y REFS
+const [creatorName, setCreatorName] = useState("el creador");
+const selectedChatRef = useRef(selectedChat);
+const chatsListRef = useRef(null);
+const wsRef = useRef(null);
 
-  // Cargar chats desde localStorage
-  const loadChats = useCallback(() => {
-    try {
-      const stored = JSON.parse(localStorage.getItem("myChats") || "[]");
-      const relevantChats = stored.filter(chat => chat.creatorPublicId === publicId);
-      relevantChats.sort((a, b) => new Date(b.ts) - new Date(a.ts)); 
-      setMyChats(relevantChats);
-      return relevantChats; 
-    } catch (error) { console.error("Error al cargar chats:", error); return []; }
-  }, [publicId]); 
-  // --- ARREGLO: Cargar chats desde localStorage al montar --- 
-  useEffect(() => {
-    loadChats();
-  }, [loadChats]);
-  // --- FIN ARREGLO ---
-  useEffect(() => {
-    // Solo desliza si:
-    // 1. Hay chats cargados (myChats.length > 0)
-    // 2. No hay un chat abierto (selectedChat es null)
-    // 3. Existe la referencia al contenedor de la lista (chatsListRef)
-    if (myChats.length > 0 && !selectedChat && chatsListRef.current) {
-      const hasUnread = myChats.some(chat => chat.hasNewReply);
-      
-      if (hasUnread) {
-        // Se usa setTimeout para asegurar que el renderizado de la lista haya ocurrido
-        setTimeout(() => {
-            chatsListRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 300); // Pequeño retraso para que el navegador esté listo
-      }
+// 1. Ref para rastrear el estado actual de selectedChat sin forzar la reconexión de WS
+useEffect(() => {
+  selectedChatRef.current = selectedChat;
+}, [selectedChat]);
+
+// Cargar chats desde localStorage
+const loadChats = useCallback(() => {
+  try {
+    const stored = JSON.parse(localStorage.getItem("myChats") || "[]");
+    const relevantChats = stored.filter(chat => chat.creatorPublicId === publicId);
+    relevantChats.sort((a, b) => new Date(b.ts) - new Date(a.ts)); 
+    
+    // -> AGREGADO: Cargar el nombre del creador
+    if (relevantChats.length > 0 && relevantChats[0].creatorName) {
+      setCreatorName(relevantChats[0].creatorName);
     }
-  // Observa la lista de chats (myChats) y si la vista es el detalle o la lista (selectedChat)
-  }, [myChats, selectedChat]);
-  // --- FIN ARREGLO NUEVO ---
+    
+    setMyChats(relevantChats);
+    return relevantChats; 
+  } catch (error) { console.error("Error al cargar chats:", error); return []; }
+}, [publicId]); 
+
+// 3. ARREGLO PERSISTENCIA: Cargar chats al montar
+useEffect(() => {
+  loadChats();
+}, [loadChats]);
+
+// 4. ARREGLO SCROLL AL RECARGAR (si hay no leídos)
+useEffect(() => {
+  if (myChats.length > 0 && !selectedChat && chatsListRef.current) {
+    const hasUnread = myChats.some(chat => chat.hasNewReply);
+    if (hasUnread) {
+      setTimeout(() => {
+          chatsListRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 300); 
+    }
+  }
+}, [myChats, selectedChat]);
 
   // --- useEffect Corregido para WebSocket (CON DEPENDENCIA CLAVE) ---
   useEffect(() => {
@@ -266,24 +269,27 @@ export default function PublicPage() {
                 if (msg.from === 'creator' && currentRelevantChats.some(c => c.chatId === msg.chatId)) {
                     console.log("WS (Public Page) Mensaje nuevo recibido:", msg);
                     const currentChats = JSON.parse(localStorage.getItem("myChats") || "[]");
-                    let creatorName = 'Creador';
-                    const updatedChats = currentChats.map(chat => {
-                         if (chat.chatId === msg.chatId) {
-                             creatorName = chat.creatorName || creatorName;
-                             return { ...chat, hasNewReply: true, preview: msg.content.slice(0, 50) + (msg.content.length > 50 ? "..." : ""), ts: msg.createdAt };
-                         } return chat;
-                    });
-                    localStorage.setItem("myChats", JSON.stringify(updatedChats));
-                    loadChats(); // Actualiza el estado de la UI (myChats)
-                    // Deslizar a la lista de chats si NO hay un chat abierto
-                    if (!selectedChatRef.current && chatsListRef.current) {
-                      chatsListRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                  }
-
-                    if (document.hidden) {
-                        if (!window.originalTitle) window.originalTitle = document.title;
-                        document.title = `(1) Nuevo mensaje de ${creatorName}`;
-                    }
+                    
+                                        let nameForTitle = creatorName; // Usar el nombre del estado
+                                        
+                                        const updatedChats = currentChats.map(chat => {
+                                             if (chat.chatId === msg.chatId) {
+                                                 nameForTitle = chat.creatorName || nameForTitle;
+                                                 return { ...chat, hasNewReply: true, preview: msg.content.slice(0, 50) + (msg.content.length > 50 ? "..." : ""), ts: msg.createdAt };
+                                             } return chat;
+                                        });
+                                        localStorage.setItem("myChats", JSON.stringify(updatedChats));
+                                        loadChats(); // Actualiza el estado de la UI (myChats)
+                                        
+                                        // Deslizar a la lista de chats si NO hay un chat abierto
+                                        if (!selectedChatRef.current && chatsListRef.current) {
+                                          chatsListRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                        }
+                    
+                                        if (document.hidden) {
+                                            if (!window.originalTitle) window.originalTitle = document.title;
+                                            document.title = `(1) Nuevo mensaje de ${nameForTitle}`;
+                                        }
                 }
             } catch (e) { console.error("Error processing WS:", e); }
         };
@@ -409,24 +415,29 @@ export default function PublicPage() {
                   Crear tu propio espacio
                 </a>
               </div>
-              <div ref={chatsListRef} className={`chats-list-section ${myChats.length > 0 ? '' : 'staggered-fade-in-up'}`}>
-                {myChats.length > 0 && <h2 className="chats-list-title">Tus Chats Abiertos</h2>}
-                <div className="chats-list-grid">
-                  {myChats.map((chat, index) => (
-                    <div key={chat.chatId} className="chat-list-item staggered-fade-in-up" style={{ animationDelay: `${0.1 * index}s` }} onClick={() => handleOpenChat(chat)}>
-                      <div className="chat-list-item-main">
-                        <div className="chat-list-item-alias">
-                          {chat.anonAlias || "Anónimo"}
-                           {chat.hasNewReply && <span className="new-reply-indicator">Nuevo Mensaje</span>}
-                        </div>
-                        <div className="chat-list-item-content">"{chat.preview}"</div>
-                        <div className="chat-list-item-date">{formatDate(chat.ts)}</div>
-                      </div>
-                      <button className="chat-list-item-button">Abrir</button>
+
+<div ref={chatsListRef} className={`chats-list-section ${myChats.length > 0 ? '' : 'staggered-fade-in-up'}`}>
+    {myChats.length > 0 && <h2 className="chats-list-title">Espera a que {creatorName} te responda</h2>}
+    <div className="chats-list-grid">
+        {myChats.map((chat, index) => (
+            <div key={chat.chatId} className="chat-list-item staggered-fade-in-up" style={{ animationDelay: `${0.1 * index}s` }} onClick={() => handleOpenChat(chat)}>
+                <div className="chat-list-item-main">
+                    <div className="chat-list-item-alias">
+                        {chat.anonAlias || "Anónimo"}
+                        {chat.hasNewReply ? (
+                            <span className="new-reply-indicator">Nueva Respuesta</span>
+                        ) : (
+                            <span className="unreplied-indicator">{creatorName} no ha respondido aún</span>
+                        )}
                     </div>
-                  ))}
+                    <div className="chat-list-item-content">"{chat.preview}"</div>
+                    <div className="chat-list-item-date">{formatDate(chat.ts)}</div>
                 </div>
-              </div>
+                <button className="chat-list-item-button">Abrir</button>
+            </div>
+        ))}
+    </div>
+</div>
             </>
           )}
         </div>

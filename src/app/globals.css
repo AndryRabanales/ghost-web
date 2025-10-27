@@ -1713,3 +1713,23 @@ body {
   animation: point-down 1.5s ease-in-out infinite;
   cursor: default; /* Para que no parezca clickeable */
 }
+
+/* Archivo: andryrabanales/ghost-web/ghost-web-fa157a694c8e70126c81f933e01c047438567622/src/app/globals.css */
+
+/* ... (Al final del archivo) */
+
+/* Indicador de chat aún sin respuesta */
+.unreplied-indicator {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 3px 8px;
+  background-color: #3a3a4c; /* Gris oscuro para estado neutral */
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 10px;
+  font-weight: 500; /* Menos negrita que el 'Nuevo Mensaje' */
+  border-radius: 10px;
+  line-height: 1;
+  vertical-align: middle; 
+  /* Animación sutil para indicar espera */
+  animation: none; 
+}
