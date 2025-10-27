@@ -1601,6 +1601,12 @@ body {
 ================================================================================
 */
 
+/*
+================================================================================
+|       SECCIÓN 5.1: ESTRUCTURA DE ITEMS DE CHAT (BANDEJA DE ENTRADA)          |
+================================================================================
+*/
+
 /* Nueva animación para el borde de chats no leídos */
 @keyframes pulse-border {
   0%, 100% { 
@@ -1619,8 +1625,8 @@ body {
   align-items: center; 
   justify-content: space-between;
   gap: 15px; 
-  padding: 8px 20px; /* ⬅️ CORRECCIÓN CLAVE 1: Reducción drástica del padding vertical */
-  min-height: auto; /* ⬅️ CORRECCIÓN CLAVE 2: Eliminar min-height fijo (antes 60px) */
+  padding: 6px 20px; /* ⬅️ CORRECCIÓN CLAVE 1: Reducción máxima del padding vertical */
+  min-height: 54px; /* ⬅️ CORRECCIÓN CLAVE 2: Asegurar una altura mínima coherente */
   margin-bottom: 12px; 
   background: transparent;
   border: 1px solid var(--border-color-faint);
@@ -1655,7 +1661,7 @@ body {
 
 /* Estilo para los chats con nueva respuesta (Carmesí) */
 .chat-item.new-reply {
-  padding: 8px 20px; /* ⬅️ CORRECCIÓN CLAVE 3: Asegura la misma altura */
+  padding: 6px 20px; /* ⬅️ CORRECCIÓN CLAVE 3: Asegura la misma altura */
   min-height: auto; 
   
   /* Aplica el estilo carmesí */
@@ -1672,6 +1678,8 @@ body {
   gap: 4px; 
   flex-grow: 1; 
   overflow: hidden; 
+  max-height: 48px; /* ⬅️ CORRECCIÓN CLAVE 4: Limitar la altura del contenido de texto */
+  height: 100%; /* ⬅️ CORRECCIÓN CLAVE 5: Asegurar que ocupe todo el espacio vertical del padre */
 }
 
 /* Alias del anónimo */
@@ -1712,7 +1720,7 @@ body {
   justify-content: center;
   gap: 8px;
   flex-shrink: 0; 
-  padding: 6px 16px; /* ⬅️ CORRECCIÓN CLAVE 4: Botón más delgado */
+  padding: 6px 16px; /* ⬅️ CORRECCIÓN CLAVE 6: Botón lo más delgado posible */
   font-size: 14px;
   font-weight: 700;
   border-radius: 12px;
