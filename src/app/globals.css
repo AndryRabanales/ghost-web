@@ -1406,7 +1406,7 @@ body {
   background: linear-gradient(90deg, var(--primary-hellfire-red), var(--secondary-ember-orange));
   color: var(--text-primary);
   transition: all 0.3s ease;
-  min-width: 120px; /* ⬅️ AÑADIR/AJUSTAR ESTA LÍNEA para forzar el ancho */
+  max-width: 120px; /* ⬅️ AÑADIR/AJUSTAR ESTA LÍNEA para forzar el ancho */
   text-align: center;
   box-shadow: 0 4px 15px rgba(74, 0, 224, 0.3);
 }
