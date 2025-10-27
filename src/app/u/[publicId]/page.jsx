@@ -1,7 +1,7 @@
 // src/app/u/[publicId]/page.jsx
 "use client";
 import AnonMessageForm from "@/components/AnonMessageForm";
-// Asegúrate de que este archivo exista en src/components/
+// Asegúrate de crear este archivo en src/components/ si quieres usar el modal
 import FirstMessageGuideModal from "@/components/FirstMessageGuideModal";
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -179,15 +179,19 @@ export default function PublicPage() {
 
   // --- useEffect Corregido para WebSocket ---
   useEffect(() => {
-    let relevantChats = loadChats(); // Carga inicial
+    let relevantChats = loadChats(); // Carga inicial y obtiene los chats
 
     const connectWebSocket = () => {
+        // Cierra conexión anterior si existe
         if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) wsRef.current.close();
+        // No conectar si no hay chats
         if (relevantChats.length === 0) { console.log("No chats, WS not connecting."); return; }
 
+        // --- Construir lista de anonTokens ---
         const anonTokensString = relevantChats.map(chat => chat.anonToken).join(',');
         if (!anonTokensString) { console.log("No valid anonTokens found."); return; }
 
+        // --- Usar el nuevo parámetro 'anonTokens' ---
         const wsUrl = `${API.replace(/^http/, "ws")}/ws?anonTokens=${anonTokensString}`;
         const ws = new WebSocket(wsUrl);
         wsRef.current = ws;
@@ -196,27 +200,32 @@ export default function PublicPage() {
         ws.onerror = (error) => console.error("WS (Public Page) error:", error);
         ws.onclose = () => {
              console.log(`WS (Public Page) disconnected. Reconnecting...`);
+             // Reconectar solo si aún hay chats (llama a loadChats para verificar)
              if (loadChats().length > 0) setTimeout(connectWebSocket, 5000);
              else console.log("No chats left, WS closed.");
         };
 
+        // --- Lógica onmessage para actualizar "Nuevo" y título ---
         ws.onmessage = (event) => {
             try {
                 const msg = JSON.parse(event.data);
-                const currentRelevantChats = loadChats(); // Recargar para la comprobación
+                // Recarga la lista actual de chats relevantes para asegurar la comprobación correcta
+                const currentRelevantChats = loadChats();
 
                 if (msg.from === 'creator' && currentRelevantChats.some(c => c.chatId === msg.chatId)) {
                     const currentChats = JSON.parse(localStorage.getItem("myChats") || "[]");
-                    let creatorName = 'Creador';
+                    let creatorName = 'Creador'; // Default name
                     const updatedChats = currentChats.map(chat => {
                          if (chat.chatId === msg.chatId) {
-                             creatorName = chat.creatorName || creatorName;
+                             creatorName = chat.creatorName || creatorName; // Usa el nombre guardado si existe
+                             // Actualiza flag, preview y timestamp
                              return { ...chat, hasNewReply: true, preview: msg.content.slice(0, 50) + (msg.content.length > 50 ? "..." : ""), ts: msg.createdAt };
                          } return chat;
                     });
                     localStorage.setItem("myChats", JSON.stringify(updatedChats));
-                    loadChats(); // Actualiza UI
+                    loadChats(); // Actualiza el estado de la UI (ya llama a setMyChats)
 
+                    // --- Notificación en título ---
                     if (document.hidden) {
                         if (!window.originalTitle) window.originalTitle = document.title;
                         document.title = `(1) Nuevo mensaje de ${creatorName}`;
@@ -225,9 +234,13 @@ export default function PublicPage() {
             } catch (e) { console.error("Error processing WS:", e); }
         };
     };
+
     connectWebSocket(); // Conexión inicial
-    return () => { // Limpieza
+
+    // --- Limpieza al desmontar ---
+    return () => {
         if (wsRef.current) { wsRef.current.onclose = null; wsRef.current.close(); }
+         // Limpiar título al desmontar
          if (window.originalTitle) { document.title = window.originalTitle; delete window.originalTitle; }
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -236,13 +249,23 @@ export default function PublicPage() {
   // --- useEffect para restaurar título ---
   useEffect(() => {
         const handleVisibilityChange = () => {
+            // Si la pestaña NO está oculta Y habíamos guardado un título original...
             if (!document.hidden && window.originalTitle) {
-                document.title = window.originalTitle; delete window.originalTitle;
+                document.title = window.originalTitle; // Restaura el título
+                delete window.originalTitle; // Limpia la variable global
+                // Opcional: Podrías marcar chats como leídos aquí si quieres
+                // loadChats(); // O una lógica más específica
             }
         };
+        // Añade el listener cuando el componente se monta
         document.addEventListener('visibilitychange', handleVisibilityChange);
-        return () => { document.removeEventListener('visibilitychange', handleVisibilityChange); if (window.originalTitle) { document.title = window.originalTitle; delete window.originalTitle; } };
-    }, []); // Ejecutar solo una vez
+        // Limpieza: elimina el listener cuando el componente se desmonta
+        return () => {
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            // Asegúrate de limpiar el título si el componente se desmonta mientras la pestaña está inactiva
+            if (window.originalTitle) { document.title = window.originalTitle; delete window.originalTitle; }
+        };
+    }, []); // El array vacío [] asegura que se ejecute solo al montar/desmontar
 
   // --- Funciones para el Modal (Opcional) ---
   const handleShowGuide = useCallback(() => {
@@ -266,69 +289,44 @@ export default function PublicPage() {
   // Función formatDate (sin cambios)
   const formatDate = (dateString) => new Date(dateString).toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 
-  // Estilos (incluye los del modal si es necesario)
-  const pageStyles = ` /* ... Tus estilos ... */ `;
+  // Estilos (incluye los del modal aquí o en globals.css)
+  const pageStyles = `
+    .page-container {
+      background: linear-gradient(-45deg, #0d0c22, #1a1a2e, #2c1a5c, #3c287c);
+      background-size: 400% 400%;
+      animation: gradient-pan 15s ease infinite;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+      font-family: var(--font-main);
+      position: relative;
+    }
+    @keyframes gradient-pan { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+    .new-reply-indicator {
+      display: inline-block; margin-left: 8px; padding: 3px 8px;
+      background-color: var(--primary-hellfire-red); color: white;
+      font-size: 10px; font-weight: bold; border-radius: 10px;
+      line-height: 1; vertical-align: middle; animation: pulse-indicator 1.5s infinite;
+    }
+    @keyframes pulse-indicator { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: 0.8; } }
+    .to-dashboard-button {
+      position: absolute; top: 20px; right: 20px;
+      background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff; padding: 10px; border-radius: 50%; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background-color 0.3s ease, transform 0.3s ease; z-index: 10;
+    }
+    .to-dashboard-button:hover { background: rgba(255, 255, 255, 0.2); transform: scale(1.1); }
+    /* Estilos del Modal (si los pones aquí) */
+  `;
 
   // --- Renderizado del componente ---
   return (
     <>
       <style>{pageStyles}</style>
-      {/* --- Renderizar Modal (si se usa) --- */}
+      {/* --- Renderizar Modal (si se usa y si showGuideModal es true) --- */}
       {showGuideModal && <FirstMessageGuideModal onClose={handleCloseGuide} />}
 
       <div className="page-container">
-        {/* Botón Home */}
-        <button onClick={() => router.push('/')} className="to-dashboard-button" title="Ir a mi espacio">
-           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="24" height="24"><path strokeLinecap="round" strokeLinejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-        </button>
-
-        <div style={{ maxWidth: 520, width: '100%' }}>
-          {selectedChat ? (
-            // Vista de chat detallada
-            <PublicChatView chatInfo={selectedChat} onBack={() => {setSelectedChat(null); loadChats();}} />
-          ) : (
-            // Vista principal (formulario y lista)
-            <>
-              <h1 style={{ /*...*/ }}>Envíame un Mensaje Anónimo...</h1>
-              {/* Formulario (ahora recibe un publicId definido) */}
-              <AnonMessageForm
-                  publicId={publicId} // Ahora es seguro pasar publicId
-                  onSent={loadChats}
-                  onFirstSent={handleShowGuide} // Para el modal opcional
-              />
-
-              {/* Link Crear espacio */}
-              <div className="create-space-link-container staggered-fade-in-up" style={{ animationDelay: '0.8s' }}>
-                <a href="/" className="create-space-link">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="20" height="20"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                  Crear tu propio espacio
-                </a>
-              </div>
-
-              {/* Lista de Chats con ref */}
-              <div ref={chatsListRef} className={`chats-list-section ${myChats.length > 0 ? '' : 'staggered-fade-in-up'}`}>
-                {myChats.length > 0 && <h2 className="chats-list-title">Tus Chats Abiertos</h2>}
-                <div className="chats-list-grid">
-                  {myChats.map((chat, index) => (
-                    <div key={chat.chatId} className="chat-list-item staggered-fade-in-up" style={{ animationDelay: `${0.1 * index}s` }} onClick={() => handleOpenChat(chat)}>
-                      <div className="chat-list-item-main">
-                        <div className="chat-list-item-alias">
-                          {chat.anonAlias || "Anónimo"}
-                           {/* --- Indicador Nuevo --- */}
-                           {chat.hasNewReply && <span className="new-reply-indicator">Nuevo</span>}
-                        </div>
-                        <div className="chat-list-item-content">"{chat.preview}"</div>
-                        <div className="chat-list-item-date">{formatDate(chat.ts)}</div>
-                      </div>
-                      <button className="chat-list-item-button">Abrir</button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-    </>
-  );
-}
