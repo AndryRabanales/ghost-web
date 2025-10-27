@@ -1,7 +1,7 @@
 // src/app/u/[publicId]/page.jsx
 "use client";
 import AnonMessageForm from "@/components/AnonMessageForm";
-// Asegúrate de crear este archivo en src/components/ si quieres usar el modal
+// Asegúrate de que este archivo exista en src/components/ si quieres usar el modal
 import FirstMessageGuideModal from "@/components/FirstMessageGuideModal";
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -330,3 +330,64 @@ export default function PublicPage() {
       {showGuideModal && <FirstMessageGuideModal onClose={handleCloseGuide} />}
 
       <div className="page-container">
+        {/* Botón Home */}
+        <button onClick={() => router.push('/')} className="to-dashboard-button" title="Ir a mi espacio">
+           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="24" height="24"><path strokeLinecap="round" strokeLinejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+        </button>
+
+        <div style={{ maxWidth: 520, width: '100%' }}>
+          {selectedChat ? (
+            // Vista de chat detallada
+            <PublicChatView chatInfo={selectedChat} onBack={() => {setSelectedChat(null); loadChats();}} />
+          ) : (
+            // Vista principal (formulario y lista)
+            <>
+              <h1 style={{
+                textAlign: 'center', marginBottom: '10px', fontSize: '26px',
+                color: '#fff', fontWeight: 800, textShadow: '0 0 20px rgba(255, 255, 255, 0.3)',
+                animation: 'fadeInUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards'
+              }}>
+                Envíame un Mensaje Anónimo y Abre un Chat Anónimo
+              </h1>
+              {/* Formulario (ahora recibe un publicId definido) */}
+              <AnonMessageForm
+                  publicId={publicId} // Ahora es seguro pasar publicId
+                  onSent={loadChats}
+                  onFirstSent={handleShowGuide} // Para el modal opcional
+              />
+
+              {/* Link Crear espacio */}
+              <div className="create-space-link-container staggered-fade-in-up" style={{ animationDelay: '0.8s' }}>
+                <a href="/" className="create-space-link">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="20" height="20"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  Crear tu propio espacio
+                </a>
+              </div>
+
+              {/* Lista de Chats con ref */}
+              <div ref={chatsListRef} className={`chats-list-section ${myChats.length > 0 ? '' : 'staggered-fade-in-up'}`}>
+                {myChats.length > 0 && <h2 className="chats-list-title">Tus Chats Abiertos</h2>}
+                <div className="chats-list-grid">
+                  {myChats.map((chat, index) => (
+                    <div key={chat.chatId} className="chat-list-item staggered-fade-in-up" style={{ animationDelay: `${0.1 * index}s` }} onClick={() => handleOpenChat(chat)}>
+                      <div className="chat-list-item-main">
+                        <div className="chat-list-item-alias">
+                          {chat.anonAlias || "Anónimo"}
+                           {/* --- Indicador Nuevo --- */}
+                           {chat.hasNewReply && <span className="new-reply-indicator">Nuevo</span>}
+                        </div>
+                        <div className="chat-list-item-content">"{chat.preview}"</div>
+                        <div className="chat-list-item-date">{formatDate(chat.ts)}</div>
+                      </div>
+                      <button className="chat-list-item-button">Abrir</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
