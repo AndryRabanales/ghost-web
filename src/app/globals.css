@@ -1394,9 +1394,9 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 2px;
   flex-shrink: 0; 
-  padding: 7px 16px; 
+  padding: 2px 6px; 
   font-size: 14px;
   font-weight: 700;
   border-radius: 12px;
