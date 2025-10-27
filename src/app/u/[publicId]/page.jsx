@@ -59,7 +59,12 @@ const PublicChatView = ({ chatInfo, onBack }) => {
             wsRef.current.close(1000, "Re-ejecución de useEffect");
         }
 
-        const wsUrl = `${API.replace(/^http/, "ws")}/ws?chatId=${chatId}&anonToken=${anonToken}`;
+        // --- CORRECCIÓN CLAVE AQUÍ ---
+        // El backend espera 'anonTokens' (plural), no 'anonToken' (singular).
+        const anonTokensString = anonToken; 
+        const wsUrl = `${API.replace(/^http/, "ws")}/ws?anonTokens=${anonTokensString}`;
+        // --- FIN CORRECCIÓN ---
+
         const ws = new WebSocket(wsUrl);
         wsRef.current = ws;
 
