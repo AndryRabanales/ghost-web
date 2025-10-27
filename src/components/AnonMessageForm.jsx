@@ -1,6 +1,6 @@
+// src/components/AnonMessageForm.jsx
 "use client";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation"; // Importar useRouter
 
 const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
 
@@ -14,8 +14,6 @@ export default function AnonMessageForm({ publicId, onSent, onFirstSent }) {
   const [isMounted, setIsMounted] = useState(false);
   // Nuevo estado para guardar la info del último chat enviado con éxito
   const [lastSentChatInfo, setLastSentChatInfo] = useState(null);
-
-  const router = useRouter(); // Inicializar useRouter
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -62,29 +60,21 @@ export default function AnonMessageForm({ publicId, onSent, onFirstSent }) {
           ts: new Date().toISOString(),
           creatorName: data.creatorName || "Conversación", // Usar el nombre del creador si viene
           anonAlias: alias || "Anónimo",
-          hasNewReply: false,
+          hasNewReply: false, // <-- AÑADIDO: Inicialmente no hay respuesta nueva
         };
 
         const updatedChats = [newChatEntry, ...myChats];
         localStorage.setItem("myChats", JSON.stringify(updatedChats));
 
-        // Redirigir al chat recién creado
-        router.push(`/u/${publicId}?chatId=${data.chatId}&anonToken=${data.anonToken}`);
-        
-        // No limpiamos el contenido aquí porque se redirigirá la página
-        // y el ciclo de vida del componente se reiniciará.
-        return; // Salir después de la redirección
-        
-        // El onFirstSent original se manejaba con una notificación.
-        // Si quieres mantenerlo, debería ser antes de la redirección, pero
-        // la redirección inmediata suele ser mejor para la UX. 
-        // Si necesitas el modal, debes manejarlo en la página principal 
-        // después de la redirección, usando los query params.
+        // Notificar si fue el primer chat para este creador
+        if (isFirstChatForCreator && typeof onFirstSent === "function") {
+          onFirstSent();
+        }
       }
 
-      setContent(""); // Limpiar contenido solo si no se redirigió (de fallback)
-      setCharCount(0); // Resetear contador solo en éxito (de fallback)
-      if (typeof onSent === "function") onSent(); // Notificar que se envió (de fallback)
+      setContent(""); // Limpiar contenido solo en éxito
+      setCharCount(0); // Resetear contador solo en éxito
+      if (typeof onSent === "function") onSent(); // Notificar que se envió (para recargar lista)
 
     } catch (err) {
       setStatus("error");
@@ -96,6 +86,7 @@ export default function AnonMessageForm({ publicId, onSent, onFirstSent }) {
   return (
     <div className={`anon-form-container ${isMounted ? 'mounted' : ''}`}>
       <form onSubmit={handleSubmit} className="form-element-group">
+        {/* ... (input de alias y textarea sin cambios) ... */}
         <input
             type="text"
             placeholder="Tu alias (opcional)"
