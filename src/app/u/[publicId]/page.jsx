@@ -1,13 +1,13 @@
 // src/app/u/[publicId]/page.jsx
 "use client";
 import AnonMessageForm from "@/components/AnonMessageForm";
-import FirstMessageGuideModal from "@/components/FirstMessageGuideModal";
+import FirstMessageGuideModal from "@/components/FirstMessageGuideModal"; // Modal Opcional
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 
 const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
 
-// --- Componente PublicChatView (CORRECCIÓN DE WEBSOCKET ROBUSTA) ---
+// --- Componente PublicChatView (Vista Detallada del Chat) ---
 const PublicChatView = ({ chatInfo, onBack }) => {
     const { anonToken, chatId, creatorName: initialCreatorName } = chatInfo;
     const [messages, setMessages] = useState([]);
@@ -51,12 +51,10 @@ const PublicChatView = ({ chatInfo, onBack }) => {
         };
         fetchMessages();
 
-        // -----------------------------------------------------
-        // --- CONEXIÓN WEB SOCKET PARA LA VISTA DEL CHAT ---
-        // -----------------------------------------------------
+        // --- Conexión WebSocket para esta vista (sólo 1 chat) ---
         const wsUrl = `${API.replace(/^http/, "ws")}/ws?chatId=${chatId}&anonToken=${anonToken}`;
         
-        // CERRAR CUALQUIER CONEXIÓN ANTERIOR DE ESTE COMPONENTE
+        // 1. CERRAR CONEXIÓN ANTERIOR ANTES DE ABRIR NUEVA (si se re-ejecuta)
         if (wsRef.current) {
             wsRef.current.onclose = null; 
             wsRef.current.close(1000, "Re-ejecución de useEffect");
@@ -89,18 +87,16 @@ const PublicChatView = ({ chatInfo, onBack }) => {
              }
         };
 
-       // LIMPIEZA AL DESMONTAR: MÁS ROBUSTA PARA PREVENIR EL CIERRE INESPERADO
+       // LIMPIEZA AL DESMONTAR
        return () => { 
            if (wsRef.current) {
-               // Prevenir que onclose se ejecute si cerramos manualmente
                wsRef.current.onclose = null; 
-               // Usamos un código de cierre limpio (1000) para evitar logs de error en consola
                wsRef.current.close(1000, "Componente desmontado limpiamente");
                wsRef.current = null;
            } 
        };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [chatId, anonToken]); // Dependencias correctas
+    }, [chatId, anonToken]); 
 
      // Enviar mensaje
      const handleSend = async (e) => {
@@ -196,14 +192,14 @@ export default function PublicPage() {
     } catch (error) { console.error("Error al cargar chats:", error); return []; }
   }, [publicId]); 
 
-  // --- useEffect Corregido para WebSocket (CON DEPENDENCIA Y LOGS) ---
+  // --- useEffect Corregido para WebSocket (CON DEPENDENCIA ARREGLADA) ---
   useEffect(() => {
     console.log(`WebSocket useEffect: Disparado. myChats.length: ${myChats.length}`);
 
     const connectWebSocket = () => {
         if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-            wsRef.current.onclose = null; // Evitar reconexión anterior
-            wsRef.current.close(1000, "Nueva conexión de página"); 
+            wsRef.current.onclose = null; 
+            wsRef.current.close(1000, "Nueva conexión de página");
         }
         
         if (myChats.length === 0) { console.log("WebSocket connect: No hay chats, no se conecta."); return; }
@@ -233,7 +229,7 @@ export default function PublicPage() {
                 if (msg.from === 'creator' && currentRelevantChats.some(c => c.chatId === msg.chatId)) {
                     console.log("WS (Public Page) Mensaje nuevo recibido:", msg);
                     const currentChats = JSON.parse(localStorage.getItem("myChats") || "[]");
-                    let creatorName = 'Creador'; 
+                    let creatorName = 'Creador';
                     const updatedChats = currentChats.map(chat => {
                          if (chat.chatId === msg.chatId) {
                              creatorName = chat.creatorName || creatorName;
@@ -241,7 +237,7 @@ export default function PublicPage() {
                          } return chat;
                     });
                     localStorage.setItem("myChats", JSON.stringify(updatedChats));
-                    loadChats(); // Actualiza el estado de la UI
+                    loadChats(); // Actualiza el estado de la UI (myChats)
 
                     if (document.hidden) {
                         if (!window.originalTitle) window.originalTitle = document.title;
@@ -252,7 +248,7 @@ export default function PublicPage() {
         };
     };
 
-    connectWebSocket(); 
+    connectWebSocket(); // Conexión inicial
 
     // --- Limpieza al desmontar ---
     return () => {
@@ -262,7 +258,7 @@ export default function PublicPage() {
   
   // --- ARREGLO CLAVE: Se re-ejecuta al cambiar el número de chats ---
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [publicId, loadChats, myChats.length]); 
+  }, [publicId, loadChats, myChats.length]); // <--- ESTO FUERZA LA CONEXIÓN DESPUÉS DEL PRIMER MENSAJE
 
   // --- useEffect para restaurar título (sin cambios) ---
   useEffect(() => {
@@ -298,15 +294,42 @@ export default function PublicPage() {
 
   // Estilos (incluye los del modal aquí o en globals.css)
   const pageStyles = `
-    .page-container { /* ... */ }
-    @keyframes gradient-pan { /* ... */ }
-    /* ... Estilos del modal y la lista ... */
+    .page-container {
+      background: linear-gradient(-45deg, #0d0c22, #1a1a2e, #2c1a5c, #3c287c);
+      background-size: 400% 400%;
+      animation: gradient-pan 15s ease infinite;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+      font-family: var(--font-main);
+      position: relative;
+    }
+    @keyframes gradient-pan { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+    .new-reply-indicator {
+      display: inline-block; margin-left: 8px; padding: 3px 8px;
+      background-color: var(--primary-hellfire-red); color: white;
+      font-size: 10px; font-weight: bold; border-radius: 10px;
+      line-height: 1; vertical-align: middle; animation: pulse-indicator 1.5s infinite;
+    }
+    @keyframes pulse-indicator { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: 0.8; } }
+    .to-dashboard-button {
+      position: absolute; top: 20px; right: 20px;
+      background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff; padding: 10px; border-radius: 50%; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background-color 0.3s ease, transform 0.3s ease; z-index: 10;
+    }
+    .to-dashboard-button:hover { background: rgba(255, 255, 255, 0.2); transform: scale(1.1); }
+    /* Estilos del Modal (si los pones aquí) */
   `;
 
   // --- Renderizado del componente ---
   return (
     <>
       <style>{pageStyles}</style>
+      {/* --- Renderizar Modal (si se usa y si showGuideModal es true) --- */}
       {showGuideModal && <FirstMessageGuideModal onClose={handleCloseGuide} />}
 
       <div className="page-container">
@@ -317,21 +340,34 @@ export default function PublicPage() {
 
         <div style={{ maxWidth: 520, width: '100%' }}>
           {selectedChat ? (
+            // Vista de chat detallada
             <PublicChatView chatInfo={selectedChat} onBack={() => {setSelectedChat(null); loadChats();}} />
           ) : (
+            // Vista principal (formulario y lista)
             <>
-              <h1 style={{ /* ... */ }}>Envíame un Mensaje Anónimo y Abre un Chat Anónimo</h1>
+              <h1 style={{
+                textAlign: 'center', marginBottom: '10px', fontSize: '26px',
+                color: '#fff', fontWeight: 800, textShadow: '0 0 20px rgba(255, 255, 255, 0.3)',
+                animation: 'fadeInUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards'
+              }}>
+                Envíame un Mensaje Anónimo y Abre un Chat Anónimo
+              </h1>
+              {/* Formulario (ahora recibe un publicId definido) */}
               <AnonMessageForm
-                  publicId={publicId} 
+                  publicId={publicId} // Ahora es seguro pasar publicId
                   onSent={loadChats}
-                  onFirstSent={handleShowGuide} 
+                  onFirstSent={handleShowGuide} // Para el modal opcional
               />
+
+              {/* Link Crear espacio */}
               <div className="create-space-link-container staggered-fade-in-up" style={{ animationDelay: '0.8s' }}>
                 <a href="/" className="create-space-link">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="20" height="20"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                   Crear tu propio espacio
                 </a>
               </div>
+
+              {/* Lista de Chats con ref */}
               <div ref={chatsListRef} className={`chats-list-section ${myChats.length > 0 ? '' : 'staggered-fade-in-up'}`}>
                 {myChats.length > 0 && <h2 className="chats-list-title">Tus Chats Abiertos</h2>}
                 <div className="chats-list-grid">
@@ -340,6 +376,7 @@ export default function PublicPage() {
                       <div className="chat-list-item-main">
                         <div className="chat-list-item-alias">
                           {chat.anonAlias || "Anónimo"}
+                           {/* --- Indicador Nuevo --- */}
                            {chat.hasNewReply && <span className="new-reply-indicator">Nuevo Mensaje</span>}
                         </div>
                         <div className="chat-list-item-content">"{chat.preview}"</div>
