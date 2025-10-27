@@ -204,6 +204,11 @@ export default function PublicPage() {
       return relevantChats; 
     } catch (error) { console.error("Error al cargar chats:", error); return []; }
   }, [publicId]); 
+  // --- ARREGLO: Cargar chats desde localStorage al montar --- 
+  useEffect(() => {
+    loadChats();
+  }, [loadChats]);
+  // --- FIN ARREGLO ---
 
   // --- useEffect Corregido para WebSocket (CON DEPENDENCIA CLAVE) ---
   useEffect(() => {
