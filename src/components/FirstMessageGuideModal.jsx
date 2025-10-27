@@ -103,7 +103,7 @@ export default function FirstMessageGuideModal({ onClose }) {
       <div style={modalContentStyle} onClick={(e) => e.stopPropagation()}> {/* Evita cerrar al hacer clic dentro */}
         <h2 style={titleStyle}>¡Chat Anónimo Abierto! 💬</h2>
         <p style={textStyle}>
-        Tu conversación acaba de empezar. Haz clic en el botón de abajo para entrar. 👇 El creador responderá tan pronto como pueda...
+     👇 El creador responderá tan pronto como pueda...👻
         </p>
         <p style={highlightTextStyle}>
           Puedes esperar aquí o volver más tarde.
