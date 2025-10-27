@@ -1818,3 +1818,40 @@ body {
   box-shadow: 0 6px 25px rgba(74, 0, 224, 0.5); 
   filter: brightness(1.2); 
 }
+
+/* ... (omitting existing styles) ... */
+
+/*
+================================================================================
+|           SECCIÓN 12: ANIMACIÓN PARA BOTÓN DE CHAT PÚBLICO                   |
+================================================================================
+*/
+
+@keyframes neon-pulse-anon {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 5px var(--glow-accent-crimson), inset 0 0 5px var(--glow-accent-crimson);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 20px var(--glow-accent-crimson), inset 0 0 10px var(--glow-accent-crimson);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 5px var(--glow-accent-crimson), inset 0 0 5px var(--glow-accent-crimson);
+  }
+}
+
+.pulse-open-anon {
+  animation: neon-pulse-anon 1.5s infinite ease-in-out;
+  border-color: var(--glow-accent-crimson) !important;
+}
+
+.chat-list-item:hover .pulse-open-anon { 
+    /* Detiene la animación de pulso cuando se pasa el ratón y aplica el hover normal */
+    animation-play-state: paused; 
+    transform: translateY(-5px) scale(1.02);
+    /* Forzar los colores de hover definidos en las secciones anteriores (púrpura) */
+    background: #8e2de2 !important; 
+    border-color: #8e2de2 !important;
+}
