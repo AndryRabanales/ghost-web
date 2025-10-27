@@ -1607,6 +1607,12 @@ body {
 ================================================================================
 */
 
+/*
+================================================================================
+|       SECCIÓN 5.1: ESTRUCTURA DE ITEMS DE CHAT (BANDEJA DE ENTRADA)          |
+================================================================================
+*/
+
 /* Nueva animación para el borde de chats no leídos */
 @keyframes pulse-border {
   0%, 100% { 
@@ -1625,8 +1631,8 @@ body {
   align-items: center; 
   justify-content: space-between;
   gap: 15px; 
-  padding: 6px 20px; /* ⬅️ CORRECCIÓN CLAVE 1: Reducción máxima del padding vertical */
-  min-height: 54px; /* ⬅️ CORRECCIÓN CLAVE 2: Asegurar una altura mínima coherente */
+  padding: 10px 20px; /* ⬅️ AJUSTE 1: Más padding vertical para que quepa el texto (antes 6px) */
+  min-height: 60px; /* ⬅️ AJUSTE 2: Garantiza altura suficiente para alias + 2 líneas */
   margin-bottom: 12px; 
   background: transparent;
   border: 1px solid var(--border-color-faint);
@@ -1661,8 +1667,8 @@ body {
 
 /* Estilo para los chats con nueva respuesta (Carmesí) */
 .chat-item.new-reply {
-  padding: 6px 20px; /* ⬅️ CORRECCIÓN CLAVE 3: Asegura la misma altura */
-  min-height: auto; 
+  padding: 10px 20px; /* ⬅️ AJUSTE 3: Asegura la misma altura */
+  min-height: 60px; /* ⬅️ AJUSTE 4: Asegura la misma altura */
   
   /* Aplica el estilo carmesí */
   border-left: 3px solid var(--notification-red-base); 
@@ -1674,12 +1680,11 @@ body {
 .chat-item-main {
   display: flex;
   flex-direction: column;
-  justify-content: center; 
+  justify-content: center; /* Asegura la alineación central vertical */
   gap: 4px; 
   flex-grow: 1; 
   overflow: hidden; 
-  max-height: 48px; /* ⬅️ CORRECCIÓN CLAVE 4: Limitar la altura del contenido de texto */
-  height: 100%; /* ⬅️ CORRECCIÓN CLAVE 5: Asegurar que ocupe todo el espacio vertical del padre */
+  /* Se eliminan las restricciones de altura que estaban cortando el texto (max-height, height: 100%) */
 }
 
 /* Alias del anónimo */
@@ -1720,7 +1725,7 @@ body {
   justify-content: center;
   gap: 8px;
   flex-shrink: 0; 
-  padding: 6px 16px; /* ⬅️ CORRECCIÓN CLAVE 6: Botón lo más delgado posible */
+  padding: 8px 16px; /* ⬅️ AJUSTE 5: Pequeño padding vertical para el botón (antes 6px) */
   font-size: 14px;
   font-weight: 700;
   border-radius: 12px;
