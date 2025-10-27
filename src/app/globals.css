@@ -1760,23 +1760,30 @@ body {
 }
 
 /* FIX CRÍTICO DE TAMAÑO: Hacemos que el item base sea más defensivo */
+/* ... (Busca la SECCIÓN 5.1 o el estilo base de .chat-item) ... */
+
+/* FIX DE TAMAÑO: Aseguramos el padding para la regla base y las notificaciones */
 .chat-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 15px; 
-  padding: 16px 20px; /* <-- Mantenemos el tamaño base */
-  min-height: 60px; /* <-- Altura mínima para estabilidad */
+  padding: 16px 20px; /* <--- VALOR DE TAMAÑO ORIGINAL */
+  min-height: 60px; 
   margin-bottom: 12px; 
   background: transparent;
   border: 1px solid var(--border-color-faint);
   border-radius: 12px;
-  /* ... (resto de estilos de chat-item) ... */
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 0 10px rgba(157, 0, 255, 0.3);
 }
 
 /* Estilo para los chats con nueva respuesta (Carmesí) */
 .chat-item.new-reply {
-  /* FIX CRÍTICO: Re-declara el padding y el min-height para asegurar el tamaño */
+  /* FIX CRÍTICO DE TAMAÑO: Re-declara el padding para evitar que se estire por herencia */
   padding: 16px 20px; 
   min-height: auto; 
   
@@ -1785,19 +1792,15 @@ body {
   background: linear-gradient(90deg, rgba(255, 22, 65, 0.1), transparent 50%);
   animation: pulse-new-reply 2.5s ease-in-out infinite; 
 }
-.chat-item.new-reply:not(.disabled):hover {
-  border-color: var(--notification-red-base);
-}
 
-/* Estilo del botón (Mantenemos el púrpura que se ve bien) */
-.chat-item.new-reply .chat-item-button {
+/* Estilo del botón (Mantenemos púrpura con brillo carmesí para que se vea el pulso) */
+.chat-item-button {
+  /* ... (estilos del botón base) ... */
   background: linear-gradient(90deg, var(--primary-hellfire-red), var(--secondary-ember-orange));
-  color: #fff; 
-  font-weight: 900;
-  box-shadow: 0 4px 15px rgba(74, 0, 224, 0.3);
+  /* ... */
 }
 
 /* Estilo para el indicador de texto */
 .new-reply-indicator {
-  background-color: var(--notification-red-base); 
+  background-color: var(--notification-red-base); /* Carmesí en el fondo de la pastilla */
 }
