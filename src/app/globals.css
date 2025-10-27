@@ -36,7 +36,7 @@
   --border-color-faint: rgba(142, 45, 226, 0.3);
   --border-color-strong: rgba(142, 45, 226, 0.7);
   
-  /* AÑADIDO: Colores de Acento para la Notificación Carmesí */
+  /* AÑADIDO: Colores de Acento para la Notificación Carmesí (para arreglar el color y el tamaño) */
   --notification-red-base: #ff1641; 
   --notification-red-glow: rgba(255, 22, 65, 0.4); 
 }
@@ -1745,6 +1745,9 @@ body {
 /* ... (En la sección de Animaciones) ... */
 
 /* Animación de Pulso de Notificación (Actualizada a tono Carmesí) */
+/* andryrabanales/ghost-web/ghost-web-39f92d39bc0a587fc148c366b58679842a2167cf/src/app/globals.css */
+
+/* Animación de Pulso de Notificación (Carmesí) */
 @keyframes pulse-new-reply {
   0%, 100% { 
     border-left-color: var(--notification-red-base); 
@@ -1756,16 +1759,14 @@ body {
   }
 }
 
-/* ... (En la sección 5.1: ESTRUCTURA DE ITEMS DE CHAT) ... */
-
-/* FIX: Agregamos min-height y forzamos el padding vertical para evitar que se estire */
+/* FIX CRÍTICO DE TAMAÑO: Hacemos que el item base sea más defensivo */
 .chat-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 15px; 
-  padding: 16px 20px; /* Mantenemos el tamaño vertical deseado */
-  min-height: 60px; /* Aseguramos un mínimo para evitar colapso */
+  padding: 16px 20px; /* <-- Mantenemos el tamaño base */
+  min-height: 60px; /* <-- Altura mínima para estabilidad */
   margin-bottom: 12px; 
   background: transparent;
   border: 1px solid var(--border-color-faint);
@@ -1773,27 +1774,30 @@ body {
   /* ... (resto de estilos de chat-item) ... */
 }
 
-/* Estilo para los chats con nueva respuesta del anónimo */
+/* Estilo para los chats con nueva respuesta (Carmesí) */
 .chat-item.new-reply {
-  /* Sobrescribe estilos de notificación con Carmesí */
+  /* FIX CRÍTICO: Re-declara el padding y el min-height para asegurar el tamaño */
+  padding: 16px 20px; 
+  min-height: auto; 
+  
+  /* Aplica el estilo carmesí */
   border-left: 3px solid var(--notification-red-base); 
-  background: linear-gradient(90deg, rgba(255, 22, 65, 0.1), transparent 50%); /* Fondo con brillo carmesí */
+  background: linear-gradient(90deg, rgba(255, 22, 65, 0.1), transparent 50%);
   animation: pulse-new-reply 2.5s ease-in-out infinite; 
-  padding: 16px 20px; /* RE-APLICAR el padding para asegurar el tamaño original. */
 }
 .chat-item.new-reply:not(.disabled):hover {
   border-color: var(--notification-red-base);
 }
 
-/* Estilo para el botón (mantenemos el púrpura principal, pero con el brillo de la tarjeta) */
+/* Estilo del botón (Mantenemos el púrpura que se ve bien) */
 .chat-item.new-reply .chat-item-button {
   background: linear-gradient(90deg, var(--primary-hellfire-red), var(--secondary-ember-orange));
   color: #fff; 
-  font-weight: 700;
-  box-shadow: 0 4px 15px rgba(74, 0, 224, 0.3); /* Sombra púrpura para que armonice */
+  font-weight: 900;
+  box-shadow: 0 4px 15px rgba(74, 0, 224, 0.3);
 }
 
 /* Estilo para el indicador de texto */
 .new-reply-indicator {
-  background-color: var(--notification-red-base); /* Carmesí en el fondo de la pastilla */
+  background-color: var(--notification-red-base); 
 }
