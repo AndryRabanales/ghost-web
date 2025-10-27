@@ -1807,13 +1807,14 @@ body {
 
 /* Estilo para el botón cuando hay nueva respuesta */
 .chat-item.new-reply .chat-item-button {
-  background: linear-gradient(90deg, var(--success-solid), #a60000); /* Color verde vibrante */
-  color: #000; /* Texto oscuro para buen contraste */
-  font-weight: 900;
-  box-shadow: 0 4px 15px rgba(255, 0, 0, 0.5);
+  background: linear-gradient(90deg, var(--primary-hellfire-red), var(--secondary-ember-orange)); 
+  color: var(--text-primary); 
+  font-weight: 700; 
+  box-shadow: 0 4px 15px rgba(74, 0, 224, 0.3); 
 }
+
 .chat-item.new-reply .chat-item-button:hover {
   transform: scale(1.05) translateY(-2px); 
-  box-shadow: 0 6px 25px rgba(255, 0, 0, 0.7); 
+  box-shadow: 0 6px 25px rgba(74, 0, 224, 0.5); 
   filter: brightness(1.2); 
 }
