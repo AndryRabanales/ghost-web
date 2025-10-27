@@ -1613,6 +1613,12 @@ body {
 ================================================================================
 */
 
+/*
+================================================================================
+|       SECCIÓN 5.1: ESTRUCTURA DE ITEMS DE CHAT (BANDEJA DE ENTRADA)          |
+================================================================================
+*/
+
 /* Nueva animación para el borde de chats no leídos */
 @keyframes pulse-border {
   0%, 100% { 
@@ -1631,8 +1637,8 @@ body {
   align-items: center; 
   justify-content: space-between;
   gap: 15px; 
-  padding: 10px 20px; /* ⬅️ AJUSTE 1: Más padding vertical para que quepa el texto (antes 6px) */
-  min-height: 60px; /* ⬅️ AJUSTE 2: Garantiza altura suficiente para alias + 2 líneas */
+  padding: 8px 20px; /* ⬅️ CORRECCIÓN: Padding vertical compacto */
+  min-height: auto; /* ⬅️ CRÍTICO: Eliminar altura forzada */
   margin-bottom: 12px; 
   background: transparent;
   border: 1px solid var(--border-color-faint);
@@ -1667,8 +1673,8 @@ body {
 
 /* Estilo para los chats con nueva respuesta (Carmesí) */
 .chat-item.new-reply {
-  padding: 10px 20px; /* ⬅️ AJUSTE 3: Asegura la misma altura */
-  min-height: 60px; /* ⬅️ AJUSTE 4: Asegura la misma altura */
+  padding: 8px 20px; /* ⬅️ CORRECCIÓN: Mantener el padding compacto */
+  min-height: auto; 
   
   /* Aplica el estilo carmesí */
   border-left: 3px solid var(--notification-red-base); 
@@ -1680,11 +1686,11 @@ body {
 .chat-item-main {
   display: flex;
   flex-direction: column;
-  justify-content: center; /* Asegura la alineación central vertical */
-  gap: 4px; 
+  justify-content: center; 
+  gap: 2px; /* ⬅️ CORRECCIÓN: Reducir el espacio entre líneas para que quepa el texto */
   flex-grow: 1; 
   overflow: hidden; 
-  /* Se eliminan las restricciones de altura que estaban cortando el texto (max-height, height: 100%) */
+  /* Se eliminan todas las restricciones de altura aquí */
 }
 
 /* Alias del anónimo */
@@ -1725,7 +1731,7 @@ body {
   justify-content: center;
   gap: 8px;
   flex-shrink: 0; 
-  padding: 8px 16px; /* ⬅️ AJUSTE 5: Pequeño padding vertical para el botón (antes 6px) */
+  padding: 6px 16px; /* ⬅️ CORRECCIÓN: Botón muy compacto */
   font-size: 14px;
   font-weight: 700;
   border-radius: 12px;
