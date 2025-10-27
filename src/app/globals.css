@@ -855,8 +855,8 @@ body::after {
   --text-primary: #f5f5f5;
   --text-secondary: rgba(235, 235, 245, 0.7);
 
---success-glow: rgba(255, 188, 164, 0.52); /* Púrpura claro (rgba de #c9a4ff) */
---success-solid: #be3432; /* Púrpura claro sólido */
+--success-glow: rgba(133, 40, 255, 0.796); /* Púrpura claro (rgba de #c9a4ff) */
+--success-solid: #  851aff; /* Púrpura claro sólido */
 
 --font-main: "Orbitron", sans-serif;
   --font-main: "Orbitron", sans-serif;
