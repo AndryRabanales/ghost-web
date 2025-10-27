@@ -1675,3 +1675,41 @@ body {
 /* Puedes quitar la media query que ajustaba font-size si ya no es necesaria */
 /* O ajustarla para cambiar width/height del SVG si aún lo necesitas */
 /* @media (max-width: 400px) { ... } */
+
+/* src/app/globals.css */
+
+ /* ... tus otros estilos ... */
+
+ /* Indicador de Nuevo Mensaje */
+ .new-reply-indicator {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 3px 8px;
+  background-color: var(--primary-hellfire-red); /* O el color que prefieras */
+  color: white;
+  font-size: 10px;
+  font-weight: bold;
+  border-radius: 10px;
+  line-height: 1;
+  vertical-align: middle; /* Para alinearlo bien con el texto */
+  animation: pulse-indicator 1.5s infinite;
+}
+
+@keyframes pulse-indicator {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.1); opacity: 0.8; }
+}
+
+/* Guía visual para scroll (opcional) */
+@keyframes point-down {
+  0%, 100% { transform: translateY(0); opacity: 1; }
+  50% { transform: translateY(8px); opacity: 0.5; }
+}
+.scroll-cue {
+  text-align: center;
+  margin-top: 15px;
+  color: var(--glow-accent-crimson);
+  font-weight: bold;
+  animation: point-down 1.5s ease-in-out infinite;
+  cursor: default; /* Para que no parezca clickeable */
+}

@@ -1,9 +1,9 @@
+// src/app/chats/[anonToken]/[chatId]/page.jsx
 "use client";
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react"; // Añadir useCallback
 import { useParams } from "next/navigation";
 
-const API =
-  process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
+const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
 
 export default function PublicChatPage() {
   const params = useParams();
@@ -12,209 +12,228 @@ export default function PublicChatPage() {
   const [messages, setMessages] = useState([]);
   const [newMsg, setNewMsg] = useState("");
   const [creatorName, setCreatorName] = useState("Respuesta");
-  const [anonAlias, setAnonAlias] = useState("Tú");
+  const [anonAlias, setAnonAlias] = useState("Tú"); // En la vista pública, el anónimo es "Tú"
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const bottomRef = useRef(null);
   const wsRef = useRef(null);
 
+  // --- Función para marcar como leído ---
+  const markChatAsRead = useCallback(() => {
+    try {
+        const storedChats = JSON.parse(localStorage.getItem("myChats") || "[]");
+        const updatedChats = storedChats.map(chat =>
+            chat.chatId === chatId && chat.anonToken === anonToken
+                ? { ...chat, hasNewReply: false }
+                : chat
+        );
+        localStorage.setItem("myChats", JSON.stringify(updatedChats));
+    } catch (e) {
+        console.error("Error updating localStorage:", e);
+    }
+  }, [chatId, anonToken]); // Dependencias: chatId y anonToken
+
   // Scroll automático al fondo
   useEffect(() => {
     if (bottomRef.current) {
       bottomRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [messages]);
+     // Marcar como leído cuando los mensajes cambian (o inicialmente)
+     markChatAsRead();
+  }, [messages, markChatAsRead]); // Incluir markChatAsRead
 
-  // Recuperar nombre y alias guardados
-  useEffect(() => {
+  // ... (Recuperar alias y nombre guardados - sin cambios) ...
+   useEffect(() => {
     const stored = JSON.parse(localStorage.getItem("myChats") || "[]");
     const found = stored.find(
       (c) => c.chatId === chatId && c.anonToken === anonToken
     );
+    // Nota: Aquí no establecemos anonAlias porque en esta vista siempre es "Tú"
     if (found?.creatorName) setCreatorName(found.creatorName);
-    if (found?.anonAlias) setAnonAlias(found.anonAlias);
+    // if (found?.anonAlias) setAnonAlias(found.anonAlias); <--- Esto no es necesario aquí
   }, [chatId, anonToken]);
 
-  const updateLocalStorage = (updater) => {
-    const stored = JSON.parse(localStorage.getItem("myChats") || "[]");
-    const next = stored.map((c) =>
-      c.chatId === chatId && c.anonToken === anonToken ? updater(c) : c
-    );
-    localStorage.setItem("myChats", JSON.stringify(next));
-  };
-
-  // 📥 Cargar mensajes iniciales (solo 1 vez)
-  const fetchMessages = async () => {
-    try {
-      setError(null);
-      const res = await fetch(`${API}/chats/${anonToken}/${chatId}`);
-      if (!res.ok) throw new Error("No se pudo cargar el chat");
-
-      const data = await res.json();
-      if (Array.isArray(data.messages)) {
-        setMessages(data.messages);
-
-        if (data.creatorName) {
-          setCreatorName(data.creatorName);
-          updateLocalStorage((c) => ({ ...c, creatorName: data.creatorName }));
+  // Función para guardar actualizaciones en localStorage (si es necesario)
+   const updateLocalStorage = useCallback((updater) => {
+        try {
+            const stored = JSON.parse(localStorage.getItem("myChats") || "[]");
+            const next = stored.map((c) =>
+              c.chatId === chatId && c.anonToken === anonToken ? updater(c) : c
+            );
+            localStorage.setItem("myChats", JSON.stringify(next));
+        } catch (e) {
+            console.error("Error updating localStorage:", e);
         }
+   }, [chatId, anonToken]);
 
-        const firstAnon = data.messages.find((m) => m.from === "anon");
-        if (firstAnon?.alias) {
-          setAnonAlias(firstAnon.alias);
-          updateLocalStorage((c) => ({ ...c, anonAlias: firstAnon.alias }));
-        }
 
-        const creatorMsgs = data.messages.filter((m) => m.from === "creator");
-        const lastCreatorId = creatorMsgs.length
-          ? creatorMsgs[creatorMsgs.length - 1].id
-          : null;
+  // Cargar mensajes iniciales y conectar WebSocket
+  useEffect(() => {
+    const fetchMessages = async () => {
+      // ... (lógica fetchMessages sin cambios, pero usamos updateLocalStorage) ...
+      try {
+            setError(null);
+            const res = await fetch(`${API}/chats/${anonToken}/${chatId}`);
+            if (!res.ok) throw new Error("No se pudo cargar el chat");
 
-        updateLocalStorage((c) => ({
-          ...c,
-          hasReply: false,
-          lastSeenCreatorId: lastCreatorId ?? c.lastSeenCreatorId ?? null,
-        }));
-      }
-    } catch (err) {
-      console.error(err);
-      setError("⚠️ Error cargando mensajes");
-    } finally {
-      setLoading(false);
-    }
-  };
+            const data = await res.json();
+            if (Array.isArray(data.messages)) {
+              setMessages(data.messages);
 
-  // 🔌 WebSocket: escuchar mensajes nuevos
-useEffect(() => {
-  fetchMessages(); // solo al inicio
+              if (data.creatorName) {
+                setCreatorName(data.creatorName);
+                // Usamos la función para actualizar
+                updateLocalStorage((c) => ({ ...c, creatorName: data.creatorName }));
+              }
 
-  const apiBase =
-    process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
+              // Ya no necesitamos actualizar el alias aquí
+              // const firstAnon = data.messages.find((m) => m.from === "anon");
+              // if (firstAnon?.alias) {
+              //   // setAnonAlias(firstAnon.alias); <--- No necesario
+              //   updateLocalStorage((c) => ({ ...c, anonAlias: firstAnon.alias }));
+              // }
 
-  // --- CORRECCIÓN CLAVE AQUÍ ---
-  // La ruta del WebSocket debe ser /ws, no /ws/chat
-  const wsUrl =
-    apiBase.replace(/^http/, "ws") +
-    `/ws?chatId=${chatId}&anonToken=${anonToken}`;
+              // Marcar como leído (ya lo hace el otro useEffect, pero redundancia no hace daño aquí)
+              markChatAsRead();
 
-  const ws = new WebSocket(wsUrl);
-  wsRef.current = ws;
-
-  ws.onopen = () => {
-    console.log(`✅ WS conectado al chat ${chatId} como anónimo`);
-  };
-
-  ws.onmessage = (event) => {
-    try {
-      const msg = JSON.parse(event.data);
-      if (msg.chatId === chatId) {
-        setMessages((prev) => {
-            if (prev.some(m => m.id === msg.id)) {
-                return prev;
+            } else {
+                setMessages([]); // Asegura que messages sea un array
             }
-            return [...prev, msg];
-        });
-      }
-    } catch {
-      console.log("Mensaje WS no es JSON:", event.data);
-    }
-  };
+          } catch (err) {
+            console.error(err);
+            setError("⚠️ Error cargando mensajes");
+            setMessages([]); // Asegura que messages sea un array en caso de error
+          } finally {
+            setLoading(false);
+          }
+    };
 
-  ws.onclose = () => {
-    console.log("❌ WS cerrado (anónimo)");
-  };
-  
-  ws.onerror = (err) => {
-    console.error("⚠️ Error en WebSocket (anónimo):", err);
-  };
+    fetchMessages(); // Carga inicial
 
-  return () => {
-    if (wsRef.current) {
+    // Conectar WebSocket
+    const wsUrl = `${API.replace(/^http/, "ws")}/ws?chatId=${chatId}&anonToken=${anonToken}`;
+    const ws = new WebSocket(wsUrl);
+    wsRef.current = ws;
+
+     ws.onopen = () => console.log(`WebSocket conectado a chat ${chatId}`);
+     ws.onerror = (error) => console.error("WebSocket error:", error);
+     ws.onclose = () => console.log(`WebSocket desconectado de chat ${chatId}`);
+
+    ws.onmessage = (event) => {
+      // ... (lógica onmessage sin cambios, pero llama a markChatAsRead) ...
+      try {
+            const msg = JSON.parse(event.data);
+            if (msg.chatId === chatId) { // Asegura que el mensaje es para este chat
+                setMessages((prev) => {
+                    // Evitar duplicados
+                    if (prev.some(m => m.id === msg.id)) return prev;
+                    return [...prev, msg];
+                });
+                // Marcar como leído si la ventana está activa
+                if (document.visibilityState === 'visible') {
+                    markChatAsRead();
+                }
+            }
+        } catch (e) {
+            console.error("Error procesando WebSocket:", e);
+        }
+    };
+
+    // Limpieza
+    return () => {
+      if (wsRef.current) {
         wsRef.current.close();
-    }
-  };
-}, [chatId, anonToken]);
+      }
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chatId, anonToken, updateLocalStorage]); // Incluir updateLocalStorage
 
-
-  // ✉️ Enviar mensaje (REST normal)
+  // Enviar mensaje
   const handleSend = async (e) => {
+    // ... (lógica handleSend sin cambios) ...
     e.preventDefault();
-    if (!newMsg.trim()) return;
-    const tempMsg = newMsg;
-    setNewMsg("");
-    try {
-      const res = await fetch(`${API}/chats/${anonToken}/${chatId}/messages`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: tempMsg }),
-      });
-      if (!res.ok) throw new Error("No se pudo enviar el mensaje");
-      const actualMessage = await res.json();
-      setMessages((prev) => [...prev, actualMessage]);
-    } catch (err) {
-      console.error(err);
-      setError("⚠️ No se pudo enviar el mensaje");
-      setNewMsg(tempMsg);
-    }
+        if (!newMsg.trim()) return;
+        const tempMsg = newMsg;
+        setNewMsg(""); // Limpia input inmediatamente
+        try {
+          const res = await fetch(`${API}/chats/${anonToken}/${chatId}/messages`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ content: tempMsg }),
+          });
+          if (!res.ok) {
+              const errorData = await res.json();
+              throw new Error(errorData.error || "No se pudo enviar el mensaje");
+          }
+          // No necesitamos añadir el mensaje aquí, esperamos al WebSocket
+        } catch (err) {
+          console.error(err);
+          setError("⚠️ No se pudo enviar el mensaje. Intenta de nuevo.");
+          setNewMsg(tempMsg); // Restaurar si falla
+        }
   };
 
-  if (loading) return <p style={{ padding: 20 }}>Cargando chat…</p>;
+   // Componente Message (adaptado para esta vista)
+   const Message = ({ msg, creatorName }) => {
+        const isCreator = msg.from === "creator";
+        const senderName = isCreator ? creatorName : "Tú"; // Anónimo siempre es "Tú" aquí
+
+        return (
+             // Alineación: Creador a la izquierda ('anon'), Anónimo a la derecha ('creator')
+            <div className={`message-bubble-wrapper ${isCreator ? 'anon' : 'creator'}`}>
+              <div>
+                  <div className="message-alias">{senderName}</div>
+                   {/* Estilo: Creador gris ('anon'), Anónimo púrpura ('creator') */}
+                  <div className={`message-bubble ${isCreator ? 'anon' : 'creator'}`}>
+                      {msg.content}
+                  </div>
+              </div>
+            </div>
+        );
+    };
+
+  if (loading) return <p style={{ padding: 20, textAlign: 'center', color: 'var(--text-secondary)' }}>Cargando chat…</p>;
 
   return (
-    <div style={{ maxWidth: 600, margin: "0 auto", padding: 20 }}>
-      <h1>Chat con {creatorName}</h1>
+    // Reutilizamos clases de la vista unificada si es posible
+    <div className="public-chat-view" style={{ maxWidth: 600, margin: "40px auto", padding: 20, height: 'auto', maxHeight: 'none' }}>
+      <div className="chat-view-header">
+           <h1>Chat con {creatorName}</h1>
+           {/* Puedes añadir un botón para volver a la lista si quieres */}
+           {/* <button onClick={() => router.back()} className="back-button">← Volver</button> */}
+      </div>
 
-      <div
-        style={{
-          border: "1px solid #ccc",
-          borderRadius: 8,
-          padding: 10,
-          height: 400,
-          overflowY: "auto",
-          marginBottom: 10,
-        }}
-      >
-        {messages.length === 0 && (
-          <div style={{ color: "#666", textAlign: "center" }}>
-            No hay mensajes todavía.
-          </div>
+      <div className="messages-display">
+        {/* ... (renderizado de mensajes y error sin cambios) ... */}
+        {error && <p style={{ color: "red", textAlign: 'center' }}>{error}</p>}
+        {messages.length === 0 && !loading && (
+              <div style={{ color: "#666", textAlign: "center", padding: '20px' }}>
+                Aún no hay mensajes. ¡Envía el primero!
+              </div>
         )}
-
-        {messages.map((m) => (
-          <div
-            key={m.id || Math.random()}
-            style={{
-              marginBottom: 8,
-              textAlign: m.from === "creator" ? "left" : "right",
-            }}
-          >
-            <strong>
-              {m.from === "creator" ? `${creatorName}:` : `${m.alias || anonAlias}:`}
-            </strong>{" "}
-            {m.content}
-          </div>
-        ))}
+         {messages.map((m) => (
+             <Message key={m.id || Math.random()} msg={m} creatorName={creatorName} />
+         ))}
         <div ref={bottomRef} />
       </div>
 
-      {error && <p style={{ color: "red" }}>{error}</p>}
-
-      <form onSubmit={handleSend} style={{ marginTop: 10 }}>
-        <input
-          type="text"
-          value={newMsg}
-          onChange={(e) => setNewMsg(e.target.value)}
-          placeholder="Escribe un mensaje..."
-          style={{ width: "100%", padding: 10 }}
-        />
-        <button
-          type="submit"
-          style={{ marginTop: 8 }}
-          disabled={!newMsg.trim()}
-        >
-          Enviar
-        </button>
+      <form onSubmit={handleSend} className="chat-reply-form">
+         {/* ... (input y botón sin cambios) ... */}
+         <input
+              type="text"
+              value={newMsg}
+              onChange={(e) => setNewMsg(e.target.value)}
+              placeholder="Escribe un mensaje..."
+              className="form-input-field reply-input" // Reutilizar estilos
+            />
+            <button
+              type="submit"
+              className="submit-button reply-button" // Reutilizar estilos
+              disabled={!newMsg.trim()}
+            >
+              Enviar
+            </button>
       </form>
     </div>
   );
