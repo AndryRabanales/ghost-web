@@ -1589,29 +1589,31 @@ body {
 /* Animación de Pulso de Notificación (Actualizada a tono Carmesí) */
 /* andryrabanales/ghost-web/ghost-web-39f92d39bc0a587fc148c366b58679842a2167cf/src/app/globals.css */
 
-/* Animación de Pulso de Notificación (Carmesí) */
-@keyframes pulse-new-reply {
+/*
+================================================================================
+|       SECCIÓN 5.1: ESTRUCTURA DE ITEMS DE CHAT (BANDEJA DE ENTRADA)          |
+================================================================================
+*/
+
+/* Nueva animación para el borde de chats no leídos */
+@keyframes pulse-border {
   0%, 100% { 
-    border-left-color: var(--notification-red-base); 
-    box-shadow: inset 5px 0 15px -5px var(--notification-red-glow);
+    border-left-color: var(--glow-accent-crimson);
+    box-shadow: inset 5px 0 15px -5px var(--glow-accent-crimson);
   }
   50% { 
-    border-left-color: var(--primary-hellfire-red);
-    box-shadow: inset 3px 0 5px -5px rgba(255, 255, 255, 0.5);
+    border-left-color: var(--border-color-strong);
+    box-shadow: inset 3px 0 5px -5px var(--border-color-strong);
   }
 }
 
-/* FIX CRÍTICO DE TAMAÑO: Hacemos que el item base sea más defensivo */
-/* ... (Busca la SECCIÓN 5.1 o el estilo base de .chat-item) ... */
-
-/* FIX DE TAMAÑO: Aseguramos el padding para la regla base y las notificaciones */
+/* Contenedor principal del item de chat */
 .chat-item {
   display: flex;
-  align-items: center;
+  align-items: center; 
   justify-content: space-between;
   gap: 15px; 
-  padding: 16px 20px; /* <--- VALOR DE TAMAÑO ORIGINAL */
-  min-height: 60px; 
+  padding: 12px 20px; /* ⬅️ CORRECCIÓN CLAVE: Reducido de 16px a 12px */
   margin-bottom: 12px; 
   background: transparent;
   border: 1px solid var(--border-color-faint);
@@ -1622,11 +1624,31 @@ body {
   overflow: hidden;
   box-shadow: inset 0 0 10px rgba(157, 0, 255, 0.3);
 }
+.chat-item::before {
+  content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(201, 164, 255, 0.1), transparent);
+  animation: neuron-flash 3.5s linear infinite; opacity: 0; transition: opacity 0.4s ease;
+}
+.chat-item:not(.disabled):hover {
+  transform: translateY(-4px) scale(1.02);
+  background: rgba(40, 40, 60, 0.7);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  border-color: var(--glow-accent-crimson); /* Borde brillante al pasar el mouse */
+}
+.chat-item:not(.disabled):hover::before {
+  opacity: 1; /* Muestra el barrido de luz al pasar el mouse */
+}
+
+/* Estilo para los chats no abiertos (más llamativo) */
+.chat-item.unopened {
+  border-left: 3px solid var(--glow-accent-crimson);
+  background: linear-gradient(90deg, rgba(142, 45, 226, 0.1), transparent 50%);
+  animation: pulse-border 2.5s ease-in-out infinite; /* Animación pulsante */
+}
 
 /* Estilo para los chats con nueva respuesta (Carmesí) */
 .chat-item.new-reply {
-  /* FIX CRÍTICO DE TAMAÑO: Re-declara el padding para evitar que se estire por herencia */
-  padding: 16px 20px; 
+  padding: 12px 20px; /* ⬅️ CORRECCIÓN CLAVE: Asegura la misma altura que el estilo base */
   min-height: auto; 
   
   /* Aplica el estilo carmesí */
@@ -1635,14 +1657,105 @@ body {
   animation: pulse-new-reply 2.5s ease-in-out infinite; 
 }
 
-/* Estilo del botón (Mantenemos púrpura con brillo carmesí para que se vea el pulso) */
-.chat-item-button {
-  /* ... (estilos del botón base) ... */
-  background: linear-gradient(90deg, var(--primary-hellfire-red), var(--secondary-ember-orange));
-  /* ... */
+/* Contenido principal (Alias, Mensaje, Fecha) */
+.chat-item-main {
+  display: flex;
+  flex-direction: column;
+  justify-content: center; 
+  gap: 4px; 
+  flex-grow: 1; 
+  overflow: hidden; 
 }
 
-/* Estilo para el indicador de texto */
-.new-reply-indicator {
-  background-color: var(--notification-red-base); /* Carmesí en el fondo de la pastilla */
+/* Alias del anónimo */
+.chat-item-alias {
+  font-weight: 700;
+  font-size: 1.1em; 
+  color: var(--text-primary);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+/* Contenido del último mensaje */
+.chat-item-content {
+  font-size: 0.9em; 
+  color: var(--text-secondary);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+.chat-item-content span {
+  color: var(--glow-accent-crimson);
+  font-weight: 600;
+}
+
+/* Fecha del último mensaje */
+.chat-item-date {
+  font-size: 0.75em; 
+  color: var(--border-color-strong);
+  font-family: var(--font-mono);
+  margin-top: 4px;
+}
+
+/* Botón de Acción (Ver / Responder / Espera) */
+.chat-item-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-shrink: 0; 
+  padding: 10px 16px; /* Este padding es adecuado para un botón pequeño */
+  font-size: 14px;
+  font-weight: 700;
+  border-radius: 12px;
+  cursor: pointer;
+  border: none;
+  /* Fondo con gradiente "espectacular" */
+  background: linear-gradient(90deg, var(--primary-hellfire-red), var(--secondary-ember-orange));
+  color: var(--text-primary);
+  transition: all 0.3s ease;
+  min-width: 110px; 
+  text-align: center;
+  box-shadow: 0 4px 15px rgba(74, 0, 224, 0.3);
+}
+
+.chat-item-button svg {
+  transition: transform 0.3s ease;
+}
+
+/* Animación de hover para el botón */
+.chat-item:not(.disabled) .chat-item-button:hover {
+  transform: scale(1.05) translateY(-2px);
+  box-shadow: 0 6px 25px rgba(74, 0, 224, 0.5); 
+  filter: brightness(1.2); 
+}
+
+.chat-item:not(.disabled) .chat-item-button:hover svg {
+  transform: scale(1.1);
+}
+
+/* Estado deshabilitado (sin vidas) */
+.chat-item.disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  filter: grayscale(50%);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.chat-item.disabled .chat-item-button {
+  background: #3a3a4c; 
+  color: var(--text-secondary);
+  cursor: not-allowed;
+  animation: none;
+  box-shadow: none;
+}
+
+.chat-item.disabled::before {
+  opacity: 0 !important;
+}
+
+/* Oculta el brillo de neón en el item deshabilitado */
+.chat-item.disabled::before {
+  opacity: 0 !important;
 }
