@@ -60,16 +60,18 @@ const ChatItem = ({ chat, onOpenChat, disabled, minutesNext }) => {
 
   return (
     <div
-      // 💡 CAMBIO CLAVE 2: Clase condicional para el estilo de notificación
-      className={`chat-item ${disabled ? 'disabled' : ''} ${chat.anonReplied ? 'new-reply' : ''} ${!chat.isOpened && !chat.anonReplied ? 'unopened' : ''}`}
+      // ⬅️ CLAVE 1: Restaurar 'new-reply' para activar el pulso/fondo morado
+      className={`chat-item ${disabled ? 'disabled' : ''} ${chat.anonReplied ? 'new-reply' : ''} ${!chat.isOpened ? 'unopened' : ''}`}
       onClick={() => !disabled && onOpenChat(chat.id)}
     >
       <div className="chat-item-main">
         <div className="chat-item-alias">
-          {/* Esto sigue usando el alias del chat, está bien */}
+          {/* Alias del anónimo */}
           {chat.anonAlias || "Anónimo"}
-          {/* 💡 CAMBIO CLAVE 3: Muestra el indicador de texto */}
+
+          {/* ⬅️ CLAVE 2: Restaurar el indicador visual */}
           {chat.anonReplied && <span className="new-reply-indicator">Nuevo mensaje</span>}
+
         </div>
         <div className="chat-item-content">
           {/* Usa 'preview.content' */}
