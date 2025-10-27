@@ -94,7 +94,7 @@ export default function FirstMessageGuideModal({ onClose }) {
 
   // Cierra el modal automáticamente después de 12 segundos
   useEffect(() => {
-    const timer = setTimeout(onClose, 12000); // 12 segundos
+    const timer = setTimeout(onClose, 15000); // 12 segundos
     return () => clearTimeout(timer);
   }, [onClose]);
 
@@ -109,7 +109,7 @@ export default function FirstMessageGuideModal({ onClose }) {
           Puedes esperar aquí o volver más tarde.
         </p>
         <p style={textStyle}>
-          Este chat y tus futuras conversaciones se guardarán aquí, en tu navegador. **Desliza hacia abajo 👇 para verlos.**
+            **Desliza hacia abajo 👇 para verlos.**
         </p>
         <div style={arrowStyle}>⬇️</div>
         <button
