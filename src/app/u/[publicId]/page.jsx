@@ -209,6 +209,24 @@ export default function PublicPage() {
     loadChats();
   }, [loadChats]);
   // --- FIN ARREGLO ---
+  useEffect(() => {
+    // Solo desliza si:
+    // 1. Hay chats cargados (myChats.length > 0)
+    // 2. No hay un chat abierto (selectedChat es null)
+    // 3. Existe la referencia al contenedor de la lista (chatsListRef)
+    if (myChats.length > 0 && !selectedChat && chatsListRef.current) {
+      const hasUnread = myChats.some(chat => chat.hasNewReply);
+      
+      if (hasUnread) {
+        // Se usa setTimeout para asegurar que el renderizado de la lista haya ocurrido
+        setTimeout(() => {
+            chatsListRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 300); // Pequeño retraso para que el navegador esté listo
+      }
+    }
+  // Observa la lista de chats (myChats) y si la vista es el detalle o la lista (selectedChat)
+  }, [myChats, selectedChat]);
+  // --- FIN ARREGLO NUEVO ---
 
   // --- useEffect Corregido para WebSocket (CON DEPENDENCIA CLAVE) ---
   useEffect(() => {
