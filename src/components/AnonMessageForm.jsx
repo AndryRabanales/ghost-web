@@ -114,16 +114,6 @@ export default function AnonMessageForm({ publicId, onSent, onFirstSent }) {
         </button>
       </form>
 
-       {/* Mensaje de éxito modificado */}
-       {status === "success" && lastSentChatInfo && (
-        <div className="form-status-message success">
-           <p>✅ ¡Mensaje enviado!</p>
-           <p className="sub-text">
-            Puedes ver tu chat y la respuesta (cuando llegue) más abajo o <a href={`/chats/${lastSentChatInfo.anonToken}/${lastSentChatInfo.chatId}`}>abrirlo aquí</a>.
-           </p>
-        </div>
-      )}
-
       {status === "error" && (
         <div className="form-status-message error">
           <p>{errorMsg || "Hubo un error al enviar tu mensaje."}</p>
