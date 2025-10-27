@@ -854,8 +854,11 @@ body::after {
   --accent-data-stream: #000000;
   --text-primary: #f5f5f5;
   --text-secondary: rgba(235, 235, 245, 0.7);
-  --success-glow: rgba(0, 255, 128, 0.4);
-  --success-solid: #00ff80;
+
+--success-glow: rgba(255, 188, 164, 0.52); /* Púrpura claro (rgba de #c9a4ff) */
+--success-solid: #ffa5a4; /* Púrpura claro sólido */
+
+--font-main: "Orbitron", sans-serif;
   --font-main: "Orbitron", sans-serif;
   --font-mono: "Fira Code", monospace;
   --border-color-faint: rgba(142, 45, 226, 0.3);
