@@ -1733,3 +1733,58 @@ body {
   /* Animación sutil para indicar espera */
   animation: none; 
 }
+
+
+/* andryrabanales/ghost-web/ghost-web-39f92d39bc0a587fc148c366b58679842a2167cf/src/app/globals.css */
+
+/* ... (Asegúrate de que estas variables estén definidas) ...
+:root {
+  --success-solid: #00ff80;
+  --success-glow: rgba(0, 255, 128, 0.4);
+  --primary-hellfire-red: #8011e2;
+}
+*/
+
+/*
+================================================================================
+|           SECCIÓN DE ESTILOS PARA NOTIFICACIÓN "new-reply"                   |
+================================================================================
+*/
+
+/* Nueva animación para el borde de chats con nueva respuesta */
+@keyframes pulse-new-reply {
+  0%, 100% { 
+    /* Usa color de éxito para notificar */
+    border-left-color: var(--success-solid); 
+    box-shadow: inset 5px 0 15px -5px var(--success-glow);
+  }
+  50% { 
+    /* Pulso intermedio */
+    border-left-color: var(--primary-hellfire-red);
+    box-shadow: inset 3px 0 5px -5px rgba(255, 255, 255, 0.5);
+  }
+}
+
+/* Estilo para los chats con nueva respuesta del anónimo */
+.chat-item.new-reply {
+  /* Sobrescribe el estilo normal y de unopened */
+  border-left: 3px solid var(--success-solid); 
+  background: linear-gradient(90deg, rgba(0, 255, 128, 0.1), transparent 50%); /* Fondo con brillo verde */
+  animation: pulse-new-reply 2.5s ease-in-out infinite; 
+}
+.chat-item.new-reply:not(.disabled):hover {
+  border-color: var(--success-solid);
+}
+
+/* Estilo para el botón cuando hay nueva respuesta */
+.chat-item.new-reply .chat-item-button {
+  background: linear-gradient(90deg, var(--success-solid), #00A65B); /* Color verde vibrante */
+  color: #000; /* Texto oscuro para buen contraste */
+  font-weight: 900;
+  box-shadow: 0 4px 15px rgba(0, 255, 128, 0.5);
+}
+.chat-item.new-reply .chat-item-button:hover {
+  transform: scale(1.05) translateY(-2px); 
+  box-shadow: 0 6px 25px rgba(0, 255, 128, 0.7); 
+  filter: brightness(1.2); 
+}
