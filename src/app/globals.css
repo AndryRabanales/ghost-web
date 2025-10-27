@@ -20,22 +20,26 @@
 /* Reemplaza esto en src/app/globals.css */
 
 :root {
-  /* Paleta de Colores "GHOSTLY GLASS" (Morado) */
-  --background-abyss: #0d0c22;
-  --background-core: #1a1a2e;
-  --primary-hellfire-red: #8011e2; /* Púrpura principal */
-  --secondary-ember-orange: #5703ff; /* Púrpura oscuro */
-  --glow-accent-crimson: #c9a4ff; /* Púrpura claro para brillos */
-  --accent-data-stream: #000000;
-  --text-primary: #f5f5f5;
-  --text-secondary: rgba(235, 235, 245, 0.7);
-  --success-glow: rgba(0, 255, 128, 0.4);
-  --success-solid: #00ff80;
-  --font-main: "Orbitron", sans-serif;
-  --font-mono: "Fira Code", monospace;
-  --border-color-faint: rgba(142, 45, 226, 0.3);
-  --border-color-strong: rgba(142, 45, 226, 0.7);
-}
+    /* Paleta de Colores "GHOSTLY GLASS" (Morado) */
+    --background-abyss: #0d0c22;
+    --background-core: #1a1a2e;
+    --primary-hellfire-red: #8011e2; /* Púrpura principal */
+    --secondary-ember-orange: #5703ff; /* Púrpura oscuro */
+    --glow-accent-crimson: #c9a4ff; /* Púrpura claro para brillos */
+    --accent-data-stream: #000000;
+    --text-primary: #f5f5f5;
+    --text-secondary: rgba(235, 235, 245, 0.7);
+    --success-glow: rgba(0, 255, 128, 0.4);
+    --success-solid: #00ff80;
+    --font-main: "Orbitron", sans-serif;
+    --font-mono: "Fira Code", monospace;
+    --border-color-faint: rgba(142, 45, 226, 0.3);
+    --border-color-strong: rgba(142, 45, 226, 0.7);
+    
+    /* AÑADIDO: Colores de Acento para la Notificación Carmesí */
+    --notification-red-base: #ff1641; 
+    --notification-red-glow: rgba(255, 22, 65, 0.4); 
+  }
 
 /* -------------------------------------------------------------------------- */
 /* SECCIÓN 2: CONFIGURACIÓN BASE Y AMBIENTACIÓN GLOBAL */
@@ -845,22 +849,6 @@ body::after {
 */
 @import url("https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Fira+Code&display=swap");
 
-:root {
-  --background-abyss: #0d0c22;
-  --background-core: #1a1a2e;
-  --primary-hellfire-red: #8011e2;
-  --secondary-ember-orange: #5703ff;
-  --glow-accent-crimson: #c9a4ff;
-  --accent-data-stream: #000000;
-  --text-primary: #f5f5f5;
-  --text-secondary: rgba(235, 235, 245, 0.7);
-  --success-glow: rgba(0, 255, 128, 0.4);
-  --success-solid: #00ff80;
-  --font-main: "Orbitron", sans-serif;
-  --font-mono: "Fira Code", monospace;
-  --border-color-faint: rgba(142, 45, 226, 0.3);
-  --border-color-strong: rgba(142, 45, 226, 0.7);
-}
 
 body {
   background-color: var(--background-abyss);
@@ -1752,39 +1740,60 @@ body {
 */
 
 /* Nueva animación para el borde de chats con nueva respuesta */
+/* andryrabanales/ghost-web/ghost-web-39f92d39bc0a587fc148c366b58679842a2167cf/src/app/globals.css */
+
+/* ... (En la sección de Animaciones) ... */
+
+/* Animación de Pulso de Notificación (Actualizada a tono Carmesí) */
 @keyframes pulse-new-reply {
   0%, 100% { 
-    /* Usa color de éxito para notificar */
-    border-left-color: var(--success-solid); 
-    box-shadow: inset 5px 0 15px -5px var(--success-glow);
+    border-left-color: var(--notification-red-base); 
+    box-shadow: inset 5px 0 15px -5px var(--notification-red-glow);
   }
   50% { 
-    /* Pulso intermedio */
     border-left-color: var(--primary-hellfire-red);
     box-shadow: inset 3px 0 5px -5px rgba(255, 255, 255, 0.5);
   }
 }
 
-/* Estilo para los chats con nueva respuesta del anónimo */
-.chat-item.new-reply {
-  /* Sobrescribe el estilo normal y de unopened */
-  border-left: 3px solid var(--success-solid); 
-  background: linear-gradient(90deg, rgba(0, 255, 128, 0.1), transparent 50%); /* Fondo con brillo verde */
-  animation: pulse-new-reply 2.5s ease-in-out infinite; 
-}
-.chat-item.new-reply:not(.disabled):hover {
-  border-color: var(--success-solid);
+/* ... (En la sección 5.1: ESTRUCTURA DE ITEMS DE CHAT) ... */
+
+/* FIX: Agregamos min-height y forzamos el padding vertical para evitar que se estire */
+.chat-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px; 
+  padding: 16px 20px; /* Mantenemos el tamaño vertical deseado */
+  min-height: 60px; /* Aseguramos un mínimo para evitar colapso */
+  margin-bottom: 12px; 
+  background: transparent;
+  border: 1px solid var(--border-color-faint);
+  border-radius: 12px;
+  /* ... (resto de estilos de chat-item) ... */
 }
 
-/* Estilo para el botón cuando hay nueva respuesta */
-.chat-item.new-reply .chat-item-button {
-  background: linear-gradient(90deg, var(--success-solid), #00A65B); /* Color verde vibrante */
-  color: #000; /* Texto oscuro para buen contraste */
-  font-weight: 900;
-  box-shadow: 0 4px 15px rgba(0, 255, 128, 0.5);
+/* Estilo para los chats con nueva respuesta del anónimo */
+.chat-item.new-reply {
+  /* Sobrescribe estilos de notificación con Carmesí */
+  border-left: 3px solid var(--notification-red-base); 
+  background: linear-gradient(90deg, rgba(255, 22, 65, 0.1), transparent 50%); /* Fondo con brillo carmesí */
+  animation: pulse-new-reply 2.5s ease-in-out infinite; 
+  padding: 16px 20px; /* RE-APLICAR el padding para asegurar el tamaño original. */
 }
-.chat-item.new-reply .chat-item-button:hover {
-  transform: scale(1.05) translateY(-2px); 
-  box-shadow: 0 6px 25px rgba(0, 255, 128, 0.7); 
-  filter: brightness(1.2); 
+.chat-item.new-reply:not(.disabled):hover {
+  border-color: var(--notification-red-base);
+}
+
+/* Estilo para el botón (mantenemos el púrpura principal, pero con el brillo de la tarjeta) */
+.chat-item.new-reply .chat-item-button {
+  background: linear-gradient(90deg, var(--primary-hellfire-red), var(--secondary-ember-orange));
+  color: #fff; 
+  font-weight: 700;
+  box-shadow: 0 4px 15px rgba(74, 0, 224, 0.3); /* Sombra púrpura para que armonice */
+}
+
+/* Estilo para el indicador de texto */
+.new-reply-indicator {
+  background-color: var(--notification-red-base); /* Carmesí en el fondo de la pastilla */
 }
