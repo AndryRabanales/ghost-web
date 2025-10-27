@@ -154,7 +154,7 @@ const PublicChatView = ({ chatInfo, onBack }) => {
             </form>
         </div>
     );
-};
+
 
 
 // --- Componente Principal de la Página ---
