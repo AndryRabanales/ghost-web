@@ -188,6 +188,12 @@ export default function PublicPage() {
   const chatsListRef = useRef(null);
   const wsRef = useRef(null); 
 
+  // Ref para rastrear el estado actual de selectedChat sin forzar la reconexión de WS
+  const selectedChatRef = useRef(selectedChat);
+  useEffect(() => {
+    selectedChatRef.current = selectedChat;
+  }, [selectedChat]);
+
   // Cargar chats desde localStorage
   const loadChats = useCallback(() => {
     try {
@@ -246,6 +252,10 @@ export default function PublicPage() {
                     });
                     localStorage.setItem("myChats", JSON.stringify(updatedChats));
                     loadChats(); // Actualiza el estado de la UI (myChats)
+                    // Deslizar a la lista de chats si NO hay un chat abierto
+                    if (!selectedChatRef.current && chatsListRef.current) {
+                      chatsListRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }
 
                     if (document.hidden) {
                         if (!window.originalTitle) window.originalTitle = document.title;
