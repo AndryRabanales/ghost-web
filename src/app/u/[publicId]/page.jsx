@@ -372,7 +372,7 @@ export default function PublicPage() {
                         <div className="chat-list-item-alias">
                           {chat.anonAlias || "Anónimo"}
                            {/* --- Indicador Nuevo --- */}
-                           {chat.hasNewReply && <span className="new-reply-indicator">Nuevo</span>}
+                           {chat.hasNewReply && <span className="new-reply-indicator">Nuevo Mensaje</span>}
                         </div>
                         <div className="chat-list-item-content">"{chat.preview}"</div>
                         <div className="chat-list-item-date">{formatDate(chat.ts)}</div>
