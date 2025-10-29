@@ -85,7 +85,7 @@ const buttonStyle = {
 // --- 👇 NUEVO ESTILO PARA LA IMAGEN ---
 const imageStyle = {
     display: 'block',     // Para poder centrar con margin
-    maxWidth: '80%',      // Que no sea más ancha que el 80% del modal
+    maxWidth: '95%',      // Que no sea más ancha que el 80% del modal
     height: 'auto',       // Mantiene la proporción
     margin: '15px auto', // Centra la imagen y añade espacio arriba/abajo
     borderRadius: '16px', // Bordes redondeados
