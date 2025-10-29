@@ -29,7 +29,7 @@ const modalContentStyle = {
   borderRadius: '24px',
   border: '1px solid rgba(142, 45, 226, 0.3)',
   maxWidth: '420px',
-  width: '90%',
+  width: '97%',
   textAlign: 'center',
   color: 'var(--text-primary, #f5f5f5)',
   boxShadow: '0 15px 50px rgba(0, 0, 0, 0.6)',
@@ -85,7 +85,7 @@ const buttonStyle = {
 // --- 👇 NUEVO ESTILO PARA LA IMAGEN ---
 const imageStyle = {
     display: 'block',     // Para poder centrar con margin
-    maxWidth: '110%',      // Que no sea más ancha que el 80% del modal
+    maxWidth: '100%',      // Que no sea más ancha que el 80% del modal
     height: 'auto',       // Mantiene la proporción
     margin: '15px auto', // Centra la imagen y añade espacio arriba/abajo
     borderRadius: '16px', // Bordes redondeados
