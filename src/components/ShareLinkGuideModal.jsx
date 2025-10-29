@@ -163,7 +163,7 @@ export default function ShareLinkGuideModal({ onClose, publicLink }) {
 
                 {/* Esta imagen es solo ilustrativa, si quieres puedes usar una diferente o quitarla */}
                 <Image
-                    src="/guide.jpg" // Puedes cambiar esto por una imagen más adecuada para "compartir"
+                    src="/enlace.jpg" // Puedes cambiar esto por una imagen más adecuada para "compartir"
                     alt="Persona compartiendo un enlace"
                     width={300}
                     height={150}
