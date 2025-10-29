@@ -135,6 +135,22 @@ export default function FirstMessageGuideModal({ onClose }) {
         />
         {/* --- 👆 FIN AÑADIR IMAGEN 👆 --- */}
 
+        <p style={textStyle}>
+          Tambien puedes crear tu propio dashboard y recibir mensajes anonimos!
+        </p>
+
+        {/* --- 👇 AÑADIR IMAGEN AQUÍ 👇 --- */}
+        {/* Usamos el componente Image de Next.js para optimización */}
+        <Image
+          src="/dash.jpg" // Ruta desde la carpeta 'public'
+          alt="Guía visual para encontrar chats"
+          width={200} // Ancho deseado (Next.js lo usa para optimizar)
+          height={350} // Alto deseado (ajusta según tu imagen)
+          style={imageStyle} // Aplicamos los estilos
+          priority // Cargar la imagen rápido ya que es importante para el modal
+        />
+        {/* --- 👆 FIN AÑADIR IMAGEN 👆 --- */}
+
         <button
           style={buttonStyle}
           onClick={onClose}
