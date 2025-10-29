@@ -129,8 +129,8 @@ export default function FirstMessageGuideModal({ onClose }) {
         <Image
           src="/guide.jpg" // Ruta desde la carpeta 'public'
           alt="Guía visual para encontrar chats"
-          width={350} // Ancho deseado (Next.js lo usa para optimizar)
-          height={200} // Alto deseado (ajusta según tu imagen)
+          width={500} // Ancho deseado (Next.js lo usa para optimizar)
+          height={350} // Alto deseado (ajusta según tu imagen)
           style={imageStyle} // Aplicamos los estilos
           priority // Cargar la imagen rápido ya que es importante para el modal
         />
