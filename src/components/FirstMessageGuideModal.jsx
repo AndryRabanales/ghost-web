@@ -116,11 +116,6 @@ export default function FirstMessageGuideModal({ onClose }) {
       <div style={modalContentStyle} onClick={(e) => e.stopPropagation()}>
         <h2 style={titleStyle}>¡Chat Anónimo Abierto! 💬</h2>
 
-        
-
-        <p style={textStyle}>
-          Abre el chat con el anonimo!
-        </p>
         <p style={highlightTextStyle}>
         Espera a que te respondan el mensaje que acabas de enviar!
         </p>
@@ -134,8 +129,8 @@ export default function FirstMessageGuideModal({ onClose }) {
         <Image
           src="/guide.jpg" // Ruta desde la carpeta 'public'
           alt="Guía visual para encontrar chats"
-          width={300} // Ancho deseado (Next.js lo usa para optimizar)
-          height={150} // Alto deseado (ajusta según tu imagen)
+          width={350} // Ancho deseado (Next.js lo usa para optimizar)
+          height={200} // Alto deseado (ajusta según tu imagen)
           style={imageStyle} // Aplicamos los estilos
           priority // Cargar la imagen rápido ya que es importante para el modal
         />
