@@ -16,7 +16,7 @@ const LoadingSpinner = () => (
 // --- Componente Principal de la Página de Inicio ---
 export default function Home() {
   const router = useRouter();
-  
+
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -27,7 +27,7 @@ export default function Home() {
     const timer = setTimeout(() => setIsMounted(true), 100);
     return () => clearTimeout(timer);
   }, []);
-  
+
   const handleCreateAndRedirect = async (e) => {
     e.preventDefault();
     if (loading) return;
@@ -42,7 +42,7 @@ export default function Home() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Error al crear tu espacio");
-      
+
       localStorage.setItem("token", data.token);
       localStorage.setItem("publicId", data.publicId);
       router.push(`/dashboard/${data.dashboardId}`);
@@ -51,7 +51,7 @@ export default function Home() {
       setLoading(false);
     }
   };
-  
+
   const colors = useMemo(() => ({
     primary: '#8e2de2',
     secondary: '#4a00e0',
@@ -78,13 +78,15 @@ export default function Home() {
       transform: skewX(-25deg); transition: left 1s cubic-bezier(0.2, 0.8, 0.2, 1);
     }
     .button-shine:hover::before { left: 150%; }
+    /* Estilo para los links del footer */
+    .footer-link { color: #fff; text-decoration: none; font-weight: 600; cursor: pointer; margin: 0 8px; position: relative; padding: 5px; transition: color 0.2s ease, text-shadow 0.2s ease; }
+    .footer-link:hover { color: ${colors.primary}; text-shadow: 0 0 10px ${colors.primary}99; }
   `;
-  
+
   const pageStyle = {
     display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh',
     fontFamily: 'sans-serif', overflow: 'hidden', position: 'relative', padding: '20px',
     backgroundColor: colors.darkBg,
-    // Se restaura la imagen de fondo original
     backgroundImage: 'url(/background-home.png)',
     backgroundSize: 'cover',
     backgroundPosition: 'center center',
@@ -101,7 +103,7 @@ export default function Home() {
     opacity: isMounted ? 1 : 0,
     transition: 'transform 1.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1)',
   };
-  
+
   const getButtonStyle = () => {
     let style = {
       width: '100%', padding: '20px', marginTop: '20px', background: `linear-gradient(90deg, ${colors.primary}, ${colors.secondary})`,
@@ -110,17 +112,13 @@ export default function Home() {
       display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', boxShadow: `0 10px 30px ${colors.secondary}77`,
       position: 'relative', overflow: 'hidden'
     };
-    if (!isMounted) {
-      style.opacity = 0;
-    }
+    if (!isMounted) style.opacity = 0;
     let animationValue = isMounted ? 'fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards 0.9s' : 'none';
-    if (!loading && isMounted) {
-      animationValue += ', pulse-glow 4s infinite';
-    }
+    if (!loading && isMounted) animationValue += ', pulse-glow 4s infinite';
     style.animation = animationValue;
     return style;
   };
-  
+
   return (
     <>
       <style>{dynamicStyles}</style>
@@ -132,7 +130,7 @@ export default function Home() {
             <p style={{...{ color: colors.textSecondary, fontSize: '18px', margin: '0 auto 40px', lineHeight: '1.7', maxWidth: '350px' }, ...(isMounted ? {animation: 'fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards', animationDelay: '0.5s'} : {opacity: 0})}}>
               Crea tu espacio anónimo, compártelo y descubre lo que otros realmente piensan.
             </p>
-            
+
             <form onSubmit={handleCreateAndRedirect}>
               <div style={isMounted ? {animationName: 'fadeInUp', animationDelay: '0.7s', opacity: 0} : {opacity:0}} className="staggered-fade-in-up">
                 <input type="text" placeholder="Escribe tu nombre (opcional)" value={name} onChange={(e) => setName(e.target.value)} onFocus={() => setIsFocused(true)} onBlur={() => setIsFocused(false)}
@@ -157,10 +155,20 @@ export default function Home() {
 
             {error && <p style={{ color: colors.primary, marginTop: '20px' }}>{error}</p>}
 
+            {/* --- 👇 MODIFICACIÓN AQUÍ 👇 --- */}
             <footer style={{...{ marginTop: '40px', color: colors.textSecondary, fontSize: '14px'}, ...(isMounted ? {animation: 'fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards', animationDelay: '1.1s'} : {opacity: 0})}} className="staggered-fade-in-up">
               <span>¿Ya tienes una cuenta?</span>
-              <a onClick={() => router.push('/login')} style={{ color: '#fff', textDecoration: 'none', fontWeight: '600', cursor: 'pointer', margin: '0 8px', position: 'relative', padding: '5px' }}>Inicia sesión</a>
+              {/* Aplicamos la clase CSS al enlace de Iniciar Sesión */}
+              <a onClick={() => router.push('/login')} className="footer-link">
+                  Inicia sesión
+              </a>
+              <span> | </span> {/* Separador */}
+              {/* Nuevo enlace para Registrarse */}
+              <a onClick={() => router.push('/register')} className="footer-link">
+                  Registrarse
+              </a>
             </footer>
+            {/* --- 👆 FIN MODIFICACIÓN 👆 --- */}
         </main>
       </div>
     </>
