@@ -161,22 +161,7 @@ export default function ShareLinkGuideModal({ onClose, publicLink }) {
             <div style={modalContentStyle} onClick={(e) => e.stopPropagation()}>
                 <h2 style={titleStyle}>¡Tu Espacio Anónimo Está Listo! ✨</h2>
 
-                {/* Esta imagen es solo ilustrativa, si quieres puedes usar una diferente o quitarla */}
-                <Image
-                    src="/enlace.jpg" // Puedes cambiar esto por una imagen más adecuada para "compartir"
-                    alt="Persona compartiendo un enlace"
-                    width={300}
-                    height={150}
-                    style={{
-                        display: 'block',
-                        maxWidth: '85%', // Ajustado para que la imagen no sea tan dominante
-                        height: 'auto',
-                        margin: '15px auto',
-                        borderRadius: '16px',
-                        boxShadow: '0 10px 30px rgba(0, 0, 0, 0.4)',
-                    }}
-                    priority
-                />
+               
 
                 <p style={textStyle}>
                     Comparte este link para empezar a recibir mensajes anónimos.
@@ -202,6 +187,26 @@ export default function ShareLinkGuideModal({ onClose, publicLink }) {
                         {copyText}
                     </button>
                 </div>
+
+                <p style={highlightTextStyle}>
+                    ¡Simplemente pega la url en "Enlace"!
+                </p>
+                 {/* Esta imagen es solo ilustrativa, si quieres puedes usar una diferente o quitarla */}
+                 <Image
+                    src="/enlace.jpg" // Puedes cambiar esto por una imagen más adecuada para "compartir"
+                    alt="Persona compartiendo un enlace"
+                    width={300}
+                    height={150}
+                    style={{
+                        display: 'block',
+                        maxWidth: '85%', // Ajustado para que la imagen no sea tan dominante
+                        height: 'auto',
+                        margin: '15px auto',
+                        borderRadius: '16px',
+                        boxShadow: '0 10px 30px rgba(0, 0, 0, 0.4)',
+                    }}
+                    priority
+                />
 
                 <p style={highlightTextStyle}>
                     ¡Anímate y compártelo ahora!
