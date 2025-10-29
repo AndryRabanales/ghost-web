@@ -116,7 +116,20 @@ export default function FirstMessageGuideModal({ onClose }) {
       <div style={modalContentStyle} onClick={(e) => e.stopPropagation()}>
         <h2 style={titleStyle}>¡Chat Anónimo Abierto! 💬</h2>
 
-        {/* --- 👇 AÑADIR IMAGEN AQUÍ 👇 --- */}
+        
+
+        <p style={textStyle}>
+          Abre el chat con el anonimo!
+        </p>
+        <p style={highlightTextStyle}>
+        Espera a que te respondan el mensaje que acabas de enviar!
+        </p>
+        <p style={textStyle}>
+          **Desliza hacia abajo 👇 para verlos.**
+        </p>
+        <div style={arrowStyle}>⬇️</div>
+
+ {/* --- 👇 AÑADIR IMAGEN AQUÍ 👇 --- */}
         {/* Usamos el componente Image de Next.js para optimización */}
         <Image
           src="/guide.jpg" // Ruta desde la carpeta 'public'
@@ -128,16 +141,6 @@ export default function FirstMessageGuideModal({ onClose }) {
         />
         {/* --- 👆 FIN AÑADIR IMAGEN 👆 --- */}
 
-        <p style={textStyle}>
-          👇 El creador responderá pronto...👻
-        </p>
-        <p style={highlightTextStyle}>
-          ¡Puedes esperar aquí!
-        </p>
-        <p style={textStyle}>
-          **Desliza hacia abajo 👇 para verlos.**
-        </p>
-        <div style={arrowStyle}>⬇️</div>
         <button
           style={buttonStyle}
           onClick={onClose}
