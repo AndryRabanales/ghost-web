@@ -15,9 +15,10 @@ const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.rail
 // --- Componente Principal de la Página (PublicPage) ---
 export default function PublicPage() {
   const params = useParams();
-  const publicId = params?.publicId;
+  const publicId = params?.publicId; // Obtener publicId de forma segura
   const router = useRouter();
 
+  // --- GUARDA: Verificar si publicId está listo (SOLUCION ERROR DE COMPILACIÓN) ---
   if (publicId === undefined) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', color: 'white', backgroundColor: '#0d0c22' }}>
@@ -25,37 +26,47 @@ export default function PublicPage() {
       </div>
     );
   }
+  // --- FIN DE LA GUARDA ---
 
+  // Estados
   const [myChats, setMyChats] = useState([]);
   const [selectedChat, setSelectedChat] = useState(null);
   const [showGuideModal, setShowGuideModal] = useState(false);
+
+  // NUEVOS ESTADOS Y REFS
   const [creatorName, setCreatorName] = useState("el creador");
   const selectedChatRef = useRef(selectedChat);
   const chatsListRef = useRef(null);
   const wsRef = useRef(null);
 
+  // 1. Ref para rastrear el estado actual de selectedChat sin forzar la reconexión de WS
   useEffect(() => {
     selectedChatRef.current = selectedChat;
   }, [selectedChat]);
 
+  // Cargar chats desde localStorage
   const loadChats = useCallback(() => {
     try {
       const stored = JSON.parse(localStorage.getItem("myChats") || "[]");
       const relevantChats = stored.filter(chat => chat.creatorPublicId === publicId);
       relevantChats.sort((a, b) => new Date(b.ts) - new Date(a.ts));
+
+      // -> AGREGADO: Cargar el nombre del creador
       if (relevantChats.length > 0 && relevantChats[0].creatorName) {
         setCreatorName(relevantChats[0].creatorName);
       }
+
       setMyChats(relevantChats);
       return relevantChats; // Devolver los chats cargados para uso inmediato
     } catch (error) { console.error("Error al cargar chats:", error); return []; }
   }, [publicId]);
 
+  // 3. ARREGLO PERSISTENCIA: Cargar chats al montar
   useEffect(() => {
-    loadChats(); // Cargar al montar
+    loadChats();
   }, [loadChats]);
 
-  // Scroll a chats no leídos
+  // 4. ARREGLO SCROLL AL RECARGAR (si hay no leídos)
   useEffect(() => {
     if (myChats.length > 0 && !selectedChat && chatsListRef.current) {
       const hasUnread = myChats.some(chat => chat.hasNewReply);
@@ -67,11 +78,12 @@ export default function PublicPage() {
     }
   }, [myChats, selectedChat]);
 
-  // WebSocket
+  // --- useEffect Corregido para WebSocket (CON DEPENDENCIA CLAVE) ---
   useEffect(() => {
     console.log(`WebSocket useEffect: Disparado. myChats.length: ${myChats.length}`);
 
     const connectWebSocket = () => {
+      // Cierre de la conexión anterior
       if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
         wsRef.current.onclose = null;
         wsRef.current.close(1000, "Nueva conexión de página");
@@ -146,7 +158,8 @@ export default function PublicPage() {
 
     connectWebSocket();
 
-    return () => { // Limpieza al desmontar
+    // --- Limpieza al desmontar ---
+    return () => {
       if (wsRef.current) { wsRef.current.onclose = null; wsRef.current.close(1000, "Componente Page desmontado"); wsRef.current = null; }
       if (window.originalTitle) { document.title = window.originalTitle; delete window.originalTitle; }
     };
@@ -154,7 +167,7 @@ export default function PublicPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [publicId, loadChats, myChats.length]);
 
-  // Restaurar título de la pestaña
+  // --- useEffect para restaurar título (sin cambios) ---
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden && window.originalTitle) {
@@ -165,14 +178,14 @@ export default function PublicPage() {
     return () => { document.removeEventListener('visibilitychange', handleVisibilityChange); if (window.originalTitle) { document.title = window.originalTitle; delete window.originalTitle; } };
   }, []);
 
-  // Funciones del Modal
+  // --- Funciones para el Modal ---
   const handleShowGuide = useCallback(() => {
     setShowGuideModal(true);
     setTimeout(() => { chatsListRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 500);
   }, []);
   const handleCloseGuide = useCallback(() => { setShowGuideModal(false); }, []);
 
-  // Abrir chat (marcar como leído)
+  // --- handleOpenChat Actualizado ---
   const handleOpenChat = (chat) => {
     try {
       const storedChats = JSON.parse(localStorage.getItem("myChats") || "[]");
@@ -184,39 +197,89 @@ export default function PublicPage() {
     } catch (e) { console.error("Error opening chat:", e); setSelectedChat(chat); }
   };
 
+  // Función formatDate (sin cambios)
   const formatDate = (dateString) => new Date(dateString).toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 
-  // Estilos
+  // --- 👇 ESTILOS RESTAURADOS 👇 ---
+  // Estilos (simulamos los que tienes en globals.css para la demostración)
   const pageStyles = `
-    .page-container { /* ... (tus estilos de page-container) ... */ }
-    .new-reply-indicator { /* ... (tus estilos de new-reply-indicator) ... */ }
-    .unreplied-indicator { /* ... (tus estilos de unreplied-indicator) ... */ }
-    .to-dashboard-button { /* ... (tus estilos de to-dashboard-button) ... */ }
-    .chat-list-item { /* ... (tus estilos de chat-list-item) ... */ }
-    /* ... (resto de tus estilos) ... */
+    .page-container {
+      background: linear-gradient(-45deg, #0d0c22, #1a1a2e, #2c1a5c, #3c287c);
+      background-size: 400% 400%;
+      animation: gradient-pan 15s ease infinite;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+      font-family: var(--font-main);
+      position: relative;
+    }
+    @keyframes gradient-pan { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+    .new-reply-indicator {
+      display: inline-block; margin-left: 8px; padding: 3px 8px;
+      background-color: var(--primary-hellfire-red); color: white;
+      font-size: 10px; font-weight: bold; border-radius: 10px;
+      line-height: 1; vertical-align: middle; animation: pulse-indicator 1.5s infinite;
+    }
+    @keyframes pulse-indicator { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: 0.8; } }
+    .to-dashboard-button {
+      position: absolute; top: 20px; right: 20px;
+      background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff; padding: 10px; border-radius: 50%; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background-color 0.3s ease, transform 0.3s ease; z-index: 10;
+    }
+    .to-dashboard-button:hover { background: rgba(255, 255, 255, 0.2); transform: scale(1.1); }
+    .chat-list-item { display: flex; align-items: center; justify-content: space-between; gap: 15px; padding: 18px 20px; background: rgba(26, 26, 42, 0.5); border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1); cursor: pointer; transition: transform 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease; overflow: hidden; position: relative; }
+    .chat-list-item-main { display: flex; flex-direction: column; gap: 6px; flex-grow: 1; overflow: hidden; }
+    .chat-list-item-alias { font-weight: 700; font-size: 16px; color: #f5f5f5; white-space: nowrap; }
+    .chat-list-item-content { font-style: italic; color: rgba(235, 235, 245, 0.7); font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .chat-list-item-date { font-size: 12px; color: rgba(235, 235, 245, 0.5); font-family: var(--font-mono); }
+    .chat-list-item-button { flex-shrink: 0; padding: 8px 16px; font-size: 14px; font-weight: 600; color: #fff; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 10px; transition: background-color 0.3s ease, border-color 0.3s ease; }
+    /* Estilos adicionales que podrías tener en globals.css */
+    .unreplied-indicator { /* Tus estilos */ }
+    .create-space-link-container { /* Tus estilos */ }
+    .create-space-link { /* Tus estilos */ }
+    .chats-list-section { /* Tus estilos */ }
+    .chats-list-title { /* Tus estilos */ }
+    .chats-list-grid { /* Tus estilos */ }
+    .staggered-fade-in-up { /* Tus estilos */ }
+    @keyframes fadeInUp { /* Tu animación */ }
   `;
+  // --- 👆 FIN ESTILOS RESTAURADOS 👆 ---
 
+
+  // --- Renderizado del componente ---
   return (
     <>
+      {/* Aplicamos los estilos */}
       <style>{pageStyles}</style>
       {showGuideModal && <FirstMessageGuideModal onClose={handleCloseGuide} />}
 
+      {/* Usamos la clase page-container */}
       <div className="page-container">
+        {/* Botón Home */}
         <button onClick={() => router.push('/')} className="to-dashboard-button" title="Ir a mi espacio">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="24" height="24"><path strokeLinecap="round" strokeLinejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
         </button>
 
+        {/* Contenedor del contenido principal */}
         <div style={{ maxWidth: 520, width: '100%' }}>
           {selectedChat ? (
-            // --- 👇 MODIFICACIÓN 3a: Usar el nuevo componente ---
+            // --- Usamos el componente importado ---
             <PublicChatView
               chatInfo={selectedChat}
               onBack={() => { setSelectedChat(null); loadChats(); }} // Asegurarse de recargar al volver
             />
-            // --- 👆 FIN MODIFICACIÓN 3a 👆 ---
           ) : (
             <>
-              <h1 style={{ /* ... (tus estilos h1) ... */ }}>
+              {/* --- Título H1 Restaurado --- */}
+              <h1 style={{
+                textAlign: 'center', marginBottom: '10px', fontSize: '26px',
+                color: '#fff', fontWeight: 800, textShadow: '0 0 20px rgba(255, 255, 255, 0.3)',
+                animation: 'fadeInUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards'
+              }}>
                 Envíame un Mensaje Anónimo y Abre un Chat Anónimo
               </h1>
               <AnonMessageForm
@@ -231,6 +294,7 @@ export default function PublicPage() {
                 </a>
               </div>
 
+              {/* Lista de chats (lógica del indicador corregida) */}
               <div ref={chatsListRef} className={`chats-list-section ${myChats.length > 0 ? '' : 'staggered-fade-in-up'}`}>
                 {myChats.length > 0 && <h2 className="chats-list-title">Espera a que {creatorName} te responda</h2>}
                 <div className="chats-list-grid">
@@ -239,7 +303,7 @@ export default function PublicPage() {
                       <div className="chat-list-item-main">
                         <div className="chat-list-item-alias">
                           {chat.anonAlias || "Anónimo"}
-                          {/* --- 👇 MODIFICACIÓN 3b: Lógica del indicador corregida --- */}
+                          {/* --- 👇 Lógica del indicador corregida (ya estaba) --- */}
                           {chat.hasNewReply ? (
                             <span className="new-reply-indicator">Nueva Respuesta</span>
                           ) : (
@@ -249,7 +313,7 @@ export default function PublicPage() {
                             )
                             // Si previewFrom es 'creator' y hasNewReply es false, no mostramos nada (ya leíste)
                           )}
-                          {/* --- 👆 FIN MODIFICACIÓN 3b 👆 --- */}
+                          {/* --- 👆 Fin lógica corregida 👆 --- */}
                         </div>
                         <div className="chat-list-item-content">"{chat.preview}"</div>
                         <div className="chat-list-item-date">{formatDate(chat.ts)}</div>
