@@ -60,7 +60,10 @@ export default function AnonMessageForm({ publicId, onSent, onFirstSent }) {
           ts: new Date().toISOString(),
           creatorName: data.creatorName || "Conversación", // Usar el nombre del creador si viene
           anonAlias: alias || "Anónimo",
-          hasNewReply: false, // <-- AÑADIDO: Inicialmente no hay respuesta nueva
+          hasNewReply: false,
+          // --- 👇 MODIFICACIÓN AQUÍ 👇 ---
+          previewFrom: 'anon' // Indica que el primer mensaje (preview) es del anónimo
+          // --- 👆 FIN DE MODIFICACIÓN 👆 ---
         };
 
         const updatedChats = [newChatEntry, ...myChats];
