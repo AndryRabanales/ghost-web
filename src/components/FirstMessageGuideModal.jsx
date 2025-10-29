@@ -120,9 +120,8 @@ export default function FirstMessageGuideModal({ onClose }) {
         Espera a que te respondan el mensaje que acabas de enviar!
         </p>
         <p style={textStyle}>
-          **Desliza hacia abajo 👇 para verlos.**
+          **Presiona en abrir chatear ahora mismo!.⬇️**
         </p>
-        <div style={arrowStyle}>⬇️</div>
 
  {/* --- 👇 AÑADIR IMAGEN AQUÍ 👇 --- */}
         {/* Usamos el componente Image de Next.js para optimización */}
