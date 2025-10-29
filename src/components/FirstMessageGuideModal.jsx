@@ -1,87 +1,101 @@
 // src/components/FirstMessageGuideModal.jsx
 "use client";
 import React, { useEffect } from 'react';
+// --- 👇 Import Next.js Image component ---
+import Image from 'next/image';
 
-// --- ESTILOS (Puedes moverlos a globals.css si prefieres) ---
+// --- ESTILOS ---
+// ... (modalOverlayStyle, modalContentStyle, titleStyle, etc. sin cambios) ...
 const modalOverlayStyle = {
   position: 'fixed',
   top: 0,
   left: 0,
   right: 0,
   bottom: 0,
-  backgroundColor: 'rgba(13, 12, 34, 0.85)', // Fondo oscuro semi-transparente (ajusta --background-abyss)
+  backgroundColor: 'rgba(13, 12, 34, 0.85)',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
   zIndex: 1000,
   opacity: 0,
   animation: 'fadeInOverlay 0.5s forwards',
-  backdropFilter: 'blur(5px)', // Efecto blur para el fondo
+  backdropFilter: 'blur(5px)',
   WebkitBackdropFilter: 'blur(5px)',
 };
 
 const modalContentStyle = {
-  background: 'linear-gradient(145deg, #1a1a2e, #2c1a5c)', // Gradiente similar al fondo (ajusta --background-core)
-  padding: '30px 35px', // Padding ajustado
-  borderRadius: '24px', // Borde redondeado
-  border: '1px solid rgba(142, 45, 226, 0.3)', // Borde sutil púrpura (ajusta --border-color-faint)
-  maxWidth: '420px', // Ancho máximo
+  background: 'linear-gradient(145deg, #1a1a2e, #2c1a5c)',
+  padding: '30px 35px',
+  borderRadius: '24px',
+  border: '1px solid rgba(142, 45, 226, 0.3)',
+  maxWidth: '420px',
   width: '90%',
   textAlign: 'center',
-  color: 'var(--text-primary, #f5f5f5)', // Color de texto primario
-  boxShadow: '0 15px 50px rgba(0, 0, 0, 0.6)', // Sombra más pronunciada
-  transform: 'translateY(20px) scale(0.95)', // Estado inicial para animación
-  opacity: 0, // Estado inicial para animación
-  animation: 'popUpModal 0.6s 0.1s forwards cubic-bezier(0.175, 0.885, 0.32, 1.275)', // Animación de entrada
+  color: 'var(--text-primary, #f5f5f5)',
+  boxShadow: '0 15px 50px rgba(0, 0, 0, 0.6)',
+  transform: 'translateY(20px) scale(0.95)',
+  opacity: 0,
+  animation: 'popUpModal 0.6s 0.1s forwards cubic-bezier(0.175, 0.885, 0.32, 1.275)',
 };
 
 const titleStyle = {
-    fontSize: '24px', // Tamaño ajustado
-    fontWeight: '700', // Negrita
-    color: '#fff', // Blanco para contraste
-    marginBottom: '10px', // Espacio abajo
+    fontSize: '24px',
+    fontWeight: '700',
+    color: '#fff',
+    marginBottom: '10px',
 };
 
 const textStyle = {
-    color: 'rgba(235, 235, 245, 0.7)', // Color secundario (ajusta --text-secondary)
-    lineHeight: 1.7, // Interlineado
-    fontSize: '15px', // Tamaño ligero
+    color: 'rgba(235, 235, 245, 0.7)',
+    lineHeight: 1.7,
+    fontSize: '15px',
     marginBottom: '15px',
 };
 
 const highlightTextStyle = {
-    fontWeight: '600', // Ligeramente más negrita
-    color: '#fff', // Blanco
+    fontWeight: '600',
+    color: '#fff',
     marginTop: '15px',
     marginBottom: '15px',
     fontSize: '16px',
 };
 
 const arrowStyle = {
-  fontSize: '32px', // Tamaño flecha
+  fontSize: '32px',
   display: 'block',
-  margin: '10px auto 5px', // Espaciado ajustado
-  color: 'var(--glow-accent-crimson, #c9a4ff)', // Color acento púrpura claro
-  animation: 'bounceArrow 1.8s infinite ease-in-out', // Animación más suave
+  margin: '10px auto 5px',
+  color: 'var(--glow-accent-crimson, #c9a4ff)',
+  animation: 'bounceArrow 1.8s infinite ease-in-out',
 };
 
 const buttonStyle = {
   marginTop: '25px',
-  padding: '14px 30px', // Padding ajustado
-  background: 'linear-gradient(90deg, #8e2de2, #4a00e0)', // Gradiente púrpura (ajusta colores primarios)
+  padding: '14px 30px',
+  background: 'linear-gradient(90deg, #8e2de2, #4a00e0)',
   border: 'none',
-  borderRadius: '12px', // Borde redondeado
+  borderRadius: '12px',
   color: '#fff',
   fontWeight: 'bold',
-  fontSize: '16px', // Tamaño ajustado
+  fontSize: '16px',
   cursor: 'pointer',
   transition: 'transform 0.2s ease, box-shadow 0.3s ease',
-  boxShadow: '0 5px 15px rgba(74, 0, 224, 0.3)', // Sombra sutil
+  boxShadow: '0 5px 15px rgba(74, 0, 224, 0.3)',
 };
+
+// --- 👇 NUEVO ESTILO PARA LA IMAGEN ---
+const imageStyle = {
+    display: 'block',     // Para poder centrar con margin
+    maxWidth: '80%',      // Que no sea más ancha que el 80% del modal
+    height: 'auto',       // Mantiene la proporción
+    margin: '15px auto', // Centra la imagen y añade espacio arriba/abajo
+    borderRadius: '16px', // Bordes redondeados
+    boxShadow: '0 10px 30px rgba(0, 0, 0, 0.4)', // Sombra sutil
+};
+// --- 👆 FIN NUEVO ESTILO ---
 
 // --- COMPONENTE ---
 export default function FirstMessageGuideModal({ onClose }) {
-  // Cierra el modal si se presiona la tecla Escape
+  // ... (useEffect para Escape y temporizador sin cambios) ...
   useEffect(() => {
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') {
@@ -92,36 +106,47 @@ export default function FirstMessageGuideModal({ onClose }) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onClose]);
 
-  // Cierra el modal automáticamente después de 12 segundos
   useEffect(() => {
-    const timer = setTimeout(onClose, 15000); // 12 segundos
+    const timer = setTimeout(onClose, 15000);
     return () => clearTimeout(timer);
   }, [onClose]);
 
   return (
-    <div style={modalOverlayStyle} onClick={onClose}> {/* Cierra al hacer clic fuera */}
-      <div style={modalContentStyle} onClick={(e) => e.stopPropagation()}> {/* Evita cerrar al hacer clic dentro */}
+    <div style={modalOverlayStyle} onClick={onClose}>
+      <div style={modalContentStyle} onClick={(e) => e.stopPropagation()}>
         <h2 style={titleStyle}>¡Chat Anónimo Abierto! 💬</h2>
+
+        {/* --- 👇 AÑADIR IMAGEN AQUÍ 👇 --- */}
+        {/* Usamos el componente Image de Next.js para optimización */}
+        <Image
+          src="/guide.jpg" // Ruta desde la carpeta 'public'
+          alt="Guía visual para encontrar chats"
+          width={300} // Ancho deseado (Next.js lo usa para optimizar)
+          height={150} // Alto deseado (ajusta según tu imagen)
+          style={imageStyle} // Aplicamos los estilos
+          priority // Cargar la imagen rápido ya que es importante para el modal
+        />
+        {/* --- 👆 FIN AÑADIR IMAGEN 👆 --- */}
+
         <p style={textStyle}>
-     👇 El creador responderá pronto...👻
+          👇 El creador responderá pronto...👻
         </p>
         <p style={highlightTextStyle}>
-        ¡Puedes esperar aquí! 
+          ¡Puedes esperar aquí!
         </p>
         <p style={textStyle}>
-            **Desliza hacia abajo 👇 para verlos.**
+          **Desliza hacia abajo 👇 para verlos.**
         </p>
         <div style={arrowStyle}>⬇️</div>
         <button
-            style={buttonStyle}
-            onClick={onClose}
-            onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
-            onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+          style={buttonStyle}
+          onClick={onClose}
+          onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+          onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
         >
           Entendido
         </button>
       </div>
-      {/* Keyframes para las animaciones (inyectados directamente) */}
       <style>{`
         @keyframes fadeInOverlay { to { opacity: 1; backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); } }
         @keyframes popUpModal { to { transform: translateY(0) scale(1); opacity: 1; } }
