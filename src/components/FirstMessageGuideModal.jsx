@@ -136,7 +136,7 @@ export default function FirstMessageGuideModal({ onClose }) {
         {/* --- 👆 FIN AÑADIR IMAGEN 👆 --- */}
 
         <p style={textStyle}>
-          Tambien puedes crear tu propio dashboard y recibir mensajes anonimos!
+          En este apartado crea tu propio dashboard, comparte y recibe mensajes anónimos!
         </p>
 
         {/* --- 👇 AÑADIR IMAGEN AQUÍ 👇 --- */}
