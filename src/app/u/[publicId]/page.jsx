@@ -128,7 +128,7 @@ export default function PublicPage() {
     connectWebSocket();
     return () => { if (wsRef.current) { wsRef.current.onclose = null; wsRef.current.close(1000, "Componente Page desmontado"); wsRef.current = null; } if (window.originalTitle) { document.title = window.originalTitle; delete window.originalTitle; } };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [publicId, loadChats, myChats.length]);
+  }, [publicId, loadChats]);
 
   useEffect(() => { /* ... (código restaurar título sin cambios) ... */
     const handleVisibilityChange = () => { if (!document.hidden && window.originalTitle) { document.title = window.originalTitle; delete window.originalTitle; } };
