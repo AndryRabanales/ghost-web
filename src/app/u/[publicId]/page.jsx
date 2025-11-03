@@ -5,6 +5,7 @@ import FirstMessageGuideModal from "@/components/FirstMessageGuideModal";
 import PublicChatView from "@/components/PublicChatView"; // Importamos el componente extraído
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { timeAgo } from "@/utils/timeAgo"; // ⬅️ PIEZA 1
 
 const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
 
@@ -28,6 +29,7 @@ export default function PublicPage() {
   const [selectedChat, setSelectedChat] = useState(null);
   const [showGuideModal, setShowGuideModal] = useState(false);
   const [creatorName, setCreatorName] = useState("el creador");
+  const [lastActive, setLastActive] = useState(null); // ⬅️ PIEZA 2 (¡Esta es la clave!)
   const selectedChatRef = useRef(selectedChat);
   const chatsListRef = useRef(null);
   const wsRef = useRef(null);
@@ -85,6 +87,7 @@ export default function PublicPage() {
           console.log("Reconectando WS..."); setTimeout(connectWebSocket, 5000);
         } else { console.log("WS closed."); }
       };
+      
       ws.onmessage = (event) => {
         try {
           const msg = JSON.parse(event.data);
@@ -139,6 +142,35 @@ export default function PublicPage() {
   }, []);
   const handleCloseGuide = useCallback(() => { setShowGuideModal(false); }, []);
 
+// src/app/u/[publicId]/page.jsx
+
+  // ... (después de tus otros hooks como handleCloseGuide)
+
+  // --- PIEZA 3: Cargar info del creador (Nombre y Actividad INICIAL) ---
+  useEffect(() => {
+    if (!publicId) return;
+
+    const fetchCreatorInfo = async () => {
+      try {
+        // Esta es la ruta que creamos en el Paso 1 (backend)
+        const res = await fetch(`${API}/public/${publicId}/info`); 
+        if (res.ok) {
+          const data = await res.json();
+          if (data.name) setCreatorName(data.name); 
+          if (data.lastActiveAt) {
+            // Aquí usamos la Pieza 1 (timeAgo) y la Pieza 2 (setLastActive)
+            setLastActive(timeAgo(data.lastActiveAt));
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching creator info:", err);
+      }
+    };
+
+    fetchCreatorInfo();
+  }, [publicId, setCreatorName]); // Dependencias
+
+
   const handleOpenChat = (chat) => { /* ... (código abrir chat sin cambios) ... */
     try {
       const storedChats = JSON.parse(localStorage.getItem("myChats") || "[]");
@@ -167,6 +199,17 @@ export default function PublicPage() {
       position: relative;
       color: var(--text-primary); /* Color de texto por defecto */
     }
+
+    .creator-active-status {
+      text-align: center;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--glow-accent-crimson); /* Color púrpura claro */
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 20px; /* Espacio antes del título h2 */
+      opacity: 0;
+      animation: fadeInUp 0.6s 0.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
     @keyframes gradient-pan { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
 
     /* Asegúrate que estos estilos existen en globals.css o defínelos aquí */
@@ -239,6 +282,13 @@ export default function PublicPage() {
               {/* ===== INICIO DE LA LISTA DE CHATS (LOS MENSAJES DE ABAJO) ===== */}
               <div ref={chatsListRef} className={`chats-list-section ${myChats.length > 0 ? '' : 'staggered-fade-in-up'}`}>
                 {myChats.length > 0 && <h2 className="chats-list-title">Espera a que {creatorName} te responda</h2>}
+                {/* --- 👇 AQUÍ ES DONDE APARECE (COMO EN TU IMAGEN) 👇 --- */}
+                {myChats.length > 0 && lastActive && (
+                  <p className="creator-active-status">
+                    {creatorName} estuvo activo {lastActive}
+                  </p>
+                )}
+                {/* --- 👆 FIN DE LÍNEAS AÑADIDAS 👆 --- */}
                 <div className="chats-list-grid">
                   {myChats.map((chat, index) => (
                     <div key={chat.chatId} className="chat-list-item staggered-fade-in-up" style={{ animationDelay: `${0.1 * index}s` }} onClick={() => handleOpenChat(chat)}>
