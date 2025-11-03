@@ -29,11 +29,22 @@ export default function PublicPage() {
   const [selectedChat, setSelectedChat] = useState(null);
   const [showGuideModal, setShowGuideModal] = useState(false);
   const [creatorName, setCreatorName] = useState("el creador");
-  const [lastActive, setLastActive] = useState(null); // ⬅️ PIEZA 2 (¡Esta es la clave!)
-  const selectedChatRef = useRef(selectedChat);
+  const [lastActiveTimestamp, setLastActiveTimestamp] = useState(null); // ⬅️ CAMBIO: Guarda la fecha, no el string
+  const [now, setNow] = useState(new Date()); // ⬅️ AÑADIDO: Este es el "tick" del reloj  const selectedChatRef = useRef(selectedChat);
   const chatsListRef = useRef(null);
   const wsRef = useRef(null);
 
+
+  // --- AÑADIDO: Timer para actualizar el "hace..." en tiempo real ---
+  useEffect(() => {
+    // Esto fuerza un re-render cada 30 segundos
+    const interval = setInterval(() => {
+      setNow(new Date());
+    }, 30000); // 30000ms = 30 segundos
+
+    return () => clearInterval(interval); // Limpia el intervalo al salir
+  }, []); // Se ejecuta solo una vez al montar la página
+  
   // --- useEffect y useCallback (sin cambios funcionales, solo restauramos estilos) ---
   useEffect(() => { selectedChatRef.current = selectedChat; }, [selectedChat]);
 
@@ -119,7 +130,10 @@ export default function PublicPage() {
             // Usamos la función timeAgo (que ya deberías tener de mi respuesta anterior)
             // y actualizamos el estado 'lastActive' en tiempo real.
             // Si el creador está activo, la fecha será tan reciente que dirá "justo ahora".
-            setLastActive(timeAgo(msg.lastActiveAt));
+          } else if (msg.type === 'CREATOR_ACTIVE') {
+            console.log("WS (Public Page) Actividad del creador:", msg);
+            setLastActiveTimestamp(msg.lastActiveAt); // ⬅️ CAMBIO: Guarda la fecha, no el string
+          
           }
 
         } catch (e) { console.error("Error processing WS:", e); }
@@ -159,7 +173,7 @@ export default function PublicPage() {
           if (data.name) setCreatorName(data.name); 
           if (data.lastActiveAt) {
             // Aquí usamos la Pieza 1 (timeAgo) y la Pieza 2 (setLastActive)
-            setLastActive(timeAgo(data.lastActiveAt));
+            setLastActiveTimestamp(data.lastActiveAt); // ⬅️ CAMBIO: Guarda la fecha, no el string
           }
         }
       } catch (err) {
