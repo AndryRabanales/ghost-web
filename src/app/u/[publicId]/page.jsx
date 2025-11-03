@@ -31,6 +31,7 @@ export default function PublicPage() {
   const [creatorName, setCreatorName] = useState("el creador");
   const [lastActiveTimestamp, setLastActiveTimestamp] = useState(null); // ⬅️ CAMBIO: Guarda la fecha, no el string
   const [now, setNow] = useState(new Date()); // ⬅️ AÑADIDO: Este es el "tick" del reloj  const selectedChatRef = useRef(selectedChat);
+  const selectedChatRef = useRef(selectedChat); // ⬅️ ¡ESTA LÍNEA DEBE ESTAR AQUÍ!
   const chatsListRef = useRef(null);
   const wsRef = useRef(null);
 
