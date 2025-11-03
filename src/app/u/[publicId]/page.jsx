@@ -143,6 +143,7 @@ export default function PublicPage() {
       min-height: 100vh;
       display: flex;
       flex-direction: column;
+      justify-content: center; /* ⬅️ AÑADE ESTA LÍNEA */
       align-items: center;
       padding: 40px 20px; /* Asegura padding */
       font-family: var(--font-main);
