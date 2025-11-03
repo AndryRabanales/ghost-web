@@ -70,8 +70,10 @@ export default function PublicPage() {
       const currentChatsForWS = loadChats();
       if (currentChatsForWS.length === 0) { console.log("WebSocket connect: No hay chats."); return; }
       const anonTokensString = currentChatsForWS.map(chat => chat.anonToken).join(',');
-      if (!anonTokensString) { console.log("WebSocket connect: No tokens."); return; }
-      const wsUrl = `${API.replace(/^http/, "ws")}/ws?anonTokens=${anonTokensString}`;
+      // (Quitamos el 'return' si no hay tokens, porque aún queremos conectarnos por publicId)
+      
+      // Enviamos CUALQUIER token que tengamos, Y el publicId de la página
+      const wsUrl = `${API.replace(/^http/, "ws")}/ws?anonTokens=${anonTokensString}&publicId=${publicId}`;
       console.log(`WebSocket connect: ${wsUrl}`);
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
@@ -86,22 +88,37 @@ export default function PublicPage() {
       ws.onmessage = (event) => {
         try {
           const msg = JSON.parse(event.data);
-          const currentRelevantChatsOnMessage = loadChats();
-          if (msg.from === 'creator' && currentRelevantChatsOnMessage.some(c => c.chatId === msg.chatId)) {
-            console.log("WS (Public Page) Mensaje nuevo:", msg);
-            const currentLocalStorageChats = JSON.parse(localStorage.getItem("myChats") || "[]");
-            let nameForTitle = creatorName;
-            const updatedChats = currentLocalStorageChats.map(chat => {
-              if (chat.chatId === msg.chatId) {
-                nameForTitle = chat.creatorName || nameForTitle;
-                return { ...chat, hasNewReply: true, preview: msg.content.slice(0, 50) + (msg.content.length > 50 ? "..." : ""), ts: msg.createdAt, previewFrom: 'creator' }; // <-- Bug fix
-              } return chat;
-            });
-            localStorage.setItem("myChats", JSON.stringify(updatedChats));
-            loadChats();
-            if (!selectedChatRef.current && chatsListRef.current) { chatsListRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
-            if (document.hidden) { if (!window.originalTitle) window.originalTitle = document.title; document.title = `(1) Nuevo mensaje de ${nameForTitle}`; }
+          
+          // --- CASO 1: Es un mensaje de chat (Tu código anterior) ---
+          if (msg.from === 'creator') { 
+            const currentRelevantChatsOnMessage = loadChats();
+            if (currentRelevantChatsOnMessage.some(c => c.chatId === msg.chatId)) {
+                console.log("WS (Public Page) Mensaje nuevo:", msg);
+                // (Toda tu lógica existente para actualizar la lista de chats)
+                const currentLocalStorageChats = JSON.parse(localStorage.getItem("myChats") || "[]");
+                let nameForTitle = creatorName;
+                const updatedChats = currentLocalStorageChats.map(chat => {
+                  if (chat.chatId === msg.chatId) {
+                    nameForTitle = chat.creatorName || nameForTitle;
+                    return { ...chat, hasNewReply: true, preview: msg.content.slice(0, 50) + (msg.content.length > 50 ? "..." : ""), ts: msg.createdAt, previewFrom: 'creator' };
+                  } return chat;
+                });
+                localStorage.setItem("myChats", JSON.stringify(updatedChats));
+                loadChats();
+                if (!selectedChatRef.current && chatsListRef.current) { chatsListRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+                if (document.hidden) { if (!window.originalTitle) window.originalTitle = document.title; document.title = `(1) Nuevo mensaje de ${nameForTitle}`; }
+            }
+          
+          // --- 👇 CASO 2: Es una actualización de actividad (NUEVO) 👇 ---
+          } else if (msg.type === 'CREATOR_ACTIVE') {
+            console.log("WS (Public Page) Actividad del creador:", msg);
+            
+            // Usamos la función timeAgo (que ya deberías tener de mi respuesta anterior)
+            // y actualizamos el estado 'lastActive' en tiempo real.
+            // Si el creador está activo, la fecha será tan reciente que dirá "justo ahora".
+            setLastActive(timeAgo(msg.lastActiveAt));
           }
+
         } catch (e) { console.error("Error processing WS:", e); }
       };
     };
