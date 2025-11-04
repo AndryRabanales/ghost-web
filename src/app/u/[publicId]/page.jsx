@@ -241,7 +241,11 @@ export default function PublicPage() {
     @keyframes neon-pulse-anon { 0% { transform: scale(1); box-shadow: 0 0 5px var(--glow-accent-crimson), inset 0 0 5px var(--glow-accent-crimson); } 50% { transform: scale(1.05); box-shadow: 0 0 20px var(--glow-accent-crimson), inset 0 0 10px var(--glow-accent-crimson); } 100% { transform: scale(1); box-shadow: 0 0 5px var(--glow-accent-crimson), inset 0 0 5px var(--glow-accent-crimson); } }
     .chat-list-item:hover .pulse-open-anon { animation-play-state: paused; transform: translateY(-5px) scale(1.02); background: #8e2de2 !important; border-color: #8e2de2 !important; }
     /* --- 👇 Estilos para el estado en línea/fuera de línea --- */
-    .status-online { color: var(--success-solid); text-shadow: 0 0 8px var(--success-glow); }
+    /* --- 👇 Estilos para el estado en línea/fuera de línea --- */
+    .status-online { 
+      color: #E8DFFF; /* Morado muy pálido, casi blanco */
+      text-shadow: 0 0 12px var(--glow-accent-crimson, #c9a4ff), 0 0 5px #FFFFFF; /* Brillo morado + toque blanco */
+    }
     .status-offline { color: var(--text-secondary); opacity: 0.8; }
   `;
   
@@ -283,9 +287,6 @@ export default function PublicPage() {
 
               <div ref={chatsListRef} className={`chats-list-section ${myChats.length > 0 ? '' : 'staggered-fade-in-up'}`}>
                 
-                {/* --- 👇 LÓGICA DE ESTADO DEL CREATOR ACTUALIZADA 👇 --- */}
-               
-                {/* --- 👆 FIN LÓGICA DE ESTADO 👆 --- */}
                 
                 {myChats.length > 0 && (
                   <h2 className="chats-list-title waiting-for-reply">

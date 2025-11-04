@@ -1888,19 +1888,26 @@ body {
 
 /* Contenedor del título */
 .waiting-for-reply {
-  /* Aplicamos la animación de respiración a todo el título */
+  /* ... (animación y display: flex ya existentes) ... */
+  display: flex; 
+  justify-content: center; 
+  align-items: center; 
   animation: subtle-pulse-glow 2.5s ease-in-out infinite;
-  display: flex; /* Para alinear los puntos al lado */
-  justify-content: center; /* Centra el texto y los puntos */
-  align-items: center; /* Alinea verticalmente */
+
+  /* --- 👇 LÍNEAS AÑADIDAS/MODIFICADAS 👇 --- */
+  flex-wrap: nowrap;     /* Evita que los puntos bajen de línea */
+  white-space: nowrap;  /* Evita que el texto "Espera a que..." se parta */
+  overflow: hidden;     /* Oculta lo que no quepa */
+  text-overflow: ellipsis; /* Pone "..." si el nombre es muy largo */
 }
 
 /* Contenedor de los puntos */
 .waiting-dots {
-  display: inline-block;
-  margin-left: 6px; /* Espacio entre el texto y los puntos */
+  /* display: inline-block; <-- Puedes quitar esto si quieres */
+  flex-shrink: 0; /* <-- AÑADIR: Impide que los puntos colapsen */
+  margin-left: 6px; 
   position: relative;
-  top: -4px; /* Ajuste vertical fino */
+  top: -4px; 
 }
 
 /* Estilo y animación de cada punto */
