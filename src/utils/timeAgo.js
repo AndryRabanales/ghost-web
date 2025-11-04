@@ -14,8 +14,6 @@ export function timeAgo(dateString) {
     const now = new Date();
     const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
   
-    // Menos de 30 segundos
-    if (seconds < 30) return "justo ahora";
     
     // Menos de 1 minuto
     if (seconds < 60) return "hace unos segundos";
