@@ -302,9 +302,14 @@ export default function PublicPage() {
               <div ref={chatsListRef} className={`chats-list-section ${myChats.length > 0 ? '' : 'staggered-fade-in-up'}`}>
                 
                 {/* --- CORRECCIÓN DE BUG 4 (Usar la variable correcta) --- */}
+                {/* --- 👇 AQUÍ ES DONDE APARECE (CON LÓGICA MEJORADA) 👇 --- */}
                 {myChats.length > 0 && lastActiveDisplay && (
                   <p className="creator-active-status">
-                    {creatorName} estuvo activo {lastActiveDisplay}
+                    {/* Comprueba si la palabra clave es "NOW" */}
+                    {lastActiveDisplay === 'NOW'
+                      ? `${creatorName} esta activo` // ⬅️ ¡CAMBIO AQUÍ!
+                      : `${creatorName} estuvo activo ${lastActiveDisplay}`
+                    }
                   </p>
                 )}
                 {/* --- FIN CORRECCIÓN 4 --- */}
