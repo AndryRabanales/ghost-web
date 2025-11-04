@@ -303,15 +303,18 @@ export default function PublicPage() {
                 
                 {/* --- CORRECCIÓN DE BUG 4 (Usar la variable correcta) --- */}
                 {/* --- 👇 AQUÍ ES DONDE APARECE (CON LÓGICA MEJORADA) 👇 --- */}
+               {/* --- CORRECCIÓN 4 (Usar la variable correcta) --- */}
+                {/* --- 👇 AQUÍ ES DONDE APARECE (CON LÓGICA MEJORADA) 👇 --- */}
                 {myChats.length > 0 && lastActiveDisplay && (
                   <p className="creator-active-status">
-                    {/* Comprueba si la palabra clave es "NOW" */}
-                    {lastActiveDisplay === 'NOW'
-                      ? `${creatorName} esta activo` // ⬅️ ¡CAMBIO AQUÍ!
+                    {/* Comprueba si la palabra clave es "justo ahora" */}
+                    {lastActiveDisplay === 'justo ahora'
+                      ? `${creatorName} esta activo ahora` // ⬅️ ¡CAMBIO AQUÍ!
                       : `${creatorName} estuvo activo ${lastActiveDisplay}`
                     }
                   </p>
                 )}
+                {/* --- FIN CORRECCIÓN 4 --- */}
                 {/* --- FIN CORRECCIÓN 4 --- */}
                 
                 {myChats.length > 0 && <h2 className="chats-list-title">Espera a que {creatorName} te responda</h2>}
