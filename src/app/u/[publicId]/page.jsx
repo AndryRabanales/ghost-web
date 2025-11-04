@@ -2,20 +2,18 @@
 "use client";
 import AnonMessageForm from "@/components/AnonMessageForm";
 import FirstMessageGuideModal from "@/components/FirstMessageGuideModal";
-import PublicChatView from "@/components/PublicChatView"; // Importamos el componente extraído
+import PublicChatView from "@/components/PublicChatView";
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { timeAgo } from "@/utils/timeAgo"; // ⬅️ PIEZA 1
+import { timeAgo } from "@/utils/timeAgo"; // PIEZA 1 (Correcto)
 
 const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
 
-// --- Componente Principal de la Página (PublicPage) ---
 export default function PublicPage() {
   const params = useParams();
   const publicId = params?.publicId;
   const router = useRouter();
 
-  // --- GUARDA ---
   if (publicId === undefined) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', color: 'white', backgroundColor: '#0d0c22' }}>
@@ -29,27 +27,28 @@ export default function PublicPage() {
   const [selectedChat, setSelectedChat] = useState(null);
   const [showGuideModal, setShowGuideModal] = useState(false);
   const [creatorName, setCreatorName] = useState("el creador");
-  const [lastActiveTimestamp, setLastActiveTimestamp] = useState(null); // ⬅️ CAMBIO: Guarda la fecha, no el string
-  const [now, setNow] = useState(new Date()); // ⬅️ AÑADIDO: Este es el "tick" del reloj  const selectedChatRef = useRef(selectedChat);
-  const selectedChatRef = useRef(selectedChat); // ⬅️ ¡ESTA LÍNEA DEBE ESTAR AQUÍ!
+  
+  // --- CORRECCIÓN DE BUG 1 y 2 (Líneas duplicadas/rotas) ---
+  const [lastActiveTimestamp, setLastActiveTimestamp] = useState(null);
+  const [now, setNow] = useState(new Date()); // "Tick" del reloj
+  const selectedChatRef = useRef(selectedChat); // Definido correctamente
+  // --- FIN CORRECCIÓN 1 y 2 ---
+  
   const chatsListRef = useRef(null);
   const wsRef = useRef(null);
 
-
-  // --- AÑADIDO: Timer para actualizar el "hace..." en tiempo real ---
+  // --- Timer para actualizar el "hace..." (Correcto) ---
   useEffect(() => {
-    // Esto fuerza un re-render cada 30 segundos
     const interval = setInterval(() => {
       setNow(new Date());
-    }, 30000); // 30000ms = 30 segundos
-
-    return () => clearInterval(interval); // Limpia el intervalo al salir
-  }, []); // Se ejecuta solo una vez al montar la página
+    }, 30000); // 30 segundos
+    return () => clearInterval(interval);
+  }, []);
   
-  // --- useEffect y useCallback (sin cambios funcionales, solo restauramos estilos) ---
+  // --- useEffect y useCallback (Correcto) ---
   useEffect(() => { selectedChatRef.current = selectedChat; }, [selectedChat]);
 
-  const loadChats = useCallback(() => { /* ... (código loadChats sin cambios) ... */
+  const loadChats = useCallback(() => {
     try {
       const stored = JSON.parse(localStorage.getItem("myChats") || "[]");
       const relevantChats = stored.filter(chat => chat.creatorPublicId === publicId);
@@ -64,7 +63,7 @@ export default function PublicPage() {
 
   useEffect(() => { loadChats(); }, [loadChats]);
 
-  useEffect(() => { /* ... (código scroll sin cambios) ... */
+  useEffect(() => {
     if (myChats.length > 0 && !selectedChat && chatsListRef.current) {
       const hasUnread = myChats.some(chat => chat.hasNewReply);
       if (hasUnread) {
@@ -75,41 +74,41 @@ export default function PublicPage() {
     }
   }, [myChats, selectedChat]);
 
-  useEffect(() => { /* ... (código WebSocket con correcciones del bug, sin cambios) ... */
-    console.log(`WebSocket useEffect: Disparado. myChats.length: ${myChats.length}`);
+  // --- WebSocket useEffect ---
+  useEffect(() => {
+    console.log(`WebSocket useEffect: Disparado.`);
     const connectWebSocket = () => {
       if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
         wsRef.current.onclose = null; wsRef.current.close(1000, "Nueva conexión de página");
       }
-      const currentChatsForWS = loadChats();
-      if (currentChatsForWS.length === 0) { console.log("WebSocket connect: No hay chats."); return; }
-      const anonTokensString = currentChatsForWS.map(chat => chat.anonToken).join(',');
-      // (Quitamos el 'return' si no hay tokens, porque aún queremos conectarnos por publicId)
       
-      // Enviamos CUALQUIER token que tengamos, Y el publicId de la página
+      const currentChatsForWS = loadChats(); // Carga los chats AHORA
+      const anonTokensString = currentChatsForWS.map(chat => chat.anonToken).join(',');
+      
+      // Conecta al publicId (para estado "activo") Y a los anonTokens (para mensajes)
       const wsUrl = `${API.replace(/^http/, "ws")}/ws?anonTokens=${anonTokensString}&publicId=${publicId}`;
       console.log(`WebSocket connect: ${wsUrl}`);
+      
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
-      ws.onopen = () => console.log(`WS (Public Page) connected for ${currentChatsForWS.length} chats.`);
+      ws.onopen = () => console.log(`WS (Public Page) connected.`);
       ws.onerror = (error) => console.error("WS (Public Page) error:", error);
       ws.onclose = (event) => {
         console.log(`WS (Public Page) disconnected. Code: ${event.code}.`);
         if (loadChats().length > 0 && ![1000, 1008].includes(event.code)) {
           console.log("Reconectando WS..."); setTimeout(connectWebSocket, 5000);
-        } else { console.log("WS closed."); }
+        }
       };
       
+      // --- CORRECCIÓN DE BUG 3 (Bloque 'else if' duplicado) ---
       ws.onmessage = (event) => {
         try {
           const msg = JSON.parse(event.data);
           
-          // --- CASO 1: Es un mensaje de chat (Tu código anterior) ---
           if (msg.from === 'creator') { 
             const currentRelevantChatsOnMessage = loadChats();
             if (currentRelevantChatsOnMessage.some(c => c.chatId === msg.chatId)) {
                 console.log("WS (Public Page) Mensaje nuevo:", msg);
-                // (Toda tu lógica existente para actualizar la lista de chats)
                 const currentLocalStorageChats = JSON.parse(localStorage.getItem("myChats") || "[]");
                 let nameForTitle = creatorName;
                 const updatedChats = currentLocalStorageChats.map(chat => {
@@ -119,74 +118,72 @@ export default function PublicPage() {
                   } return chat;
                 });
                 localStorage.setItem("myChats", JSON.stringify(updatedChats));
-                loadChats();
+                loadChats(); // Recarga la lista de chats en la UI
                 if (!selectedChatRef.current && chatsListRef.current) { chatsListRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
                 if (document.hidden) { if (!window.originalTitle) window.originalTitle = document.title; document.title = `(1) Nuevo mensaje de ${nameForTitle}`; }
             }
-          
-          // --- 👇 CASO 2: Es una actualización de actividad (NUEVO) 👇 ---
           } else if (msg.type === 'CREATOR_ACTIVE') {
             console.log("WS (Public Page) Actividad del creador:", msg);
-            
-            // Usamos la función timeAgo (que ya deberías tener de mi respuesta anterior)
-            // y actualizamos el estado 'lastActive' en tiempo real.
-            // Si el creador está activo, la fecha será tan reciente que dirá "justo ahora".
-          } else if (msg.type === 'CREATOR_ACTIVE') {
-            console.log("WS (Public Page) Actividad del creador:", msg);
-            setLastActiveTimestamp(msg.lastActiveAt); // ⬅️ CAMBIO: Guarda la fecha, no el string
-          
+            setLastActiveTimestamp(msg.lastActiveAt); // Actualiza la fecha (correcto)
           }
-
+          // (Se eliminó el 'else if' duplicado)
         } catch (e) { console.error("Error processing WS:", e); }
       };
+      // --- FIN CORRECCIÓN 3 ---
     };
+    
     connectWebSocket();
-    return () => { if (wsRef.current) { wsRef.current.onclose = null; wsRef.current.close(1000, "Componente Page desmontado"); wsRef.current = null; } if (window.originalTitle) { document.title = window.originalTitle; delete window.originalTitle; } };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
+    return () => { 
+      if (wsRef.current) { 
+        wsRef.current.onclose = null; 
+        wsRef.current.close(1000, "Componente Page desmontado"); 
+        wsRef.current = null; 
+      } 
+      if (window.originalTitle) { 
+        document.title = window.originalTitle; 
+        delete window.originalTitle; 
+      } 
+    };
+  // --- CORRECCIÓN DE BUG (Quitar myChats.length para evitar reconexión) ---
   }, [publicId, loadChats]);
+  // --- FIN CORRECCIÓN ---
 
-  useEffect(() => { /* ... (código restaurar título sin cambios) ... */
+  useEffect(() => {
     const handleVisibilityChange = () => { if (!document.hidden && window.originalTitle) { document.title = window.originalTitle; delete window.originalTitle; } };
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => { document.removeEventListener('visibilitychange', handleVisibilityChange); if (window.originalTitle) { document.title = window.originalTitle; delete window.originalTitle; } };
   }, []);
 
-  const handleShowGuide = useCallback(() => { /* ... (código modal sin cambios) ... */
+  const handleShowGuide = useCallback(() => {
     setShowGuideModal(true);
     setTimeout(() => { chatsListRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 500);
   }, []);
+  
   const handleCloseGuide = useCallback(() => { setShowGuideModal(false); }, []);
 
-// src/app/u/[publicId]/page.jsx
-
-  // ... (después de tus otros hooks como handleCloseGuide)
-
-  // --- PIEZA 3: Cargar info del creador (Nombre y Actividad INICIAL) ---
+  // --- Carga inicial de datos del Creador (Nombre y Actividad) ---
   useEffect(() => {
     if (!publicId) return;
-
     const fetchCreatorInfo = async () => {
       try {
-        // Esta es la ruta que creamos en el Paso 1 (backend)
         const res = await fetch(`${API}/public/${publicId}/info`); 
         if (res.ok) {
           const data = await res.json();
           if (data.name) setCreatorName(data.name); 
           if (data.lastActiveAt) {
-            // Aquí usamos la Pieza 1 (timeAgo) y la Pieza 2 (setLastActive)
-            setLastActiveTimestamp(data.lastActiveAt); // ⬅️ CAMBIO: Guarda la fecha, no el string
+            setLastActiveTimestamp(data.lastActiveAt); // Guarda la fecha (correcto)
           }
         }
       } catch (err) {
         console.error("Error fetching creator info:", err);
       }
     };
-
     fetchCreatorInfo();
-  }, [publicId, setCreatorName]); // Dependencias
+  }, [publicId, setCreatorName]); // Dependencias correctas
 
 
-  const handleOpenChat = (chat) => { /* ... (código abrir chat sin cambios) ... */
+  const handleOpenChat = (chat) => {
     try {
       const storedChats = JSON.parse(localStorage.getItem("myChats") || "[]");
       const updatedChats = storedChats.map(c => c.chatId === chat.chatId ? { ...c, hasNewReply: false } : c);
@@ -198,7 +195,7 @@ export default function PublicPage() {
 
   const formatDate = (dateString) => new Date(dateString).toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 
-  // --- 👇 REINTEGRACIÓN DE ESTILOS 👇 ---
+  // --- CORRECCIÓN DE BUG 5 (Sintaxis de CSS) ---
   const pageStyles = `
     .page-container {
       background: linear-gradient(-45deg, #0d0c22, #1a1a2e, #2c1a5c, #3c287c);
@@ -207,27 +204,30 @@ export default function PublicPage() {
       min-height: 100vh;
       display: flex;
       flex-direction: column;
-      justify-content: center; /* ⬅️ AÑADE ESTA LÍNEA */
+      justify-content: center;
       align-items: center;
-      padding: 40px 20px; /* Asegura padding */
+      padding: 40px 20px;
       font-family: var(--font-main);
       position: relative;
-      color: var(--text-primary); /* Color de texto por defecto */
+      color: var(--text-primary);
     }
 
     .creator-active-status {
       text-align: center;
       font-size: 13px;
       font-weight: 600;
-      color: var(--glow-accent-crimson); /* Color púrpura claro */
+      color: var(--glow-accent-crimson);
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      margin-bottom: 20px; /* Espacio antes del título h2 */
+      margin-bottom: 20px;
       opacity: 0;
       animation: fadeInUp 0.6s 0.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    } /* <-- Se añadió la llave '}' que faltaba */
+
     @keyframes gradient-pan { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
 
-    /* Asegúrate que estos estilos existen en globals.css o defínelos aquí */
+    /* (El resto de tus estilos .new-reply-indicator, .chat-list-item, etc. van aquí) */
+    /* ... */
     .new-reply-indicator { display: inline-block; margin-left: 8px; padding: 3px 8px; background-color: var(--primary-hellfire-red); color: white; font-size: 10px; font-weight: bold; border-radius: 10px; line-height: 1; vertical-align: middle; animation: pulse-indicator 1.5s infinite; }
     @keyframes pulse-indicator { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: 0.8; } }
     .unreplied-indicator { display: inline-block; margin-left: 8px; padding: 3px 8px; background-color: #ff1641; color: rgb(255, 255, 255); font-size: 10px; font-weight: 500; border-radius: 10px; line-height: 1; vertical-align: middle; animation: none; }
@@ -251,18 +251,23 @@ export default function PublicPage() {
     @keyframes fadeInUp { from { opacity: 0; transform: translateY(25px); } to { opacity: 1; transform: translateY(0); } }
     .staggered-fade-in-up { opacity: 0; animation: fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
     .pulse-open-anon { animation: neon-pulse-anon 1.5s infinite ease-in-out; border-color: var(--glow-accent-crimson) !important; }
-    @keyframes neon-pulse-anon { /* ... (definición de neon-pulse-anon) ... */ 0% { transform: scale(1); box-shadow: 0 0 5px var(--glow-accent-crimson), inset 0 0 5px var(--glow-accent-crimson); } 50% { transform: scale(1.05); box-shadow: 0 0 20px var(--glow-accent-crimson), inset 0 0 10px var(--glow-accent-crimson); } 100% { transform: scale(1); box-shadow: 0 0 5px var(--glow-accent-crimson), inset 0 0 5px var(--glow-accent-crimson); } }
+    @keyframes neon-pulse-anon { 0% { transform: scale(1); box-shadow: 0 0 5px var(--glow-accent-crimson), inset 0 0 5px var(--glow-accent-crimson); } 50% { transform: scale(1.05); box-shadow: 0 0 20px var(--glow-accent-crimson), inset 0 0 10px var(--glow-accent-crimson); } 100% { transform: scale(1); box-shadow: 0 0 5px var(--glow-accent-crimson), inset 0 0 5px var(--glow-accent-crimson); } }
     .chat-list-item:hover .pulse-open-anon { animation-play-state: paused; transform: translateY(-5px) scale(1.02); background: #8e2de2 !important; border-color: #8e2de2 !important; }
 
   `;
-  // --- 👆 FIN REINTEGRACIÓN DE ESTILOS 👆 ---
+  // --- FIN CORRECCIÓN 5 ---
+  
+  // --- CORRECCIÓN DE BUG 4 (Definir lastActiveDisplay) ---
+  // Calcula el string "hace X" en cada render, usando el estado de la fecha
+  // y el "tick" de 'now' (aunque 'now' no se usa aquí, su cambio dispara este re-cálculo)
+  const lastActiveDisplay = timeAgo(lastActiveTimestamp);
 
   return (
     <>
       <style>{pageStyles}</style>
       {showGuideModal && <FirstMessageGuideModal onClose={handleCloseGuide} />}
 
-      <div className="page-container"> {/* Clase aplicada aquí */}
+      <div className="page-container">
         <button onClick={() => router.push('/')} className="to-dashboard-button" title="Ir a mi espacio">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="24" height="24"><path strokeLinecap="round" strokeLinejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
         </button>
@@ -276,7 +281,7 @@ export default function PublicPage() {
           ) : (
             <>
               <h1 style={{
-                textAlign: 'center', marginBottom: '30px', /* Aumentamos margen inferior */ fontSize: '26px',
+                textAlign: 'center', marginBottom: '30px', fontSize: '26px',
                 color: '#fff', fontWeight: 800, textShadow: '0 0 20px rgba(255, 255, 255, 0.3)',
                 animation: 'fadeInUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards'
               }}>
@@ -294,23 +299,24 @@ export default function PublicPage() {
                 </a>
               </div>
 
-              {/* ===== INICIO DE LA LISTA DE CHATS (LOS MENSAJES DE ABAJO) ===== */}
               <div ref={chatsListRef} className={`chats-list-section ${myChats.length > 0 ? '' : 'staggered-fade-in-up'}`}>
-                {myChats.length > 0 && <h2 className="chats-list-title">Espera a que {creatorName} te responda</h2>}
-                {/* --- 👇 AQUÍ ES DONDE APARECE (COMO EN TU IMAGEN) 👇 --- */}
-                {myChats.length > 0 && lastActive && (
+                
+                {/* --- CORRECCIÓN DE BUG 4 (Usar la variable correcta) --- */}
+                {myChats.length > 0 && lastActiveDisplay && (
                   <p className="creator-active-status">
-                    {creatorName} estuvo activo {lastActive}
+                    {creatorName} estuvo activo {lastActiveDisplay}
                   </p>
                 )}
-                {/* --- 👆 FIN DE LÍNEAS AÑADIDAS 👆 --- */}
+                {/* --- FIN CORRECCIÓN 4 --- */}
+                
+                {myChats.length > 0 && <h2 className="chats-list-title">Espera a que {creatorName} te responda</h2>}
+                
                 <div className="chats-list-grid">
                   {myChats.map((chat, index) => (
                     <div key={chat.chatId} className="chat-list-item staggered-fade-in-up" style={{ animationDelay: `${0.1 * index}s` }} onClick={() => handleOpenChat(chat)}>
                       <div className="chat-list-item-main">
                         <div className="chat-list-item-alias">
                           {chat.anonAlias || "Anónimo"}
-                          {/* --- Lógica del indicador corregida --- */}
                           {chat.hasNewReply ? (
                             <span className="new-reply-indicator">Nueva Respuesta</span>
                           ) : (
@@ -318,7 +324,6 @@ export default function PublicPage() {
                               <span className="unreplied-indicator">{creatorName} no ha respondido aún</span>
                             )
                           )}
-                          {/* --- Fin lógica corregida --- */}
                         </div>
                         <div className="chat-list-item-content">"{chat.preview}"</div>
                         <div className="chat-list-item-date">{formatDate(chat.ts)}</div>
@@ -328,7 +333,6 @@ export default function PublicPage() {
                   ))}
                 </div>
               </div>
-              {/* ===== FIN DE LA LISTA DE CHATS ===== */}
             </>
           )}
         </div>
