@@ -209,7 +209,6 @@ export default function PublicPage() {
     .creator-active-status {
       text-align: left; justify-content: left; align-items: left; font-size: 11px;
       font-weight: 700; color: var(--text-primary); 
-      text-shadow: 0 0 12px var(--glow-accent-crimson), 0 0 5px var(--glow-accent-crimson);
       text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 20px;
       margin-left: 10px; opacity: 0;
       animation: fadeInUp 0.6s 0.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
