@@ -207,12 +207,15 @@ export default function PublicPage() {
       position: relative; color: var(--text-primary);
     }
     .creator-active-status {
-      text-align: left; justify-content: left; align-items: left; font-size: 13px;
+      text-align: left; justify-content: left; align-items: left; font-size: 11px;
       font-weight: 700; color: var(--text-primary); 
       text-shadow: 0 0 12px var(--glow-accent-crimson), 0 0 5px var(--glow-accent-crimson);
       text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 20px;
       margin-left: 10px; opacity: 0;
       animation: fadeInUp 0.6s 0.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+      white-space: nowrap;     /* <-- AÑADIDO: Evita que se parta */
+      overflow: hidden;        /* <-- AÑADIDO: Oculta si se desborda */
+      text-overflow: ellipsis; /* <-- AÑADIDO: Pone "..." si no cabe */
     }
     @keyframes gradient-pan { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
     .new-reply-indicator { display: inline-block; margin-left: 8px; padding: 3px 8px; background-color: var(--primary-hellfire-red); color: white; font-size: 10px; font-weight: bold; border-radius: 10px; line-height: 1; vertical-align: middle; animation: pulse-indicator 1.5s infinite; }
@@ -233,7 +236,7 @@ export default function PublicPage() {
     .create-space-link svg { transition: transform 0.3s ease; }
     .create-space-link:hover svg { transform: scale(1.1); }
     .chats-list-section { margin-top: 35px; width: 100%; opacity: 0; transform: translateY(20px); animation: fadeInUp 0.8s 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
-    .chats-list-title { color: white; border-bottom: 1px solid rgba(255, 255, 255, 0.15); padding-bottom: 15px; margin-bottom: 25px; font-size: 22px; font-weight: 700; }
+    .chats-list-title { color: white; border-bottom: 1px solid rgba(255, 255, 255, 0.15); padding-bottom: 15px; margin-bottom: 25px; font-size: 20px; font-weight: 700; }
     .chats-list-grid { display: grid; gap: 15px; }
     @keyframes fadeInUp { from { opacity: 0; transform: translateY(25px); } to { opacity: 1; transform: translateY(0); } }
     .staggered-fade-in-up { opacity: 0; animation: fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
