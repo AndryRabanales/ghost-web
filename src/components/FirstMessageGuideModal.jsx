@@ -120,7 +120,7 @@ export default function FirstMessageGuideModal({ onClose }) {
         Espera a que te respondan el mensaje que acabas de enviar!
         </p>
         <p style={textStyle}>
-          **Presiona en abrir chatear ahora mismo!.⬇️**
+          **Presiona el botón abrir ahora mismo!.⬇️**
         </p>
 
  {/* --- 👇 AÑADIR IMAGEN AQUÍ 👇 --- */}
