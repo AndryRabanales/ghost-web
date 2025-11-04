@@ -320,7 +320,7 @@ export default function PublicPage() {
                     {/* Comprueba si la palabra clave es "justo ahora" */}
                     {lastActiveDisplay === 'justo ahora'
                       ? `${creatorName} esta activo ahora 🟢` // ⬅️ ¡CAMBIO AQUÍ!
-                      : `${creatorName} estuvo activo ${lastActiveDisplay}`
+                      : `${creatorName} estuvo activo  ${lastActiveDisplay} ⚪`
                     }
                   </p>
                 )}
