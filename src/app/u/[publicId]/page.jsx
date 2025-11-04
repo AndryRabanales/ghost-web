@@ -246,10 +246,9 @@ export default function PublicPage() {
    /* --- 👇 Estilos para el estado en línea/fuera de línea --- */
     .status-online  { 
       color: #E8DFFF; /* Morado muy pálido, casi blanco */
-      text-shadow: 0 0 12px var(--glow-accent-crimson, #c9a4ff), 0 0 5px #FFFFFF; /* Brillo morado + toque blanco */
+      
     }
-    .status-offline { color: #f8eFFF; /* Morado muy pálido, casi blanco */
-    text-shadow: 0 0 12px var(--glow-accent-crimson, #c9a4ff), 0 0 5px #FFFFFF; /* Brillo morado + toque blanco */}
+    .status-offline { color: #f8eFFF; /* Morado muy pálido, casi blanco */}
   `;
   
   // Calcula el string "hace X" en cada render
