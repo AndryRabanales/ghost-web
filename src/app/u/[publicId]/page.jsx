@@ -150,7 +150,7 @@ export default function PublicPage() {
         delete window.originalTitle; 
       } 
     };
-  }, [publicId, loadChats, creatorName]); // Añadido creatorName
+  },[publicId, loadChats]); // Añadido creatorName
 
   // ... (handleVisibilityChange, handleShowGuide, handleCloseGuide sin cambios) ...
   useEffect(() => {
