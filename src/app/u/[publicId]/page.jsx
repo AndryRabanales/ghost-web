@@ -217,14 +217,18 @@ export default function PublicPage() {
       justify-content: left;
       align-items: left;
       font-size: 13px;
-      font-weight: 600;
-      color: var(--glow-accent-crimson);
+      /* --- CAMBIOS AQUÍ --- */
+      font-weight: 700; /* Un poco más grueso */
+      color: var(--text-primary); /* Color blanco brillante */
+      text-shadow: 0 0 12px var(--glow-accent-crimson), 0 0 5px var(--glow-accent-crimson); /* Añade el brillo morado */
+      /* --- FIN DE CAMBIOS --- */
       text-transform: uppercase;
       letter-spacing: 0.5px;
       margin-bottom: 20px;
+      margin-left: 5px;
       opacity: 0;
       animation: fadeInUp 0.6s 0.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-    } /* <-- Se añadió la llave '}' que faltaba */
+    }
 
     @keyframes gradient-pan { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
 
