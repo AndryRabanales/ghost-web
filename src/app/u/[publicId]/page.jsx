@@ -214,8 +214,8 @@ export default function PublicPage() {
 
     .creator-active-status {
       text-align: center;
-      justify-content: center;
-      align-items: center;
+      justify-content: left;
+      align-items: left;
       font-size: 13px;
       font-weight: 600;
       color: var(--glow-accent-crimson);
