@@ -319,7 +319,7 @@ export default function PublicPage() {
                   <p className="creator-active-status">
                     {/* Comprueba si la palabra clave es "justo ahora" */}
                     {lastActiveDisplay === 'justo ahora'
-                      ? `${creatorName} esta activo ahora` // ⬅️ ¡CAMBIO AQUÍ!
+                      ? `${creatorName} esta activo ahora 🟢` // ⬅️ ¡CAMBIO AQUÍ!
                       : `${creatorName} estuvo activo ${lastActiveDisplay}`
                     }
                   </p>
