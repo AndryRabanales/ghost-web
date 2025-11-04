@@ -5,7 +5,7 @@ import FirstMessageGuideModal from "@/components/FirstMessageGuideModal";
 import PublicChatView from "@/components/PublicChatView";
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { timeAgo } from "@/utils/timeAgo"; // PIEZA 1 (Correcto)
+import { timeAgo } from "@/utils/timeAgo";
 
 const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
 
@@ -28,24 +28,24 @@ export default function PublicPage() {
   const [showGuideModal, setShowGuideModal] = useState(false);
   const [creatorName, setCreatorName] = useState("el creador");
   
-  // --- CORRECCIÓN DE BUG 1 y 2 (Líneas duplicadas/rotas) ---
+  // --- 👇 ESTADOS DE PRESENCIA (CREATOR) 👇 ---
+  const [creatorStatus, setCreatorStatus] = useState(null); // 'online', 'offline', o null
   const [lastActiveTimestamp, setLastActiveTimestamp] = useState(null);
   const [now, setNow] = useState(new Date()); // "Tick" del reloj
-  const selectedChatRef = useRef(selectedChat); // Definido correctamente
-  // --- FIN CORRECCIÓN 1 y 2 ---
+  // --- 👆 FIN ESTADOS DE PRESENCIA 👆 ---
   
+  const selectedChatRef = useRef(selectedChat);
   const chatsListRef = useRef(null);
   const wsRef = useRef(null);
 
-  // --- Timer para actualizar el "hace..." (Correcto) ---
+  // --- Timer para actualizar el "hace..." ---
   useEffect(() => {
     const interval = setInterval(() => {
       setNow(new Date());
-    }, 9000); // 30 segundos
+    }, 30000); // 30 segundos
     return () => clearInterval(interval);
   }, []);
   
-  // --- useEffect y useCallback (Correcto) ---
   useEffect(() => { selectedChatRef.current = selectedChat; }, [selectedChat]);
 
   const loadChats = useCallback(() => {
@@ -76,18 +76,16 @@ export default function PublicPage() {
 
   // --- WebSocket useEffect ---
   useEffect(() => {
-    console.log(`WebSocket useEffect: Disparado.`);
     const connectWebSocket = () => {
       if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
         wsRef.current.onclose = null; wsRef.current.close(1000, "Nueva conexión de página");
       }
       
-      const currentChatsForWS = loadChats(); // Carga los chats AHORA
+      const currentChatsForWS = loadChats();
       const anonTokensString = currentChatsForWS.map(chat => chat.anonToken).join(',');
       
       // Conecta al publicId (para estado "activo") Y a los anonTokens (para mensajes)
       const wsUrl = `${API.replace(/^http/, "ws")}/ws?anonTokens=${anonTokensString}&publicId=${publicId}`;
-      console.log(`WebSocket connect: ${wsUrl}`);
       
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
@@ -100,11 +98,11 @@ export default function PublicPage() {
         }
       };
       
-      // --- CORRECCIÓN DE BUG 3 (Bloque 'else if' duplicado) ---
       ws.onmessage = (event) => {
         try {
           const msg = JSON.parse(event.data);
           
+          // --- Manejador de Mensajes (del Creador) ---
           if (msg.from === 'creator') { 
             const currentRelevantChatsOnMessage = loadChats();
             if (currentRelevantChatsOnMessage.some(c => c.chatId === msg.chatId)) {
@@ -118,18 +116,25 @@ export default function PublicPage() {
                   } return chat;
                 });
                 localStorage.setItem("myChats", JSON.stringify(updatedChats));
-                loadChats(); // Recarga la lista de chats en la UI
+                loadChats(); 
                 if (!selectedChatRef.current && chatsListRef.current) { chatsListRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
                 if (document.hidden) { if (!window.originalTitle) window.originalTitle = document.title; document.title = `(1) Nuevo mensaje de ${nameForTitle}`; }
             }
-          } else if (msg.type === 'CREATOR_ACTIVE') {
-            console.log("WS (Public Page) Actividad del creador:", msg);
-            setLastActiveTimestamp(msg.lastActiveAt); // Actualiza la fecha (correcto)
+          
+          // --- 👇 NUEVO: Manejador de Estado del Creador 👇 ---
+          } else if (msg.type === 'CREATOR_STATUS_UPDATE') {
+            console.log("WS (Public Page) Status Update:", msg);
+            setCreatorStatus(msg.status); // 'online' o 'offline'
+            
+            // Si se desconectan, actualizamos 'lastActive' a AHORA MISMO.
+            if (msg.status === 'offline') {
+              setLastActiveTimestamp(new Date().toISOString());
+            }
           }
-          // (Se eliminó el 'else if' duplicado)
+          // --- 👆 FIN NUEVO 👆 ---
+
         } catch (e) { console.error("Error processing WS:", e); }
       };
-      // --- FIN CORRECCIÓN 3 ---
     };
     
     connectWebSocket();
@@ -145,21 +150,18 @@ export default function PublicPage() {
         delete window.originalTitle; 
       } 
     };
-  // --- CORRECCIÓN DE BUG (Quitar myChats.length para evitar reconexión) ---
-  }, [publicId, loadChats]);
-  // --- FIN CORRECCIÓN ---
+  }, [publicId, loadChats, creatorName]); // Añadido creatorName
 
+  // ... (handleVisibilityChange, handleShowGuide, handleCloseGuide sin cambios) ...
   useEffect(() => {
     const handleVisibilityChange = () => { if (!document.hidden && window.originalTitle) { document.title = window.originalTitle; delete window.originalTitle; } };
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => { document.removeEventListener('visibilitychange', handleVisibilityChange); if (window.originalTitle) { document.title = window.originalTitle; delete window.originalTitle; } };
   }, []);
-
   const handleShowGuide = useCallback(() => {
     setShowGuideModal(true);
     setTimeout(() => { chatsListRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 500);
   }, []);
-  
   const handleCloseGuide = useCallback(() => { setShowGuideModal(false); }, []);
 
   // --- Carga inicial de datos del Creador (Nombre y Actividad) ---
@@ -172,7 +174,7 @@ export default function PublicPage() {
           const data = await res.json();
           if (data.name) setCreatorName(data.name); 
           if (data.lastActiveAt) {
-            setLastActiveTimestamp(data.lastActiveAt); // Guarda la fecha (correcto)
+            setLastActiveTimestamp(data.lastActiveAt);
           }
         }
       } catch (err) {
@@ -180,9 +182,10 @@ export default function PublicPage() {
       }
     };
     fetchCreatorInfo();
-  }, [publicId, setCreatorName]); // Dependencias correctas
+  }, [publicId, setCreatorName]);
 
 
+  // ... (handleOpenChat, formatDate sin cambios) ...
   const handleOpenChat = (chat) => {
     try {
       const storedChats = JSON.parse(localStorage.getItem("myChats") || "[]");
@@ -192,48 +195,26 @@ export default function PublicPage() {
       setSelectedChat(chat);
     } catch (e) { console.error("Error opening chat:", e); setSelectedChat(chat); }
   };
-
   const formatDate = (dateString) => new Date(dateString).toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 
-  // --- CORRECCIÓN DE BUG 5 (Sintaxis de CSS) ---
+  // ... (pageStyles sin cambios) ...
   const pageStyles = `
     .page-container {
       background: linear-gradient(-45deg, #0d0c22, #1a1a2e, #2c1a5c, #3c287c);
-      background-size: 400% 400%;
-      animation: gradient-pan 15s ease infinite;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      padding: 40px 20px;
-      font-family: var(--font-main);
-      position: relative;
-      color: var(--text-primary);
+      background-size: 400% 400%; animation: gradient-pan 15s ease infinite;
+      min-height: 100vh; display: flex; flex-direction: column; justify-content: center;
+      align-items: center; padding: 40px 20px; font-family: var(--font-main);
+      position: relative; color: var(--text-primary);
     }
-
     .creator-active-status {
-      text-align: left;
-      justify-content: left;
-      align-items: left;
-      font-size: 13px;
-      /* --- CAMBIOS AQUÍ --- */
-      font-weight: 700; /* Un poco más grueso */
-      color: var(--text-primary); /* Color blanco brillante */
-      text-shadow: 0 0 12px var(--glow-accent-crimson), 0 0 5px var(--glow-accent-crimson); /* Añade el brillo morado */
-      /* --- FIN DE CAMBIOS --- */
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 20px;
-      margin-left: 5px;
-      opacity: 0;
+      text-align: left; justify-content: left; align-items: left; font-size: 13px;
+      font-weight: 700; color: var(--text-primary); 
+      text-shadow: 0 0 12px var(--glow-accent-crimson), 0 0 5px var(--glow-accent-crimson);
+      text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 20px;
+      margin-left: 5px; opacity: 0;
       animation: fadeInUp 0.6s 0.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
     }
-
     @keyframes gradient-pan { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
-
-    /* (El resto de tus estilos .new-reply-indicator, .chat-list-item, etc. van aquí) */
-    /* ... */
     .new-reply-indicator { display: inline-block; margin-left: 8px; padding: 3px 8px; background-color: var(--primary-hellfire-red); color: white; font-size: 10px; font-weight: bold; border-radius: 10px; line-height: 1; vertical-align: middle; animation: pulse-indicator 1.5s infinite; }
     @keyframes pulse-indicator { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: 0.8; } }
     .unreplied-indicator { display: inline-block; margin-left: 8px; padding: 3px 8px; background-color: #ff1641; color: rgb(255, 255, 255); font-size: 10px; font-weight: 500; border-radius: 10px; line-height: 1; vertical-align: middle; animation: none; }
@@ -259,13 +240,12 @@ export default function PublicPage() {
     .pulse-open-anon { animation: neon-pulse-anon 1.5s infinite ease-in-out; border-color: var(--glow-accent-crimson) !important; }
     @keyframes neon-pulse-anon { 0% { transform: scale(1); box-shadow: 0 0 5px var(--glow-accent-crimson), inset 0 0 5px var(--glow-accent-crimson); } 50% { transform: scale(1.05); box-shadow: 0 0 20px var(--glow-accent-crimson), inset 0 0 10px var(--glow-accent-crimson); } 100% { transform: scale(1); box-shadow: 0 0 5px var(--glow-accent-crimson), inset 0 0 5px var(--glow-accent-crimson); } }
     .chat-list-item:hover .pulse-open-anon { animation-play-state: paused; transform: translateY(-5px) scale(1.02); background: #8e2de2 !important; border-color: #8e2de2 !important; }
-
+    /* --- 👇 Estilos para el estado en línea/fuera de línea --- */
+    .status-online { color: var(--success-solid); text-shadow: 0 0 8px var(--success-glow); }
+    .status-offline { color: var(--text-secondary); opacity: 0.8; }
   `;
-  // --- FIN CORRECCIÓN 5 ---
   
-  // --- CORRECCIÓN DE BUG 4 (Definir lastActiveDisplay) ---
-  // Calcula el string "hace X" en cada render, usando el estado de la fecha
-  // y el "tick" de 'now' (aunque 'now' no se usa aquí, su cambio dispara este re-cálculo)
+  // Calcula el string "hace X" en cada render
   const lastActiveDisplay = timeAgo(lastActiveTimestamp);
 
   return (
@@ -286,11 +266,7 @@ export default function PublicPage() {
             />
           ) : (
             <>
-              <h1 style={{
-                textAlign: 'center', marginBottom: '30px', fontSize: '26px',
-                color: '#fff', fontWeight: 800, textShadow: '0 0 20px rgba(255, 255, 255, 0.3)',
-                animation: 'fadeInUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards'
-              }}>
+              <h1 style={{ textAlign: 'center', marginBottom: '30px', fontSize: '26px', color: '#fff', fontWeight: 800, textShadow: '0 0 20px rgba(255, 255, 255, 0.3)', animation: 'fadeInUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards' }}>
                 Envíame un Mensaje Anónimo y Abre un Chat Anónimo
               </h1>
               <AnonMessageForm
@@ -307,23 +283,21 @@ export default function PublicPage() {
 
               <div ref={chatsListRef} className={`chats-list-section ${myChats.length > 0 ? '' : 'staggered-fade-in-up'}`}>
                 
-              
-                {/* --- 👇 AQUÍ ES DONDE APARECE (CON LÓGICA MEJORADA) 👇 --- */}
-                
-                {/* --- FIN CORRECCIÓN 4 --- */}
-                {/* --- FIN CORRECCIÓN 4 --- */}
-                
-                {myChats.length > 0 && <h2 className="chats-list-title">Espera a que {creatorName} te responda</h2>}
-                
-                {myChats.length > 0 && lastActiveDisplay && (
+                {/* --- 👇 LÓGICA DE ESTADO DEL CREATOR ACTUALIZADA 👇 --- */}
+                {myChats.length > 0 && (
                   <p className="creator-active-status">
-                    {/* Comprueba si la palabra clave es "justo ahora" */}
-                    {lastActiveDisplay === 'justo ahora'
-                      ? `${creatorName} esta activo ahora 🟢` // ⬅️ ¡CAMBIO AQUÍ!
-                      : `${creatorName} estuvo activo  ${lastActiveDisplay} ⚪`
-                    }
+                    {creatorStatus === 'online' ? (
+                      <span className="status-online">{creatorName} está en línea 🟢</span>
+                    ) : lastActiveDisplay ? (
+                      <span className="status-offline">{creatorName} estuvo activo {lastActiveDisplay} ⚪</span>
+                    ) : (
+                      <span className="status-offline" style={{opacity: 0.6}}>Cargando estado...</span>
+                    )}
                   </p>
                 )}
+                {/* --- 👆 FIN LÓGICA DE ESTADO 👆 --- */}
+                
+                {myChats.length > 0 && <h2 className="chats-list-title">Espera a que {creatorName} te responda</h2>}
 
                 <div className="chats-list-grid">
                   {myChats.map((chat, index) => (
