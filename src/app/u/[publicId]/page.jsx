@@ -211,7 +211,7 @@ export default function PublicPage() {
       font-weight: 700; color: var(--text-primary); 
       text-shadow: 0 0 12px var(--glow-accent-crimson), 0 0 5px var(--glow-accent-crimson);
       text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 20px;
-      margin-left: 5px; opacity: 0;
+      margin-left: 10px; opacity: 0;
       animation: fadeInUp 0.6s 0.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
     }
     @keyframes gradient-pan { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
@@ -284,17 +284,7 @@ export default function PublicPage() {
               <div ref={chatsListRef} className={`chats-list-section ${myChats.length > 0 ? '' : 'staggered-fade-in-up'}`}>
                 
                 {/* --- 👇 LÓGICA DE ESTADO DEL CREATOR ACTUALIZADA 👇 --- */}
-                {myChats.length > 0 && (
-                  <p className="creator-active-status">
-                    {creatorStatus === 'online' ? (
-                      <span className="status-online">{creatorName} está en línea 🟢</span>
-                    ) : lastActiveDisplay ? (
-                      <span className="status-offline">{creatorName} estuvo activo {lastActiveDisplay} ⚪</span>
-                    ) : (
-                      <span className="status-offline" style={{opacity: 0.6}}>Cargando estado...</span>
-                    )}
-                  </p>
-                )}
+               
                 {/* --- 👆 FIN LÓGICA DE ESTADO 👆 --- */}
                 
                 {myChats.length > 0 && (
@@ -306,6 +296,18 @@ export default function PublicPage() {
                       <span>.</span>
                     </span>
                   </h2>
+                )}
+
+{myChats.length > 0 && (
+                  <p className="creator-active-status">
+                    {creatorStatus === 'online' ? (
+                      <span className="status-online">{creatorName} está en línea 🟢</span>
+                    ) : lastActiveDisplay ? (
+                      <span className="status-offline">{creatorName} estuvo activo {lastActiveDisplay} ⚪</span>
+                    ) : (
+                      <span className="status-offline" style={{opacity: 0.6}}>Cargando estado...</span>
+                    )}
+                  </p>
                 )}
                 <div className="chats-list-grid">
                   {myChats.map((chat, index) => (
