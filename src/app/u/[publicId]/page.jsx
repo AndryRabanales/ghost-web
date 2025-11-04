@@ -213,7 +213,7 @@ export default function PublicPage() {
     }
 
     .creator-active-status {
-      text-align: center;
+      text-align: left;
       justify-content: left;
       align-items: left;
       font-size: 13px;
