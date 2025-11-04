@@ -297,8 +297,16 @@ export default function PublicPage() {
                 )}
                 {/* --- 👆 FIN LÓGICA DE ESTADO 👆 --- */}
                 
-                {myChats.length > 0 && <h2 className="chats-list-title">Espera a que {creatorName} te responda</h2>}
-
+                {myChats.length > 0 && (
+                  <h2 className="chats-list-title waiting-for-reply">
+                    Espera a que {creatorName} te responda
+                    <span className="waiting-dots">
+                      <span>.</span>
+                      <span>.</span>
+                      <span>.</span>
+                    </span>
+                  </h2>
+                )}
                 <div className="chats-list-grid">
                   {myChats.map((chat, index) => (
                     <div key={chat.chatId} className="chat-list-item staggered-fade-in-up" style={{ animationDelay: `${0.1 * index}s` }} onClick={() => handleOpenChat(chat)}>
