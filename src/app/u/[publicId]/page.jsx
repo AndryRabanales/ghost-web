@@ -214,6 +214,8 @@ export default function PublicPage() {
 
     .creator-active-status {
       text-align: center;
+      justify-content: center;
+      align-items: center;
       font-size: 13px;
       font-weight: 600;
       color: var(--glow-accent-crimson);
@@ -301,10 +303,14 @@ export default function PublicPage() {
 
               <div ref={chatsListRef} className={`chats-list-section ${myChats.length > 0 ? '' : 'staggered-fade-in-up'}`}>
                 
-                {/* --- CORRECCIÓN DE BUG 4 (Usar la variable correcta) --- */}
+              
                 {/* --- 👇 AQUÍ ES DONDE APARECE (CON LÓGICA MEJORADA) 👇 --- */}
-               {/* --- CORRECCIÓN 4 (Usar la variable correcta) --- */}
-                {/* --- 👇 AQUÍ ES DONDE APARECE (CON LÓGICA MEJORADA) 👇 --- */}
+                
+                {/* --- FIN CORRECCIÓN 4 --- */}
+                {/* --- FIN CORRECCIÓN 4 --- */}
+                
+                {myChats.length > 0 && <h2 className="chats-list-title">Espera a que {creatorName} te responda</h2>}
+                
                 {myChats.length > 0 && lastActiveDisplay && (
                   <p className="creator-active-status">
                     {/* Comprueba si la palabra clave es "justo ahora" */}
@@ -314,11 +320,7 @@ export default function PublicPage() {
                     }
                   </p>
                 )}
-                {/* --- FIN CORRECCIÓN 4 --- */}
-                {/* --- FIN CORRECCIÓN 4 --- */}
-                
-                {myChats.length > 0 && <h2 className="chats-list-title">Espera a que {creatorName} te responda</h2>}
-                
+
                 <div className="chats-list-grid">
                   {myChats.map((chat, index) => (
                     <div key={chat.chatId} className="chat-list-item staggered-fade-in-up" style={{ animationDelay: `${0.1 * index}s` }} onClick={() => handleOpenChat(chat)}>
