@@ -41,7 +41,7 @@ export default function PublicPage() {
   useEffect(() => {
     const interval = setInterval(() => {
       setNow(new Date());
-    }, 30000); // 30 segundos
+    }, 9000); // 30 segundos
     return () => clearInterval(interval);
   }, []);
   
