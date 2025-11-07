@@ -2,8 +2,6 @@
 "use client";
 import React, { useEffect, useState, useRef, useCallback } from "react";
 
-const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
-
 // --- Componente Message interno (sin cambios) ---
 const Message = ({ msg, creatorName }) => {
   const isCreator = msg.from === "creator";
@@ -23,22 +21,29 @@ const Message = ({ msg, creatorName }) => {
 
 // --- Componente Principal PublicChatView (MODIFICADO) ---
 export default function PublicChatView({ 
-  chatInfo, 
+  chatId, 
+  anonToken,
   creatorStatus, 
   lastActiveDisplay,
   creatorName,
-  // --- NUEVO: Callback para notificar cambios en mensajes ---
-  onMessagesUpdated 
+  
+  // --- Props de estado recibidas del padre ---
+  messages, 
+  isLoading,
+  error,
+  onSendMessage // Función para enviar un mensaje
 }) {
   
-  const { anonToken, chatId } = chatInfo;
-  const [messages, setMessages] = useState([]);
   const [newMsg, setNewMsg] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const bottomRef = useRef(null);
-  const wsRef = useRef(null);
 
+  // --- ELIMINADOS:
+  // - const [messages, setMessages]
+  // - const [loading, setLoading]
+  // - const [error, setError]
+  // - const wsRef
+
+  // --- MODIFICADO: markChatAsRead (ahora usa props) ---
   const markChatAsRead = useCallback(() => {
     try {
       const storedChats = JSON.parse(localStorage.getItem("myChats") || "[]");
@@ -49,105 +54,35 @@ export default function PublicChatView({
       );
       localStorage.setItem("myChats", JSON.stringify(updatedChats));
     } catch (e) { console.error("Error updating localStorage:", e); }
-  }, [chatId, anonToken]);
+  }, [chatId, anonToken]); // Depende de las props
 
+  // --- MODIFICADO: useEffect de scroll (solo depende de messages) ---
   useEffect(() => {
     markChatAsRead(); 
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, markChatAsRead]);
 
+  // --- ELIMINADO: El 'useEffect' principal de fetchMessages y WebSocket ---
+  // (Toda esa lógica ahora está en el padre: page.jsx)
 
-  useEffect(() => {
-    const fetchMessages = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const res = await fetch(`${API}/chats/${anonToken}/${chatId}`);
-        if (!res.ok) throw new Error("No se pudo cargar el chat");
-        const data = await res.json();
-        setMessages(data.messages || []);
-        // --- NUEVO: Notifica al padre los mensajes iniciales ---
-        if (onMessagesUpdated) {
-          onMessagesUpdated(data.messages || []);
-        }
-      } catch (err) { setError("⚠️ Error cargando mensajes"); }
-      finally { setLoading(false); }
-    };
-    fetchMessages();
-
-    if (wsRef.current) { 
-      wsRef.current.onclose = null;
-      wsRef.current.close(1000, "Componente re-montado");
-    }
-
-    const anonTokensString = anonToken;
-    const wsUrl = `${API.replace(/^http/, "ws")}/ws?anonTokens=${anonTokensString}`;
-    const ws = new WebSocket(wsUrl);
-    wsRef.current = ws;
-
-    ws.onmessage = (event) => {
-      try {
-        const msg = JSON.parse(event.data);
-        if (msg.chatId === chatId) {
-          setMessages((prev) => {
-            if (prev.some(m => m.id === msg.id)) return prev;
-            const updatedMsgs = [...prev, msg];
-            // --- NUEVO: Notifica al padre sobre nuevos mensajes ---
-            if (onMessagesUpdated) {
-              onMessagesUpdated(updatedMsgs);
-            }
-            return updatedMsgs;
-          });
-          if (document.visibilityState === 'visible') markChatAsRead();
-        }
-      } catch (e) { console.error("Error procesando WebSocket (Chat View):", e); }
-    };
-
-    ws.onopen = () => console.log(`WebSocket (Chat View) conectado a chat ${chatId}`);
-    ws.onerror = (error) => console.error("WebSocket (Chat View) error:", error);
-    ws.onclose = (event) => {
-      console.log(`WebSocket (Chat View) desconectado de chat ${chatId}. Code: ${event.code}.`);
-      if (event.code === 1008) { 
-        setError("La sesión de chat expiró o fue rechazada.");
-      }
-    };
-
-    return () => {
-      if (wsRef.current) {
-        wsRef.current.onclose = null; 
-        wsRef.current.close(1000, "Componente desmontado limpiamente");
-        wsRef.current = null;
-      }
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chatId, anonToken]);
-
+  // --- MODIFICADO: handleSend ---
   const handleSend = async (e) => {
     e.preventDefault();
-    if (!newMsg.trim()) return;
-    const tempMsgContent = newMsg;
+    if (!newMsg.trim() || !onSendMessage) return;
+    
+    // Llama a la función del padre
+    onSendMessage(newMsg); 
+    
+    // Limpia el input localmente
     setNewMsg(""); 
-    try {
-      const res = await fetch(`${API}/chats/${anonToken}/${chatId}/messages`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: tempMsgContent }),
-      });
-      if (!res.ok) {
-        const d = await res.json();
-        throw new Error(d.error || "Error enviando el mensaje");
-      }
-    } catch (err) {
-      console.error("Error enviando mensaje:", err);
-      setError("⚠️ Error al enviar el mensaje. Inténtalo de nuevo.");
-      setNewMsg(tempMsgContent);
-    }
   };
 
-  // --- ELIMINADO: La lógica de 'isWaitingForReply' y 'showEmptyChatPlaceholder' ---
-  // Ahora la gestiona el componente padre.
+  // --- ELIMINADA: Lógica de isWaitingForReply (ahora en el padre) ---
 
+  // Renderizado
   return (
     <div className="public-chat-view">
+      {/* Header (sin cambios, usa props) */}
       <div className="chat-view-header">
         <div className="chat-header-info">
           <h3>Chat con {creatorName}</h3>
@@ -163,37 +98,27 @@ export default function PublicChatView({
         </div>
       </div>
 
+      {/* Cuerpo del Chat (usa props 'isLoading', 'error', 'messages') */}
       <div className="messages-display">
-        {loading && <p style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>Cargando mensajes...</p>}
+        {isLoading && <p style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>Cargando mensajes...</p>}
         {error && <p style={{ color: '#ff7b7b', textAlign: 'center' }}>{error}</p>}
         
         {messages.map((m) => (
           <Message key={m.id || Math.random()} msg={m} creatorName={creatorName} />
         ))}
-
-        {/* --- ELIMINADO: Placeholder de "Esperando" --- */}
-        {/*
-        {showEmptyChatPlaceholder && (
-          <div className="waiting-indicator">
-            ¡Envía el primer mensaje para iniciar el chat!
-          </div>
-        )}
-        {isWaitingForReply && (
-          <div className="waiting-indicator">
-            Espera a que {creatorName} te responda
-            <span className="waiting-dots"><span>.</span><span>.</span><span>.</span></span>
-          </div>
-        )}
-        */}
         
-        <div ref={bottomRef} /> {/* Referencia para scroll */}
+        {/* Placeholder de "Esperando" eliminado de aquí */}
+        
+        <div ref={bottomRef} />
       </div>
+
+      {/* Formulario de envío (usa handleSend modificado) */}
       <form onSubmit={handleSend} className="chat-reply-form">
         <input
           type="text" value={newMsg} onChange={(e) => setNewMsg(e.target.value)}
           placeholder="Escribe una respuesta..." className="form-input-field reply-input"
         />
-        <button type="submit" disabled={!newMsg.trim()} className="submit-button reply-button">
+        <button type-="submit" disabled={!newMsg.trim()} className="submit-button reply-button">
           Enviar
         </button>
       </form>

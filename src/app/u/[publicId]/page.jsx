@@ -29,19 +29,14 @@ export default function PublicPage() {
   const [creatorStatus, setCreatorStatus] = useState(null);
   const [lastActiveTimestamp, setLastActiveTimestamp] = useState(null);
   
-  // --- NUEVO ESTADO para los mensajes del chat activo ---
-  // Necesitamos saber los mensajes para decidir si mostrar el "espera..."
+  // --- Estados del Chat (ahora en el padre) ---
   const [chatMessages, setChatMessages] = useState([]); 
+  const [isChatLoading, setIsChatLoading] = useState(true);
+  const [chatError, setChatError] = useState(null); 
 
   const wsRef = useRef(null);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setLastActiveTimestamp(prev => prev);
-    }, 30000);
-    return () => clearInterval(interval);
-  }, []);
-
+  // --- Carga el chat guardado en localStorage ---
   const loadActiveChat = useCallback(() => {
     try {
       const stored = JSON.parse(localStorage.getItem("myChats") || "[]");
@@ -60,71 +55,15 @@ export default function PublicPage() {
     }
   }, [publicId]);
 
+  // --- Carga el chat al inicio ---
   useEffect(() => {
     const chat = loadActiveChat();
     if (chat) {
       setActiveChatInfo(chat);
     }
   }, [loadActiveChat]);
-
-
-  useEffect(() => {
-    const connectWebSocket = () => {
-      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-        wsRef.current.onclose = null; 
-        wsRef.current.close(1000, "Nueva conexión de página");
-      }
-      
-      const wsUrl = `${API.replace(/^http/, "ws")}/ws?publicId=${publicId}`;
-      
-      const ws = new WebSocket(wsUrl);
-      wsRef.current = ws;
-      ws.onopen = () => console.log(`WS (Public Page Status) connected a ${publicId}`);
-      ws.onerror = (error) => console.error("WS (Public Page Status) error:", error);
-      ws.onclose = (event) => {
-        console.log(`WS (Public Page Status) disconnected. Code: ${event.code}.`);
-        if (![1000, 1008].includes(event.code)) {
-          console.log("Reconectando WS (Status)..."); 
-          setTimeout(connectWebSocket, 5000);
-        }
-      };
-      
-      ws.onmessage = (event) => {
-        try {
-          const msg = JSON.parse(event.data);
-          
-          if (msg.type === 'CREATOR_STATUS_UPDATE') {
-            setCreatorStatus(msg.status);
-            if (msg.status === 'offline') {
-              setLastActiveTimestamp(new Date().toISOString());
-            }
-          }
-          // --- MODIFICADO: También escucha mensajes si el chat está activo ---
-          // Necesitamos esto para actualizar 'chatMessages' y el título de "espera..."
-          if (activeChatInfo && msg.chatId === activeChatInfo.chatId && msg.type === 'message') {
-            setChatMessages(prev => {
-              if (prev.some(m => m.id === msg.id)) return prev;
-              return [...prev, msg];
-            });
-          }
-        } catch (e) { console.error("Error processing WS (Status):", e); }
-      };
-    };
-    
-    connectWebSocket();
-    
-    return () => { 
-      if (wsRef.current) { 
-        wsRef.current.onclose = null; 
-        wsRef.current.close(1000, "Componente Page desmontado"); 
-        wsRef.current = null; 
-      } 
-    };
-    // Añadimos activeChatInfo para que el WS se reconecte si se inicializa el chat
-  },[publicId, activeChatInfo]); 
-
-  const handleCloseGuide = useCallback(() => { setShowGuideModal(false); }, []);
-
+  
+  // --- Carga la info del Creador (nombre, etc.) ---
   useEffect(() => {
     if (!publicId) return;
     const fetchCreatorInfo = async () => {
@@ -147,6 +86,103 @@ export default function PublicPage() {
   }, [publicId, setCreatorName]);
 
 
+  // --- MODIFICADO: useEffect para EL ÚNICO WEBSOCKET ---
+  useEffect(() => {
+    // Timer para el "hace..." (sin cambios)
+    const interval = setInterval(() => {
+      setLastActiveTimestamp(prev => prev);
+    }, 30000);
+
+    // --- Función para Cargar Mensajes (ahora vive aquí) ---
+    const fetchMessages = async (token, id) => {
+      if (!token || !id) return;
+      setIsChatLoading(true);
+      setChatError(null);
+      try {
+        const res = await fetch(`${API}/chats/${token}/${id}`);
+        if (!res.ok) throw new Error("No se pudo cargar el chat");
+        const data = await res.json();
+        setChatMessages(data.messages || []);
+      } catch (err) { setChatError("⚠️ Error cargando mensajes"); }
+      finally { setIsChatLoading(false); }
+    };
+
+    // --- Conexión WebSocket Única ---
+    const connectWebSocket = () => {
+      if (wsRef.current) { wsRef.current.close(1000, "Reconectando"); }
+
+      // 1. URL base solo con publicId
+      let wsUrl = `${API.replace(/^http/, "ws")}/ws?publicId=${publicId}`;
+      
+      // 2. Si el chat está activo, carga sus mensajes y añade el anonToken al WS
+      if (activeChatInfo) {
+        wsUrl += `&anonTokens=${activeChatInfo.anonToken}`;
+        fetchMessages(activeChatInfo.anonToken, activeChatInfo.chatId);
+      } else {
+        // Si no hay chat, resetea el estado del chat
+        setIsChatLoading(false);
+        setChatMessages([]);
+        setChatError(null);
+      }
+
+      const ws = new WebSocket(wsUrl);
+      wsRef.current = ws;
+
+      ws.onopen = () => console.log(`WS (Public Page MAIN) conectado: ${wsUrl}`);
+      ws.onerror = (error) => console.error("WS (Public Page MAIN) error:", error);
+      ws.onclose = (event) => {
+        console.log(`WS (Public Page MAIN) disconnected. Code: ${event.code}.`);
+        if (![1000, 1008].includes(event.code)) {
+          console.log("Reconectando WS (MAIN)..."); 
+          setTimeout(connectWebSocket, 5000);
+        }
+      };
+
+      // --- Manejador de Mensajes Unificado ---
+      ws.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data);
+          
+          // Handler 1: Estado del Creador
+          if (msg.type === 'CREATOR_STATUS_UPDATE') {
+            setCreatorStatus(msg.status);
+            if (msg.status === 'offline') {
+              setLastActiveTimestamp(new Date().toISOString());
+            }
+          }
+
+          // Handler 2: Mensajes del Chat
+          // (Solo se activa si el chat está activo y el msg es para este chat)
+          if (activeChatInfo && msg.chatId === activeChatInfo.chatId) {
+            setChatMessages((prev) => {
+              // Evita duplicados
+              if (prev.some(m => m.id === msg.id)) return prev;
+              return [...prev, msg];
+            });
+          }
+        } catch (e) { console.error("Error processing WS (MAIN):", e); }
+      };
+    };
+
+    connectWebSocket();
+    
+    // Limpieza
+    return () => { 
+      clearInterval(interval);
+      if (wsRef.current) { 
+        wsRef.current.onclose = null; 
+        wsRef.current.close(1000, "Componente Page desmontado"); 
+        wsRef.current = null; 
+      } 
+    };
+    // El WS se reconectará si activeChatInfo cambia (cuando el usuario envía el 1er msg)
+  },[publicId, activeChatInfo]); 
+
+  
+  // --- Función para cerrar el modal (sin cambios) ---
+  const handleCloseGuide = useCallback(() => { setShowGuideModal(false); }, []);
+
+  // --- Función para cuando se crea el chat (sin cambios) ---
   const handleChatCreated = useCallback((newChatInfo) => {
     setActiveChatInfo(newChatInfo);
     setShowGuideModal(true);
@@ -155,11 +191,33 @@ export default function PublicPage() {
     }
   }, []);
 
-  // --- NUEVA FUNCIÓN para actualizar los mensajes del chat desde PublicChatView ---
-  const handleMessagesUpdated = useCallback((msgs) => {
-    setChatMessages(msgs);
-  }, []);
+  // --- NUEVO: Función para Enviar Mensajes ---
+  // Se pasará a PublicChatView para que la use
+  const handleSendMessage = async (content) => {
+    if (!activeChatInfo || !content.trim()) return;
+    const { anonToken, chatId } = activeChatInfo;
+    
+    try {
+      const res = await fetch(`${API}/chats/${anonToken}/${chatId}/messages`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content }),
+      });
+      
+      if (!res.ok) {
+        const d = await res.json();
+        throw new Error(d.error || "Error enviando el mensaje");
+      }
+      // No necesitamos hacer nada más. El mensaje de vuelta
+      // llegará por el WebSocket que *este* componente (page.jsx) ya está escuchando.
+      
+    } catch (err) {
+      console.error("Error enviando mensaje:", err);
+      // Aquí podrías guardar el error en un estado y pasarlo al chat
+      setChatError("⚠️ Error al enviar. Inténtalo de nuevo.");
+    }
+  };
 
+  // --- Estilos (sin cambios) ---
   const pageStyles = `
     .page-container {
       background: linear-gradient(-45deg, #0d0c22, #1a1a2e, #2c1a5c, #3c287c);
@@ -179,13 +237,33 @@ export default function PublicPage() {
     @keyframes fadeInUp { from { opacity: 0; transform: translateY(25px); } to { opacity: 1; transform: translateY(0); } }
     .staggered-fade-in-up { opacity: 0; animation: fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
     
+    .waiting-title-container {
+      margin-bottom: 25px;
+      text-align: center;
+      min-height: 40px; 
+    }
+    .waiting-title {
+      font-size: 22px; /* Tamaño que ajustaste */
+      font-weight: 800;
+      color: var(--text-primary);
+      text-shadow: 0 0 15px rgba(255,255,255,0.4);
+      animation: subtle-pulse-glow 2.5s ease-in-out infinite, fadeInUp 0.8s ease-out;
+      display: inline-flex; 
+      align-items: center;
+      gap: 8px;
+    }
+    .waiting-title .waiting-dots {
+      position: relative;
+      top: -2px;
+      margin-left: 0;
+    }
   `;
   
   const lastActiveDisplay = timeAgo(lastActiveTimestamp);
 
-  // --- Lógica para el título "Espera..." ---
+  // Lógica para el título "Espera..." (ahora usa los estados del padre)
   const lastMessage = chatMessages[chatMessages.length - 1];
-  const isWaitingForReplyTitle = activeChatInfo && chatMessages.length > 0 && (!lastMessage || lastMessage.from === 'anon');
+  const isWaitingForReplyTitle = activeChatInfo && !isChatLoading && chatMessages.length > 0 && (!lastMessage || lastMessage.from === 'anon');
 
   return (
     <>
@@ -201,7 +279,7 @@ export default function PublicPage() {
 
           {activeChatInfo ? (
             <>
-              {/* --- 👇 NUEVO: Título "Espera..." grande 👇 --- */}
+              {/* Título "Espera..." (sin cambios) */}
               <div className="waiting-title-container">
                 {isWaitingForReplyTitle && (
                   <h1 className="waiting-title">
@@ -210,18 +288,26 @@ export default function PublicPage() {
                   </h1>
                 )}
               </div>
-              {/* --- 👆 FIN TÍTULO "Espera..." 👆 --- */}
-
+              
+              {/* --- MODIFICADO: Pasa las nuevas props a PublicChatView --- */}
               <PublicChatView
-                chatInfo={activeChatInfo}
+                chatId={activeChatInfo.chatId}
+                anonToken={activeChatInfo.anonToken}
                 creatorStatus={creatorStatus}
                 lastActiveDisplay={lastActiveDisplay}
                 creatorName={creatorName || "el creador"}
-                // --- NUEVO: Pasa el callback para actualizar mensajes ---
-                onMessagesUpdated={handleMessagesUpdated}
+                
+                // Pasa el estado del chat
+                messages={chatMessages}
+                isLoading={isChatLoading}
+                error={chatError}
+                
+                // Pasa el manejador de envío
+                onSendMessage={handleSendMessage}
               />
             </>
           ) : (
+            // Formulario de primer mensaje (sin cambios)
             <>
               <h1 style={{ textAlign: 'center', marginBottom: '30px', fontSize: '26px', color: '#fff', fontWeight: 800, textShadow: '0 0 20px rgba(255, 255, 255, 0.3)', animation: 'fadeInUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards' }}>
                 Envíale un Mensaje Anónimo a {creatorName}
