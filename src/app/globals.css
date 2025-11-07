@@ -1929,3 +1929,114 @@ body {
 .waiting-dots span:nth-child(3) {
   animation-delay: 0.4s;
 }
+
+/* src/app/globals.css */
+
+/* ... (pega esto al final de tu archivo) ... */
+
+/*
+================================================================================
+|           SECCIÓN 14: ESTILOS PARA HEADER DE CHAT (ESTADO EN LÍNEA)            |
+================================================================================
+*/
+
+/* Contenedor del header en PublicChatView */
+.chat-view-header {
+  /* Hacemos que el botón (si existiera) y la info se alineen */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chat-header-info {
+  /* Contenedor para el H3 y el estado */
+  display: flex;
+  flex-direction: column;
+  gap: 4px; /* Espacio entre nombre y estado */
+}
+
+.chat-header-info h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.chat-header-status {
+  font-size: 13px;
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+
+.chat-header-status .status-online {
+  color: #2ECC71; /* Verde brillante */
+  text-shadow: 0 0 8px rgba(46, 204, 113, 0.7);
+}
+
+.chat-header-status .status-offline {
+  color: var(--text-secondary); /* Gris/tenue */
+  opacity: 0.8;
+}
+
+/*
+================================================================================
+|           SECCIÓN 15: ESTILOS PARA "ESPERANDO RESPUESTA" (EN CHAT)           |
+================================================================================
+*/
+
+.waiting-indicator {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  padding: 20px;
+  margin-top: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  animation: subtle-pulse-glow 2.5s ease-in-out infinite;
+}
+
+/* Reutilizamos los puntos de 'waiting-dots' que ya deberías tener */
+.waiting-dots {
+  flex-shrink: 0;
+  margin-left: 6px;
+  position: relative;
+  top: -4px;
+}
+
+.waiting-dots span {
+  display: inline-block;
+  animation: typing-dot-bounce 1.4s infinite;
+  padding: 0 1px;
+  font-weight: 900;
+  font-size: 1.2em;
+}
+
+.waiting-dots span:nth-child(1) { animation-delay: 0s; }
+.waiting-dots span:nth-child(2) { animation-delay: 0.2s; }
+.waiting-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+/* (Asegúrate de que las animaciones 'subtle-pulse-glow' 
+   y 'typing-dot-bounce' están en tu CSS) */
+@keyframes subtle-pulse-glow {
+  0%, 100% {
+    opacity: 0.8;
+    text-shadow: 0 0 8px var(--glow-accent-crimson-faint, rgba(201, 164, 255, 0.3));
+  }
+  50% {
+    opacity: 1;
+    text-shadow: 0 0 16px var(--glow-accent-crimson, rgba(201, 164, 255, 0.7));
+  }
+}
+
+@keyframes typing-dot-bounce {
+  0%, 80%, 100% {
+    transform: translateY(0);
+    opacity: 0.5;
+  }
+  40% {
+    transform: translateY(-6px);
+    opacity: 1;
+  }
+}

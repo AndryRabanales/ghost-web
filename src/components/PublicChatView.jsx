@@ -4,17 +4,15 @@ import React, { useEffect, useState, useRef, useCallback } from "react";
 
 const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
 
-// --- Componente Message interno para esta vista ---
+// --- Componente Message interno (sin cambios) ---
 const Message = ({ msg, creatorName }) => {
   const isCreator = msg.from === "creator";
-  const senderName = isCreator ? creatorName : "Tú"; // Anónimo siempre es "Tú" aquí
+  const senderName = isCreator ? creatorName : "Tú"; 
 
   return (
-    // Alineación: Creador a la izquierda ('anon'), Anónimo a la derecha ('creator')
     <div className={`message-bubble-wrapper ${isCreator ? 'anon' : 'creator'}`}>
       <div>
         <div className="message-alias">{senderName}</div>
-        {/* Estilo: Creador gris ('anon'), Anónimo púrpura ('creator') */}
         <div className={`message-bubble ${isCreator ? 'anon' : 'creator'}`}>
           {msg.content}
         </div>
@@ -23,18 +21,26 @@ const Message = ({ msg, creatorName }) => {
   );
 };
 
-// --- Componente Principal PublicChatView ---
-export default function PublicChatView({ chatInfo, onBack }) {
-  const { anonToken, chatId, creatorName: initialCreatorName } = chatInfo;
+// --- Componente Principal PublicChatView (MODIFICADO) ---
+export default function PublicChatView({ 
+  chatInfo, 
+  // MODIFICADO: Nuevas props para estado
+  creatorStatus, 
+  lastActiveDisplay,
+  creatorName 
+}) {
+  
+  const { anonToken, chatId } = chatInfo;
   const [messages, setMessages] = useState([]);
   const [newMsg, setNewMsg] = useState("");
-  const [creatorName, setCreatorName] = useState(initialCreatorName || "Respuesta");
+  // ELIMINADO: creatorName ahora es una prop
+  // const [creatorName, setCreatorName] = useState(initialCreatorName || "Respuesta");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const bottomRef = useRef(null);
   const wsRef = useRef(null);
 
-  // Función para marcar el chat como leído en localStorage
+  // ... (markChatAsRead y useEffect de scroll sin cambios) ...
   const markChatAsRead = useCallback(() => {
     try {
       const storedChats = JSON.parse(localStorage.getItem("myChats") || "[]");
@@ -47,35 +53,36 @@ export default function PublicChatView({ chatInfo, onBack }) {
     } catch (e) { console.error("Error updating localStorage:", e); }
   }, [chatId, anonToken]);
 
-  // Scroll y marcar como leído
   useEffect(() => {
-    markChatAsRead(); // Marcar como leído al entrar
+    markChatAsRead(); 
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, markChatAsRead]);
+
 
   // Cargar mensajes iniciales y conectar WebSocket
   useEffect(() => {
     const fetchMessages = async () => {
       try {
         setLoading(true);
-        setError(null); // Limpiar errores previos
+        setError(null);
         const res = await fetch(`${API}/chats/${anonToken}/${chatId}`);
         if (!res.ok) throw new Error("No se pudo cargar el chat");
         const data = await res.json();
         setMessages(data.messages || []);
-        if (data.creatorName) setCreatorName(data.creatorName);
+        // ELIMINADO: setCreatorName (ya viene por props)
+        // if (data.creatorName) setCreatorName(data.creatorName);
       } catch (err) { setError("⚠️ Error cargando mensajes"); }
       finally { setLoading(false); }
     };
     fetchMessages();
 
-    // --- Conexión WebSocket ---
-    if (wsRef.current) { // Cerrar conexión previa si existe
+    // --- Conexión WebSocket (sin cambios, es correcta) ---
+    if (wsRef.current) { 
       wsRef.current.onclose = null;
       wsRef.current.close(1000, "Componente re-montado");
     }
 
-    const anonTokensString = anonToken; // El backend espera 'anonTokens'
+    const anonTokensString = anonToken;
     const wsUrl = `${API.replace(/^http/, "ws")}/ws?anonTokens=${anonTokensString}`;
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
@@ -83,14 +90,11 @@ export default function PublicChatView({ chatInfo, onBack }) {
     ws.onmessage = (event) => {
       try {
         const msg = JSON.parse(event.data);
-        // Asegurarse de que el mensaje es para ESTE chat específico
         if (msg.chatId === chatId) {
           setMessages((prev) => {
-            // Evitar duplicados si el mensaje ya existe
             if (prev.some(m => m.id === msg.id)) return prev;
             return [...prev, msg];
           });
-          // Marcar como leído si la ventana/tab está visible
           if (document.visibilityState === 'visible') markChatAsRead();
         }
       } catch (e) { console.error("Error procesando WebSocket (Chat View):", e); }
@@ -100,35 +104,32 @@ export default function PublicChatView({ chatInfo, onBack }) {
     ws.onerror = (error) => console.error("WebSocket (Chat View) error:", error);
     ws.onclose = (event) => {
       console.log(`WebSocket (Chat View) desconectado de chat ${chatId}. Code: ${event.code}.`);
-      if (event.code === 1008) { // Código de cierre por política violada (token inválido?)
+      if (event.code === 1008) { 
         setError("La sesión de chat expiró o fue rechazada.");
       }
-      // Podrías intentar reconectar aquí si no es un cierre limpio (código 1000)
     };
 
-    // Limpieza al desmontar
     return () => {
       if (wsRef.current) {
-        wsRef.current.onclose = null; // Evitar que onclose se dispare después de desmontar
+        wsRef.current.onclose = null; 
         wsRef.current.close(1000, "Componente desmontado limpiamente");
         wsRef.current = null;
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chatId, anonToken]); // Dependencias clave para recargar/reconectar si cambian
+  }, [chatId, anonToken]);
 
-  // Enviar mensaje anónimo
+  // ... (handleSend sin cambios) ...
   const handleSend = async (e) => {
     e.preventDefault();
     if (!newMsg.trim()) return;
     const tempMsgContent = newMsg;
-    setNewMsg(""); // Limpiar input visualmente
+    setNewMsg(""); 
     try {
       const res = await fetch(`${API}/chats/${anonToken}/${chatId}/messages`, {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content: tempMsgContent }),
       });
-      // No necesitamos añadir el mensaje aquí, esperamos que llegue por WebSocket
       if (!res.ok) {
         const d = await res.json();
         throw new Error(d.error || "Error enviando el mensaje");
@@ -136,23 +137,61 @@ export default function PublicChatView({ chatInfo, onBack }) {
     } catch (err) {
       console.error("Error enviando mensaje:", err);
       setError("⚠️ Error al enviar el mensaje. Inténtalo de nuevo.");
-      setNewMsg(tempMsgContent); // Restaurar el texto si falla
+      setNewMsg(tempMsgContent);
     }
   };
+
+  // --- INSTRUCCIÓN 1: Lógica para "Esperando respuesta" ---
+  const lastMessage = messages[messages.length - 1];
+  const isWaitingForReply = !loading && messages.length > 0 && (!lastMessage || lastMessage.from === 'anon');
+  const showEmptyChatPlaceholder = !loading && messages.length === 0 && !error;
+
 
   // Renderizado
   return (
     <div className="public-chat-view">
+      {/* --- MODIFICADO: Header del Chat --- */}
       <div className="chat-view-header">
-        <h3>Chat con {creatorName}</h3>
-        <button onClick={onBack} className="back-button">← Volver</button>
+        <div className="chat-header-info">
+          <h3>Chat con {creatorName}</h3>
+          {/* --- INSTRUCCIÓN 2: Estado En Línea --- */}
+          <div className="chat-header-status">
+            {creatorStatus === 'online' ? (
+              <span className="status-online">En línea 🟢</span>
+            ) : lastActiveDisplay ? (
+              <span className="status-offline">Activo {lastActiveDisplay} ⚪</span>
+            ) : (
+              // Placeholder mientras carga
+              <span className="status-offline" style={{opacity: 0.6}}>...</span>
+            )}
+          </div>
+        </div>
+        
+        {/* ELIMINADO: Botón "Volver" */}
+        {/* <button onClick={onBack} className="back-button">← Volver</button> */}
       </div>
+
       <div className="messages-display">
         {loading && <p style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>Cargando mensajes...</p>}
         {error && <p style={{ color: '#ff7b7b', textAlign: 'center' }}>{error}</p>}
+        
         {messages.map((m) => (
           <Message key={m.id || Math.random()} msg={m} creatorName={creatorName} />
         ))}
+
+        {/* --- INSTRUCCIÓN 1: Placeholder de "Esperando" --- */}
+        {showEmptyChatPlaceholder && (
+          <div className="waiting-indicator">
+            ¡Envía el primer mensaje para iniciar el chat!
+          </div>
+        )}
+        {isWaitingForReply && (
+          <div className="waiting-indicator">
+            Espera a que {creatorName} te responda
+            <span className="waiting-dots"><span>.</span><span>.</span><span>.</span></span>
+          </div>
+        )}
+        
         <div ref={bottomRef} /> {/* Referencia para scroll */}
       </div>
       <form onSubmit={handleSend} className="chat-reply-form">
