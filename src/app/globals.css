@@ -2040,3 +2040,71 @@ body {
     opacity: 1;
   }
 }
+
+/* src/app/globals.css */
+
+/* ... (pega esto al final de tu archivo) ... */
+
+/*
+================================================================================
+|           SECCIÓN 16: INDICADOR EN LÍNEA (LISTA DE CHATS)                    |
+================================================================================
+*/
+
+.online-indicator-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  background-color: #2ECC71; /* Verde brillante */
+  border-radius: 50%;
+  margin-left: 8px;
+  vertical-align: middle;
+  box-shadow: 0 0 10px rgba(46, 204, 113, 0.8);
+  animation: pulse-online-dot 1.5s infinite;
+}
+
+@keyframes pulse-online-dot {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.7;
+  }
+}
+
+/*
+================================================================================
+|           SECCIÓN 14: ESTILOS PARA HEADER DE CHAT (ESTADO EN LÍNEA)          |
+|           (Asegúrate de que esto ya exista de la vez anterior)             |
+================================================================================
+*/
+
+.chat-header-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px; /* Espacio entre nombre y estado */
+}
+
+.chat-header-info h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.chat-header-status {
+  font-size: 13px;
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+
+.chat-header-status .status-online {
+  color: #2ECC71; /* Verde brillante */
+  text-shadow: 0 0 8px rgba(46, 204, 113, 0.7);
+}
+
+.chat-header-status .status-offline {
+  color: var(--text-secondary); /* Gris/tenue */
+  opacity: 0.8;
+}
