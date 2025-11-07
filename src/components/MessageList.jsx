@@ -212,8 +212,12 @@ export default function MessageList({ dashboardId }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dashboardId]);
 
-  const animationStyle = (index) => ( /* ... (sin cambios) ... */ );
-
+  const animationStyle = (index) => ({
+    animation: `fadeInUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards`,
+    animationDelay: `${0.1 * index}s`,
+    opacity: 0,
+  });
+  
   return (
     <div>
       <h2 style={{ fontSize: '28px', color: '#fff', borderBottom: '1px solid var(--border-color-faint)', paddingBottom: '15px', marginBottom: '20px', fontWeight: 'bold' }}>
