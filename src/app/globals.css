@@ -2126,7 +2126,7 @@ body {
 }
 
 .waiting-title {
-  font-size: 28px; /* Título grande */
+  font-size: 16px; /* Título grande */
   font-weight: 800;
   color: var(--text-primary); /* Color principal del texto */
   text-shadow: 0 0 15px rgba(255,255,255,0.4); /* Resplandor suave */
@@ -2144,7 +2144,7 @@ body {
 
 /* Reutilizamos las animaciones de .waiting-dots y subtle-pulse-glow 
    que ya deberías tener definidas en este archivo. Si no las tienes, asegúrate de añadirlas: */
-/*
+
 @keyframes subtle-pulse-glow {
   0%, 100% { opacity: 0.8; text-shadow: 0 0 8px rgba(201, 164, 255, 0.3); }
   50% { opacity: 1; text-shadow: 0 0 16px rgba(201, 164, 255, 0.7); }
@@ -2156,4 +2156,3 @@ body {
 }
 
 @keyframes fadeInUp { from { opacity: 0; transform: translateY(25px); } to { opacity: 1; transform: translateY(0); } }
-*/
