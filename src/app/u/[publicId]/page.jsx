@@ -179,28 +179,6 @@ export default function PublicPage() {
     @keyframes fadeInUp { from { opacity: 0; transform: translateY(25px); } to { opacity: 1; transform: translateY(0); } }
     .staggered-fade-in-up { opacity: 0; animation: fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
     
-    /* --- NUEVOS ESTILOS PARA EL TÍTULO DE ESPERA --- */
-    .waiting-title-container {
-      margin-bottom: 25px; /* Espacio antes del chat */
-      text-align: center;
-      min-height: 40px; /* Para evitar saltos de layout */
-    }
-    .waiting-title {
-      font-size: 28px; /* Título grande */
-      font-weight: 800;
-      color: var(--text-primary);
-      text-shadow: 0 0 15px rgba(255,255,255,0.4);
-      animation: subtle-pulse-glow 2.5s ease-in-out infinite, fadeInUp 0.8s ease-out;
-      display: inline-flex; /* Para los puntos de espera */
-      align-items: center;
-      gap: 8px;
-    }
-    .waiting-title .waiting-dots {
-      position: relative;
-      top: -2px; /* Ajuste vertical de los puntos */
-      margin-left: 0;
-    }
-    /* Reutilizamos las animaciones de .waiting-dots que ya tenemos en globals.css */
   `;
   
   const lastActiveDisplay = timeAgo(lastActiveTimestamp);

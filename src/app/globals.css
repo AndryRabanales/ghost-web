@@ -2126,7 +2126,7 @@ body {
 }
 
 .waiting-title {
-  font-size: 16px; /* Título grande */
+  font-size: 19px; /* Título grande */
   font-weight: 800;
   color: var(--text-primary); /* Color principal del texto */
   text-shadow: 0 0 15px rgba(255,255,255,0.4); /* Resplandor suave */
