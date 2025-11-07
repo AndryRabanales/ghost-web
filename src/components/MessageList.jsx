@@ -88,8 +88,13 @@ const ChatItem = ({ chat, onOpenChat, disabled, minutesNext, isOnline }) => {
   );
 };
 
-// --- Icono de Fantasma (sin cambios) ---
-const EmptyInboxIcon = () => ( /* ... */ );
+
+// --- Icono de Fantasma para la bandeja vacía (SIN CAMBIOS) ---
+const EmptyInboxIcon = () => (
+  <svg className="empty-inbox-icon" width="64" height="64" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+    <path d="M5.29241 12.7238C4.24584 10.2965 5.06019 7.40698 7.12053 5.61865C9.18087 3.83032 12.0673 3.36383 14.545 4.39088C17.0227 5.41793 18.6739 7.74542 18.7198 10.4387C18.7656 13.1319 17.2023 15.5168 14.809 16.67L15 18H9C6.46667 18 5 19.4667 5 22H19V21.5C18.0253 20.5222 17.5025 19.2433 17.5 17.9142C17.5 16.5 18 15 19 14C19 14 19 11 17 10C15 9 14 10 14 10C14 10 13 8 11 9C9 10 8 12 8 12C6.89543 12 6 12.8954 6 14C6 15.1046 6.89543 16 8 16H9.1909C6.79773 14.8432 5.23444 12.4583 5.29241 9.76506C5.35038 7.07183 6.97728 4.74433 9.45498 3.71728C11.9327 2.69023 14.8191 3.15672 16.8795 4.94505C18.9398 6.73338 19.7542 9.62291 18.7076 12.0502" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
 
 // --- COMPONENTE PRINCIPAL MessageList (MODIFICADO) ---
 export default function MessageList({ dashboardId }) {
