@@ -23,32 +23,28 @@ export default function PublicPage() {
   }
 
   // --- Estados ---
-  // MODIFICADO: 'activeChatInfo' guarda el *único* chat activo.
   const [activeChatInfo, setActiveChatInfo] = useState(null);
   const [showGuideModal, setShowGuideModal] = useState(false);
   const [creatorName, setCreatorName] = useState("el creador");
-  
-  // --- Estados de Presencia (se mantienen aquí) ---
-  const [creatorStatus, setCreatorStatus] = useState(null); 
+  const [creatorStatus, setCreatorStatus] = useState(null);
   const [lastActiveTimestamp, setLastActiveTimestamp] = useState(null);
   
+  // --- NUEVO ESTADO para los mensajes del chat activo ---
+  // Necesitamos saber los mensajes para decidir si mostrar el "espera..."
+  const [chatMessages, setChatMessages] = useState([]); 
+
   const wsRef = useRef(null);
 
-  // --- Timer para actualizar el "hace..." ---
   useEffect(() => {
     const interval = setInterval(() => {
-      // Forzamos un re-render para actualizar el timeAgo
       setLastActiveTimestamp(prev => prev);
-    }, 30000); // 30 segundos
+    }, 30000);
     return () => clearInterval(interval);
   }, []);
 
-  // --- MODIFICADO: loadActiveChat ---
-  // Esta función ahora busca el ÚNICO chat para este creatorPublicId
   const loadActiveChat = useCallback(() => {
     try {
       const stored = JSON.parse(localStorage.getItem("myChats") || "[]");
-      // Busca el chat que coincida con el publicId de esta página
       const foundChat = stored.find(chat => chat.creatorPublicId === publicId);
       
       if (foundChat) {
@@ -64,8 +60,6 @@ export default function PublicPage() {
     }
   }, [publicId]);
 
-  // --- MODIFICADO: useEffect de carga inicial ---
-  // Carga el chat activo (si existe) al iniciar la página
   useEffect(() => {
     const chat = loadActiveChat();
     if (chat) {
@@ -74,9 +68,6 @@ export default function PublicPage() {
   }, [loadActiveChat]);
 
 
-  // --- WebSocket useEffect (SIMPLIFICADO) ---
-  // Este WebSocket ahora SOLO se preocupa del estado del creador.
-  // La vista de chat (PublicChatView) manejará sus propios mensajes.
   useEffect(() => {
     const connectWebSocket = () => {
       if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
@@ -84,7 +75,6 @@ export default function PublicPage() {
         wsRef.current.close(1000, "Nueva conexión de página");
       }
       
-      // Solo nos conectamos al publicId para el estado "activo"
       const wsUrl = `${API.replace(/^http/, "ws")}/ws?publicId=${publicId}`;
       
       const ws = new WebSocket(wsUrl);
@@ -103,14 +93,19 @@ export default function PublicPage() {
         try {
           const msg = JSON.parse(event.data);
           
-          // --- Manejador de Estado del Creador ---
           if (msg.type === 'CREATOR_STATUS_UPDATE') {
-            console.log("WS (Public Page) Status Update:", msg);
-            setCreatorStatus(msg.status); // 'online' o 'offline'
-            
+            setCreatorStatus(msg.status);
             if (msg.status === 'offline') {
               setLastActiveTimestamp(new Date().toISOString());
             }
+          }
+          // --- MODIFICADO: También escucha mensajes si el chat está activo ---
+          // Necesitamos esto para actualizar 'chatMessages' y el título de "espera..."
+          if (activeChatInfo && msg.chatId === activeChatInfo.chatId && msg.type === 'message') {
+            setChatMessages(prev => {
+              if (prev.some(m => m.id === msg.id)) return prev;
+              return [...prev, msg];
+            });
           }
         } catch (e) { console.error("Error processing WS (Status):", e); }
       };
@@ -125,11 +120,11 @@ export default function PublicPage() {
         wsRef.current = null; 
       } 
     };
-  },[publicId]); // Solo depende de publicId
+    // Añadimos activeChatInfo para que el WS se reconecte si se inicializa el chat
+  },[publicId, activeChatInfo]); 
 
   const handleCloseGuide = useCallback(() => { setShowGuideModal(false); }, []);
 
-  // --- Carga inicial de datos del Creador (Nombre y Actividad) ---
   useEffect(() => {
     if (!publicId) return;
     const fetchCreatorInfo = async () => {
@@ -137,7 +132,6 @@ export default function PublicPage() {
         const res = await fetch(`${API}/public/${publicId}/info`); 
         if (res.ok) {
           const data = await res.json();
-          // Solo actualiza el nombre si no lo hemos cargado ya desde el chat
           if (data.name) {
             setCreatorName(prev => (prev === "el creador" ? data.name : prev));
           }
@@ -153,16 +147,19 @@ export default function PublicPage() {
   }, [publicId, setCreatorName]);
 
 
-  // --- NUEVO: Manejador para cuando se crea el chat ---
   const handleChatCreated = useCallback((newChatInfo) => {
-    setActiveChatInfo(newChatInfo); // Muestra la vista de chat
-    setShowGuideModal(true);      // Muestra la guía
+    setActiveChatInfo(newChatInfo);
+    setShowGuideModal(true);
     if (newChatInfo.creatorName) {
-      setCreatorName(newChatInfo.creatorName); // Actualiza el nombre
+      setCreatorName(newChatInfo.creatorName);
     }
   }, []);
 
-  // ... (pageStyles sin cambios) ...
+  // --- NUEVA FUNCIÓN para actualizar los mensajes del chat desde PublicChatView ---
+  const handleMessagesUpdated = useCallback((msgs) => {
+    setChatMessages(msgs);
+  }, []);
+
   const pageStyles = `
     .page-container {
       background: linear-gradient(-45deg, #0d0c22, #1a1a2e, #2c1a5c, #3c287c);
@@ -181,10 +178,36 @@ export default function PublicPage() {
     .create-space-link:hover svg { transform: scale(1.1); }
     @keyframes fadeInUp { from { opacity: 0; transform: translateY(25px); } to { opacity: 1; transform: translateY(0); } }
     .staggered-fade-in-up { opacity: 0; animation: fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+    
+    /* --- NUEVOS ESTILOS PARA EL TÍTULO DE ESPERA --- */
+    .waiting-title-container {
+      margin-bottom: 25px; /* Espacio antes del chat */
+      text-align: center;
+      min-height: 40px; /* Para evitar saltos de layout */
+    }
+    .waiting-title {
+      font-size: 28px; /* Título grande */
+      font-weight: 800;
+      color: var(--text-primary);
+      text-shadow: 0 0 15px rgba(255,255,255,0.4);
+      animation: subtle-pulse-glow 2.5s ease-in-out infinite, fadeInUp 0.8s ease-out;
+      display: inline-flex; /* Para los puntos de espera */
+      align-items: center;
+      gap: 8px;
+    }
+    .waiting-title .waiting-dots {
+      position: relative;
+      top: -2px; /* Ajuste vertical de los puntos */
+      margin-left: 0;
+    }
+    /* Reutilizamos las animaciones de .waiting-dots que ya tenemos en globals.css */
   `;
   
-  // Calcula el string "hace X" en cada render
   const lastActiveDisplay = timeAgo(lastActiveTimestamp);
+
+  // --- Lógica para el título "Espera..." ---
+  const lastMessage = chatMessages[chatMessages.length - 1];
+  const isWaitingForReplyTitle = activeChatInfo && chatMessages.length > 0 && (!lastMessage || lastMessage.from === 'anon');
 
   return (
     <>
@@ -198,27 +221,35 @@ export default function PublicPage() {
 
         <div style={{ maxWidth: 520, width: '100%' }}>
 
-          {/* --- MODIFICADO: Lógica de Renderizado --- */}
           {activeChatInfo ? (
-            // --- 3. SI HAY CHAT, MUESTRA LA VISTA DE CHAT ---
-            <PublicChatView
-              chatInfo={activeChatInfo}
-              // ELIMINADO: onBack ya no es necesario, el usuario se queda aquí.
-              
-              // --- INSTRUCCIÓN 2: Pasa el estado y nombre del creador ---
-              creatorStatus={creatorStatus}
-              lastActiveDisplay={lastActiveDisplay}
-              creatorName={creatorName || "el creador"}
-            />
+            <>
+              {/* --- 👇 NUEVO: Título "Espera..." grande 👇 --- */}
+              <div className="waiting-title-container">
+                {isWaitingForReplyTitle && (
+                  <h1 className="waiting-title">
+                    Espera a que {creatorName} te responda
+                    <span className="waiting-dots"><span>.</span><span>.</span><span>.</span></span>
+                  </h1>
+                )}
+              </div>
+              {/* --- 👆 FIN TÍTULO "Espera..." 👆 --- */}
+
+              <PublicChatView
+                chatInfo={activeChatInfo}
+                creatorStatus={creatorStatus}
+                lastActiveDisplay={lastActiveDisplay}
+                creatorName={creatorName || "el creador"}
+                // --- NUEVO: Pasa el callback para actualizar mensajes ---
+                onMessagesUpdated={handleMessagesUpdated}
+              />
+            </>
           ) : (
-            // --- 2. SI NO HAY CHAT, MUESTRA EL FORMULARIO ---
             <>
               <h1 style={{ textAlign: 'center', marginBottom: '30px', fontSize: '26px', color: '#fff', fontWeight: 800, textShadow: '0 0 20px rgba(255, 255, 255, 0.3)', animation: 'fadeInUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards' }}>
                 Envíale un Mensaje Anónimo a {creatorName}
               </h1>
               <AnonMessageForm
                 publicId={publicId}
-                // MODIFICADO: Llama a handleChatCreated al éxito
                 onChatCreated={handleChatCreated}
               />
               <div className="create-space-link-container staggered-fade-in-up" style={{ animationDelay: '0.8s' }}>
@@ -227,9 +258,6 @@ export default function PublicPage() {
                   Crear tu propio espacio
                 </a>
               </div>
-
-              {/* ELIMINADO: Toda la sección <div ref={chatsListRef} ...> y 
-                  la lista de chats (myChats.map) se han quitado. */}
             </>
           )}
         </div>
