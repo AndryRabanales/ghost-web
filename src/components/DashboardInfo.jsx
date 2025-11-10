@@ -1,7 +1,6 @@
 // src/components/DashboardInfo.jsx
 "use client";
 import { useState, useEffect } from "react";
-import LivesStatus from "./LivesStatus";
 import PremiumButton from "./PremiumButton";
 
 const CopyIcon = () => (
@@ -80,7 +79,6 @@ export default function DashboardInfo({ creator, onChange }) {
         </div>
         
         <div className="dashboard-side-content">
-          <LivesStatus creator={creator} />
           <PremiumButton creator={creator} onChange={onChange} />
         </div>
       </div>
