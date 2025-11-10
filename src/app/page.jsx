@@ -51,15 +51,16 @@ export default function HomePage() {
       <main className="auth-card">
         
         {/* --- INICIO DE LA MODIFICACIÓN --- */}
-        {/* Texto de bienvenida de la imagen */}
+        {/* Texto de bienvenida centrado */}
         <h1 style={{
-          fontSize: '30px',
+          fontSize: '44px',
           fontWeight: '800',
           letterSpacing: '-2.5px',
           background: 'linear-gradient(90deg, #8e2de2, #c9a4ff)',
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
-          margin: '0 0 15px'
+          margin: '0 0 15px',
+          textAlign: 'center' // <-- CORRECCIÓN AÑADIDA
         }}>
           Inicia sesión
         </h1>
@@ -68,7 +69,8 @@ export default function HomePage() {
           fontSize: '18px',
           margin: '0 auto 30px',
           lineHeight: '1.7',
-          maxWidth: '350px'
+          maxWidth: '350px',
+          textAlign: 'center' // <-- CORRECCIÓN AÑADIDA
         }}>
           Crea tu espacio anónimo, compártelo y descubre lo que otros realmente piensan.
         </p>
