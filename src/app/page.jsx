@@ -53,7 +53,7 @@ export default function HomePage() {
         {/* --- INICIO DE LA MODIFICACIÓN --- */}
         {/* Texto de bienvenida de la imagen */}
         <h1 style={{
-          fontSize: '44px',
+          fontSize: '30px',
           fontWeight: '800',
           letterSpacing: '-2.5px',
           background: 'linear-gradient(90deg, #8e2de2, #c9a4ff)',
@@ -61,7 +61,7 @@ export default function HomePage() {
           WebkitTextFillColor: 'transparent',
           margin: '0 0 15px'
         }}>
-          Inicia la Conversación.
+          Inicia sesión
         </h1>
         <p style={{
           color: 'rgba(235, 235, 245, 0.6)',
