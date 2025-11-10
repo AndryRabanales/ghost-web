@@ -10,6 +10,10 @@ export default function RegisterPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  
+  // --- AÑADIDO ---
+  const [confirmPassword, setConfirmPassword] = useState(""); 
+  
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -17,6 +21,14 @@ export default function RegisterPage() {
     e.preventDefault();
     setLoading(true);
     setError(null);
+
+    // --- AÑADIDO: Validación de contraseña ---
+    if (password !== confirmPassword) {
+      setError("Las contraseñas no coinciden.");
+      setLoading(false);
+      return;
+    }
+    // --- FIN DE LA VALIDACIÓN ---
 
     try {
       const guestToken = localStorage.getItem("token");
@@ -82,13 +94,25 @@ export default function RegisterPage() {
             required
             className="auth-input"
           />
+          
+          {/* --- CAMPO AÑADIDO --- */}
+          <input
+            type="password"
+            placeholder="Repite tu contraseña"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            required
+            className="auth-input"
+          />
+          {/* --- FIN DEL CAMPO --- */}
+
           <button type="submit" disabled={loading} className="auth-button">
             {loading ? "Creando..." : "Registrarse"}
           </button>
           {error && <p className="auth-error">{error}</p>}
         </form>
         <p className="auth-footer-link">
-          ¿Ya tienes una cuenta? <a href="/login">Inicia sesión</a>
+          ¿Ya tienes una cuenta? <a href="/">Inicia sesión</a>
         </p>
       </main>
     </div>
