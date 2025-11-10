@@ -4,15 +4,75 @@ import { useState, useEffect } from "react";
 
 const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
 
-// MODIFICADO: Cambiadas las props
+// --- INICIO: NUEVO COMPONENTE INTERNO ---
+/**
+ * Un componente simple para seleccionar montos de propina (simulados)
+ */
+const TipSelector = ({ selectedAmount, onSelect }) => {
+  const tipOptions = [20, 50, 100]; // Montos simulados en MXN
+
+  // Estilo base del botón de propina
+  const buttonStyle = (amount) => ({
+    padding: '8px 12px',
+    fontSize: '14px',
+    fontWeight: 'bold',
+    // Cambia el estilo si está seleccionado
+    color: selectedAmount === amount ? '#fff' : 'var(--glow-accent-crimson, #c9a4ff)',
+    background: selectedAmount === amount ? 'linear-gradient(90deg, #8e2de2, #4a00e0)' : 'rgba(255, 255, 255, 0.05)',
+    border: selectedAmount === amount ? '1px solid #8e2de2' : '1px solid rgba(255, 255, 255, 0.1)',
+    borderRadius: '10px',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+  });
+
+  // Estilo del contenedor de botones
+  const containerStyle = {
+    display: 'flex',
+    gap: '10px',
+    justifyContent: 'center',
+    margin: '15px 0 5px 0' // Espacio entre el contador y el botón de envío
+  };
+
+  const labelStyle = {
+    fontSize: '13px',
+    color: 'var(--text-secondary)',
+    marginBottom: '10px',
+    textAlign: 'center'
+  };
+
+  return (
+    <div>
+      <p style={labelStyle}>¿Adjuntar propina? (Simulado)</p>
+      <div style={containerStyle}>
+        {tipOptions.map((amount) => (
+          <button
+            key={amount}
+            type="button" // Importante: previene que el botón envíe el formulario
+            style={buttonStyle(amount)}
+            // Lógica de Toggle: Si se presiona el mismo, se deselecciona (vuelve a 0)
+            onClick={() => onSelect(selectedAmount === amount ? 0 : amount)} 
+          >
+            ${amount} MXN
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
+// --- FIN: NUEVO COMPONENTE INTERNO ---
+
+
 export default function AnonMessageForm({ publicId, onChatCreated }) {
   const [alias, setAlias] = useState("");
   const [content, setContent] = useState("");
+  
+  // --- ESTADO AÑADIDO ---
+  const [tipAmount, setTipAmount] = useState(0); 
+
   const [status, setStatus] = useState("idle");
   const [errorMsg, setErrorMsg] = useState("");
   const [charCount, setCharCount] = useState(0);
   const [isMounted, setIsMounted] = useState(false);
-  // ELIMINADO: lastSentChatInfo ya no es necesario aquí
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -35,7 +95,12 @@ export default function AnonMessageForm({ publicId, onChatCreated }) {
       const res = await fetch(`${API}/public/${publicId}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ alias, content }),
+        // --- MODIFICADO: Payload ahora incluye tipAmount ---
+        body: JSON.stringify({ 
+          alias, 
+          content,
+          tipAmount // <-- Aquí se envía la propina
+        }),
       });
 
       const data = await res.json();
@@ -44,14 +109,9 @@ export default function AnonMessageForm({ publicId, onChatCreated }) {
       setStatus("success");
 
       if (data.chatId && data.anonToken) {
-        // --- MODIFICADO: Lógica de guardado ---
-        // Ahora solo guardamos UN chat por creatorPublicId.
-        
+        // ... (lógica de guardado en localStorage sin cambios) ...
         const myChats = JSON.parse(localStorage.getItem("myChats") || "[]");
-        
-        // Filtra cualquier chat *anterior* con este mismo creador
         const otherChats = myChats.filter(chat => chat.creatorPublicId !== publicId);
-
         const newChatEntry = {
           chatId: data.chatId,
           anonToken: data.anonToken,
@@ -63,22 +123,13 @@ export default function AnonMessageForm({ publicId, onChatCreated }) {
           hasNewReply: false, 
           previewFrom: 'anon' 
         };
-
-        // Añade el nuevo chat al principio de la lista filtrada
         const updatedChats = [newChatEntry, ...otherChats];
         localStorage.setItem("myChats", JSON.stringify(updatedChats));
 
-        // --- MODIFICADO: Llama al nuevo callback ---
-        // Pasa la información del chat recién creado al componente padre
         if (typeof onChatCreated === "function") {
           onChatCreated(newChatEntry);
         }
       }
-
-      // NO limpiamos el contenido aquí, el componente se va a desmontar
-      // setContent(""); 
-      // setCharCount(0); 
-
     } catch (err) {
       setStatus("error");
       setErrorMsg(err.message);
@@ -110,8 +161,17 @@ export default function AnonMessageForm({ publicId, onChatCreated }) {
           <div className="char-counter">
             {charCount} / 500
           </div>
+          
+          {/* --- BLOQUE AÑADIDO --- */}
+          <TipSelector 
+            selectedAmount={tipAmount}
+            onSelect={setTipAmount}
+          />
+          {/* --- FIN DEL BLOQUE --- */}
+
         <button type="submit" disabled={status === "loading" || !content.trim()} className="submit-button">
-          {status === "loading" ? "Enviando..." : "Enviar Mensaje"}
+          {/* --- MODIFICADO: El texto del botón cambia si hay propina --- */}
+          {status === "loading" ? "Enviando..." : (tipAmount > 0 ? `Enviar Mensaje +$${tipAmount}` : "Enviar Mensaje")}
         </button>
       </form>
 

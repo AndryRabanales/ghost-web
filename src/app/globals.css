@@ -2156,3 +2156,117 @@ body {
 }
 
 @keyframes fadeInUp { from { opacity: 0; transform: translateY(25px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ... (pega esto al final de tu archivo globals.css) ... */
+
+/*
+================================================================================
+|           SECCIÓN 18: RESUMEN DE BALANCE (DASHBOARD)                 |
+================================================================================
+*/
+
+.balance-container {
+  background: rgba(13, 12, 34, 0.7); /* Fondo oscuro #0d0c22 */
+  border: 1px solid var(--border-color-faint);
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 15px; /* Espacio antes del botón Premium */
+  box-shadow: inset 0 0 15px rgba(142, 45, 226, 0.1);
+}
+
+.balance-title {
+  font-size: 1.1em;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-top: 0;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.balance-section {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 15px;
+  border-radius: 12px;
+  background-color: rgba(0,0,0,0.2);
+}
+
+.balance-section.available {
+  /* Usamos los colores de 'success' que ya tenías */
+  border: 1px solid var(--success-glow, rgba(0, 255, 128, 0.4));
+}
+
+.balance-section.pending {
+  border: 1px solid var(--border-color-faint);
+  margin-top: 10px;
+  opacity: 0.8;
+}
+
+.balance-icon {
+  flex-shrink: 0;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.balance-section.available .balance-icon {
+  color: var(--success-solid, #00ff80);
+}
+.balance-section.pending .balance-icon {
+  color: var(--text-secondary);
+}
+
+.balance-details {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.balance-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 2px;
+}
+
+.balance-amount {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.withdraw-button {
+  background: var(--success-solid, #00ff80);
+  color: #0d0c22; /* Texto oscuro para contrastar con el verde */
+  border: none;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.withdraw-button:hover:not(:disabled) {
+  transform: scale(1.05);
+  box-shadow: 0 0 15px var(--success-glow, rgba(0, 255, 128, 0.4));
+}
+
+.withdraw-button:disabled {
+  background: #3a3a4c;
+  color: var(--text-secondary);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.balance-setup-note {
+  font-size: 13px;
+  text-align: center;
+  color: var(--glow-accent-crimson, #c9a4ff);
+  opacity: 0.8;
+  margin-top: 15px;
+  margin-bottom: 0;
+}
