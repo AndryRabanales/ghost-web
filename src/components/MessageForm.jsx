@@ -8,8 +8,9 @@ export default function MessageForm({
   dashboardId,
   chatId,
   onMessageSent,
-  livesLeft,
-  minutesToNextLife,
+  // --- MODIFICADO: Props eliminadas ---
+  // livesLeft, (ya no se necesita)
+  // minutesToNextLife, (ya no se necesita)
 }) {
   const [newMsg, setNewMsg] = useState("");
   const [loading, setLoading] = useState(false);
@@ -21,7 +22,8 @@ export default function MessageForm({
 
   const handleSend = async (e) => {
     e.preventDefault();
-    if (!newMsg.trim() || livesLeft === 0 || loading) return;
+    // --- MODIFICADO: Lógica de 'disabled' simplificada ---
+    if (!newMsg.trim() || loading) return;
     setLoading(true);
 
     try {
@@ -60,7 +62,8 @@ export default function MessageForm({
     }
   };
 
-  const isDisabled = livesLeft === 0 || loading;
+  // --- MODIFICADO: 'isDisabled' ya no depende de las vidas ---
+  const isDisabled = loading;
 
   return (
     <>
@@ -71,22 +74,21 @@ export default function MessageForm({
           onChange={(e) => setNewMsg(e.target.value)}
           placeholder="Escribe una respuesta..."
           className="form-input-field reply-input"
-          disabled={isDisabled}
+          disabled={isDisabled} // Ahora solo se deshabilita al cargar
         />
         <button
           type="submit"
           className="submit-button reply-button"
+          // --- MODIFICADO: 'disabled' ya no depende de las vidas ---
           disabled={isDisabled || !newMsg.trim()}
         >
-          {loading ? "..." : (livesLeft === 0 ? "Sin vidas" : "Enviar")}
+          {/* --- MODIFICADO: Texto del botón simplificado --- */}
+          {loading ? "..." : "Enviar"}
         </button>
       </form>
 
-      {livesLeft === 0 && (
-        <p style={{ marginTop: 12, color: "var(--glow-accent-crimson)", fontSize: 14, textAlign: 'center' }}>
-          ⏳ Espera {minutesToNextLife} min para recuperar una vida, o suscríbete Premium para tener vidas ilimitadas.
-        </p>
-      )}
+      {/* --- ELIMINADO: Mensaje de "Sin vidas" --- */}
+      {/* Ya no se muestra el contador de minutos */}
     </>
   );
 }

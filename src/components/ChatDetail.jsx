@@ -80,7 +80,7 @@ export default function ChatDetail({ dashboardId, chatId, onBack }) {
 
         const data = await res.json();
         setMessages(data.messages || []);
-        setChatInfo(data);
+        setChatInfo(data); // chatInfo todavía contiene las 'vidas' de la API, pero ya no las usamos
       } catch (err) {
         setError(err.message);
       } finally {
@@ -171,12 +171,11 @@ export default function ChatDetail({ dashboardId, chatId, onBack }) {
       </div>
 
       <div className="chat-footer">
+        {/* --- MODIFICADO: Props de 'vidas' eliminadas --- */}
         <MessageForm
           dashboardId={dashboardId}
           chatId={chatId}
           onMessageSent={() => {}}
-          livesLeft={chatInfo?.livesLeft ?? 0}
-          minutesToNextLife={chatInfo?.minutesToNextLife ?? 0}
         />
       </div>
     </div>
