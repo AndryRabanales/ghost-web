@@ -1,6 +1,8 @@
 // src/components/DashboardInfo.jsx
 "use client";
 import { useState, useEffect } from "react";
+// --- ELIMINADO: La importación del componente borrado ---
+// import LivesStatus from "./LivesStatus"; 
 import PremiumButton from "./PremiumButton";
 
 const CopyIcon = () => (
@@ -63,24 +65,29 @@ export default function DashboardInfo({ creator, onChange }) {
   return (
     // Contenedor principal del sidebar que cambiará de clase
     <div className={`sidebar-container ${isCollapsed ? 'collapsed' : ''}`}>
-      {/* Contenido que se va a ocultar/mostrar */}
+      
+      {/* --- MODIFICADO: Contenido simplificado --- */}
       <div className="sidebar-content">
-        <div className="dashboard-main-content">
-          <div className="links-section">
-            <LinkInput 
-              icon="✨"
-              label="Link Público (compártelo en tus redes sociales)"
-              url={publicUrl}
-              type="public"
-              onCopy={handleCopy}
-              copyStatus={copyStatus}
-            />
-          </div>
+        
+        {/* 1. LinkInput */}
+        <div className="links-section">
+          <LinkInput 
+            icon="✨"
+            label="Link Público (compártelo en tus redes sociales)"
+            url={publicUrl}
+            type="public"
+            onCopy={handleCopy}
+            copyStatus={copyStatus}
+          />
         </div>
         
-        <div className="dashboard-side-content">
-          <PremiumButton creator={creator} onChange={onChange} />
-        </div>
+        {/* --- ELIMINADO: La llamada al componente borrado --- */}
+        {/* <LivesStatus creator={creator} /> */}
+        
+        {/* 2. PremiumButton */}
+        <PremiumButton creator={creator} onChange={onChange} />
+
+        {/* --- ELIMINADOS: Los divs 'dashboard-main-content' y 'dashboard-side-content' --- */}
       </div>
       
       {/* Contenedor del botón para mostrar/ocultar */}
