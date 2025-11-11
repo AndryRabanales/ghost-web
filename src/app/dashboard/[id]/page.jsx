@@ -6,6 +6,7 @@ import { refreshToken, getAuthHeaders } from "@/utils/auth"; // Asegúrate que g
 import MessageList from "@/components/MessageList";
 import DashboardInfo from "@/components/DashboardInfo";
 import ShareLinkGuideModal from "@/components/ShareLinkGuideModal"; // Importa el modal
+import PremiumContractConfig from "@/components/PremiumContractConfig";
 
 const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
 
@@ -129,6 +130,11 @@ export default function DashboardPage() {
                         <div className="fade-in-up" style={{ animationDelay: '0.1s' }}>
                             <DashboardInfo creator={creator} onChange={setCreator} />
                         </div>
+
+                        <div className="fade-in-up" style={{ animationDelay: '0.2s', marginBottom: '25px' }}>
+                            <PremiumContractConfig creator={creator} onChange={setCreator} />
+                        </div>
+
                         {/* MessageList necesita el dashboardId */}
                         <div className="fade-in-up" style={{ animationDelay: '0.3s' }}>
                             <MessageList dashboardId={id} />
