@@ -10,6 +10,7 @@ const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.rail
  */
 const TipSelector = ({ selectedAmount, onSelect }) => {
   const tipOptions = [20, 50, 100]; // Montos simulados en MXN
+  const MIN_AMOUNT = 100; // <-- AÑADIDO: Mínimo para el premium
 
   // Estilo base del botón de propina
   const buttonStyle = (amount) => ({
@@ -42,20 +43,24 @@ const TipSelector = ({ selectedAmount, onSelect }) => {
 
   return (
     <div>
-      <p style={labelStyle}>¿Adjuntar propina? (Simulado)</p>
+      {/* MODIFICADO: Texto para reflejar el modelo premium */}
+      <p style={labelStyle}>Monto por Respuesta Premium (Mínimo ${MIN_AMOUNT} MXN)</p> 
       <div style={containerStyle}>
         {tipOptions.map((amount) => (
           <button
             key={amount}
-            type="button" // Importante: previene que el botón envíe el formulario
+            type="button"
             style={buttonStyle(amount)}
-            // Lógica de Toggle: Si se presiona el mismo, se deselecciona (vuelve a 0)
             onClick={() => onSelect(selectedAmount === amount ? 0 : amount)} 
           >
             ${amount} MXN
           </button>
         ))}
       </div>
+      {/* AÑADIDO: Aviso si no ha seleccionado una propina */}
+      {selectedAmount === 0 && <p style={{fontSize: '12px', color: 'var(--text-secondary)', marginTop: '10px', opacity: 0.7, textAlign: 'center'}}>
+          (El mensaje se enviará sin garantía de respuesta)
+      </p>}
     </div>
   );
 };
