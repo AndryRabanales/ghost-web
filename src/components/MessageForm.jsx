@@ -3,6 +3,7 @@ import { useState } from "react";
 import { refreshToken } from "@/utils/auth";
 
 const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
+const MIN_RESPONSE_LENGTH = 30; // <--- AÑADIDO
 
 export default function MessageForm({
   dashboardId,
@@ -14,6 +15,7 @@ export default function MessageForm({
 }) {
   const [newMsg, setNewMsg] = useState("");
   const [loading, setLoading] = useState(false);
+  const charCount = newMsg.length; // <--- AÑADIDO
 
   const getAuthHeaders = (token) => {
     const t = token || localStorage.getItem("token");
@@ -22,9 +24,9 @@ export default function MessageForm({
 
   const handleSend = async (e) => {
     e.preventDefault();
-    // --- MODIFICADO: Lógica de 'disabled' simplificada ---
-    if (!newMsg.trim() || loading) return;
-    setLoading(true);
+  // --- MODIFICADO: 'isDisabled' ahora incluye la comprobación de longitud ---
+  if (!newMsg.trim() || loading || charCount < MIN_RESPONSE_LENGTH) return;
+  setLoading(true);
 
     try {
       let res = await fetch(
@@ -63,7 +65,7 @@ export default function MessageForm({
   };
 
   // --- MODIFICADO: 'isDisabled' ya no depende de las vidas ---
-  const isDisabled = loading;
+  const isDisabled = loading || charCount < MIN_RESPONSE_LENGTH;
 
   return (
     <>
@@ -86,9 +88,15 @@ export default function MessageForm({
           {loading ? "..." : "Enviar"}
         </button>
       </form>
-
-      {/* --- ELIMINADO: Mensaje de "Sin vidas" --- */}
-      {/* Ya no se muestra el contador de minutos */}
+    {/* --- NUEVO: Contador de caracteres y alerta de calidad --- */}
+    <div style={{
+          fontSize: '12px',
+          color: charCount < MIN_RESPONSE_LENGTH ? '#ff7b7b' : 'var(--text-secondary)',
+          textAlign: 'right',
+          marginTop: '8px'
+      }}>
+          {charCount} / {MIN_RESPONSE_LENGTH} caracteres (Mínimo para garantizar calidad)
+      </div>
     </>
   );
 }
