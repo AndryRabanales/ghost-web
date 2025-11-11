@@ -64,35 +64,18 @@ export default function PublicPage() {
   }, [loadActiveChat]);
   
   // --- Carga la info del Creador (nombre, etc.) ---
-  useEffect(() => {
-    if (!publicId) return;
-    const fetchCreatorInfo = async () => {
-      try {
-        const res = await fetch(`${API}/public/${publicId}/info`); 
-        if (res.ok) {
-          const data = await res.json();
-          if (data.name) {
-            setCreatorName(prev => (prev === "el creador" ? data.name : prev));
-          }
-          if (data.lastActiveAt) {
-            setLastActiveTimestamp(data.lastActiveAt);
-          }
-        }
-      } catch (err) {
-        console.error("Error fetching creator info:", err);
-      }
-    };
-    fetchCreatorInfo();
-  }, [publicId, setCreatorName]);
+ // src/app/u/[publicId]/page.jsx (Fragmento del useEffect de WS)
 
+// ... (El código de fetchMessages y el hook de loadActiveChat se mantienen) ...
 
-  // --- MODIFICADO: useEffect para EL ÚNICO WEBSOCKET ---
+  // Cargar mensajes iniciales y conectar WebSocket
   useEffect(() => {
-    // Timer para el "hace..." (sin cambios)
+    
+    // 1. Timer para el "hace..." (sin cambios)
     const interval = setInterval(() => {
       setLastActiveTimestamp(prev => prev);
-    }, 30000);
-
+    }, 30000); // Actualiza cada 30 segundos
+    
     // --- Función para Cargar Mensajes (ahora vive aquí) ---
     const fetchMessages = async (token, id) => {
       if (!token || !id) return;
@@ -103,23 +86,29 @@ export default function PublicPage() {
         if (!res.ok) throw new Error("No se pudo cargar el chat");
         const data = await res.json();
         setChatMessages(data.messages || []);
+        // E2/E3: También actualizamos el status aquí si es un re-fetch
+        setPedidoStatus(data.pedidoStatus || 'FREE');
+        setCreatorPremiumContract(data.creatorPremiumContract || {}); 
       } catch (err) { setChatError("⚠️ Error cargando mensajes"); }
       finally { setIsChatLoading(false); }
     };
+    // -----------------------------------------------------------
 
-    // --- Conexión WebSocket Única ---
+    // 2. Conexión WebSocket Única
     const connectWebSocket = () => {
-      if (wsRef.current) { wsRef.current.close(1000, "Reconectando"); }
+      if (wsRef.current) { 
+        // Cierre suave para evitar errores si ya estaba conectado
+        wsRef.current.close(1000, "Reconectando"); 
+      }
 
-      // 1. URL base solo con publicId
+      // URL base solo con publicId
       let wsUrl = `${API.replace(/^http/, "ws")}/ws?publicId=${publicId}`;
       
-      // 2. Si el chat está activo, carga sus mensajes y añade el anonToken al WS
+      // Si el chat está activo, añade el anonToken al WS y carga sus mensajes
       if (activeChatInfo) {
         wsUrl += `&anonTokens=${activeChatInfo.anonToken}`;
         fetchMessages(activeChatInfo.anonToken, activeChatInfo.chatId);
       } else {
-        // Si no hay chat, resetea el estado del chat
         setIsChatLoading(false);
         setChatMessages([]);
         setChatError(null);
@@ -152,25 +141,26 @@ export default function PublicPage() {
           }
           
           // --- HANDLER S3: Actualización de Contrato en Tiempo Real ---
-          // El backend envía este evento cuando el creador guarda el contrato en su Dashboard.
           if (msg.type === 'CREATOR_INFO_UPDATE' && msg.premiumContract) {
-             // Este cambio de estado dispara la re-renderización del AnonMessageForm
              setCreatorContract(msg.premiumContract); 
              console.log("WS: Contrato Premium actualizado.");
           }
           // -----------------------------------------------------------
 
           // Handler 2: Mensajes del Chat (Actualización de la conversación)
-          // (Solo se activa si el chat está activo y el msg es para este chat)
           if (activeChatInfo && msg.chatId === activeChatInfo.chatId) {
             setChatMessages((prev) => {
-              // Evita duplicados
               if (prev.some(m => m.id === msg.id)) return prev;
               return [...prev, msg];
             });
+            // E2/E3: Si es una respuesta del creador, forzamos un re-fetch del estado
+            if (msg.from === 'creator') {
+                 fetchMessages(activeChatInfo.anonToken, activeChatInfo.chatId);
+            }
           }
         } catch (e) { console.error("Error processing WS (MAIN):", e); }
       };
+    };
 
     connectWebSocket();
     
@@ -184,7 +174,7 @@ export default function PublicPage() {
       } 
     };
     // El WS se reconectará si activeChatInfo cambia (cuando el usuario envía el 1er msg)
-  },[publicId, activeChatInfo]); 
+  },[publicId, activeChatInfo]);
 
   
   // --- Función para cerrar el modal (sin cambios) ---
