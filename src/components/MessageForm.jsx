@@ -76,7 +76,7 @@ export default function MessageForm({
           onChange={(e) => setNewMsg(e.target.value)}
           placeholder="Escribe una respuesta..."
           className="form-input-field reply-input"
-          disabled={isDisabled} // Ahora solo se deshabilita al cargar
+          disabled={loading} // Ahora solo se deshabilita al cargar
         />
         <button
           type="submit"
