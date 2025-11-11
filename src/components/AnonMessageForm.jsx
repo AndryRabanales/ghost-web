@@ -2,17 +2,22 @@
 import { useState, useEffect } from "react";
 
 const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
-const MIN_PREMIUM_AMOUNT = 100; // Mínimo para el premium
+const MIN_PREMIUM_AMOUNT = 100; // Mínimo para el premium (P1)
 
-// --- CORRECCIÓN: FUNCIÓN MOVIDA AL NIVEL RAÍZ (ACCESIBLE) (S3) ---
+// --- CORRECCIÓN: FUNCIÓN MOVIDA AL NIVEL RAÍZ (S3) ---
+/**
+ * Convierte el objeto JSON del contrato a un resumen legible para el Fan.
+ * Se recalcula cuando la prop creatorContract cambia (por WebSocket).
+ * @param {object} contractData Objeto JSON del creador (o string si la DB no lo parseó).
+ * @returns {string} Resumen del contrato.
+ */
 const formatContract = (contractData) => {
     try {
-        // Aseguramos que es un objeto (ya debería serlo si lo cargó bien el padre)
+        // Aseguramos que es un objeto
         const data = typeof contractData === 'string' ? JSON.parse(contractData) : contractData;
         
         // Manejo de valores no definidos si el contrato es nuevo o JSON vacío
         if (!data || Object.keys(data).length === 0) {
-             // Devolver el contrato default si el JSON está vacío o es null
              return "Respuesta de alta calidad garantizada.";
         }
         
@@ -23,14 +28,14 @@ const formatContract = (contractData) => {
         
         return parts.length > 0 ? parts.join(', ') : "Respuesta de alta calidad garantizada.";
     } catch (e) {
-        console.error("Error al parsear el contrato:", e);
+        // En caso de error de parseo (p. ej. si la DB tiene datos viejos o corruptos)
         return "Respuesta de alta calidad garantizada.";
     }
 }
 // --- FIN: Función de Formato (S3) ---
 
 
-// --- COMPONENTE TipSelector (Ahora ya no incluye la función) ---
+// --- COMPONENTE TipSelector (Control de propinas P1) ---
 /**
  * Un componente simple para seleccionar montos de propina (simulados)
  */
@@ -38,12 +43,10 @@ const TipSelector = ({ selectedAmount, onSelect }) => {
     const tipOptions = [100, 200, 500];
     const MIN_AMOUNT = 100;
 
-    // Estilo base del botón de propina
     const buttonStyle = (amount) => ({
         padding: '8px 12px',
         fontSize: '14px',
         fontWeight: 'bold',
-        // Cambia el estilo si está seleccionado
         color: selectedAmount === amount ? '#fff' : 'var(--glow-accent-crimson, #c9a4ff)',
         background: selectedAmount === amount ? 'linear-gradient(90deg, #8e2de2, #4a00e0)' : 'rgba(255, 255, 255, 0.05)',
         border: selectedAmount === amount ? '1px solid #8e2de2' : '1px solid rgba(255, 255, 255, 0.1)',
@@ -52,12 +55,11 @@ const TipSelector = ({ selectedAmount, onSelect }) => {
         transition: 'all 0.2s ease',
     });
 
-    // Estilo del contenedor de botones
     const containerStyle = {
         display: 'flex',
         gap: '10px',
         justifyContent: 'center',
-        margin: '15px 0 5px 0' // Espacio entre el contador y el botón de envío
+        margin: '15px 0 5px 0'
     };
 
     const labelStyle = {
@@ -69,7 +71,6 @@ const TipSelector = ({ selectedAmount, onSelect }) => {
 
     return (
         <div>
-            {/* MODIFICADO: Texto para reflejar el modelo premium */}
             <p style={labelStyle}>Monto por Respuesta Premium (Mínimo ${MIN_AMOUNT} MXN)</p> 
             <div style={containerStyle}>
                 {tipOptions.map((amount) => (
@@ -83,14 +84,12 @@ const TipSelector = ({ selectedAmount, onSelect }) => {
                     </button>
                 ))}
             </div>
-            {/* AÑADIDO: Aviso si no ha seleccionado una propina */}
             {selectedAmount === 0 && <p style={{fontSize: '12px', color: 'var(--text-secondary)', marginTop: '10px', opacity: 0.7, textAlign: 'center'}}>
                 (El mensaje se enviará sin garantía de respuesta)
             </p>}
         </div>
     );
 };
-// --- FIN: COMPONENTE TipSelector ---
 
 
 export default function AnonMessageForm({ 
@@ -98,7 +97,7 @@ export default function AnonMessageForm({
     onChatCreated,
     escasezData, 
     isFull,
-    creatorContract // <-- Ahora accesible
+    creatorContract // <-- Prop con el Contrato JSON (S3)
 }) {
   const [alias, setAlias] = useState("");
   const [content, setContent] = useState("");
@@ -108,7 +107,6 @@ export default function AnonMessageForm({
   const [errorMsg, setErrorMsg] = useState("");
   const [charCount, setCharCount] = useState(0);
   const [isMounted, setIsMounted] = useState(false);
-  // MIN_PREMIUM_AMOUNT ya está definido arriba
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -118,7 +116,6 @@ export default function AnonMessageForm({
   }, []);
     
   // S3: Generar texto del contrato para la vista del anónimo
-  // Llama a la función ahora que está en el scope correcto
   const contractSummary = formatContract(creatorContract); 
 
 
@@ -130,14 +127,20 @@ export default function AnonMessageForm({
       return;
     }
     
-    // --- MODIFICACIÓN (P1): Validación de mínimo si selecciona un monto ---
+    // Validación de mínimo Premium (P1)
     if (tipAmount > 0 && tipAmount < MIN_PREMIUM_AMOUNT) {
         setErrorMsg(`El monto mínimo por respuesta premium es $${MIN_PREMIUM_AMOUNT} MXN.`);
         setStatus("error");
         return;
     }
     
-    // ... (El resto del handleSubmit se mantiene) ...
+    // Validación de límite diario si intenta enviar un Premium (S1)
+    if (isFull && tipAmount > 0) {
+        setErrorMsg("El límite diario de mensajes Premium se ha alcanzado. Por favor, espera al reinicio.");
+        setStatus("error");
+        return;
+    }
+    
     setStatus("loading");
     setErrorMsg("");
 
@@ -145,29 +148,24 @@ export default function AnonMessageForm({
       const res = await fetch(`${API}/public/${publicId}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        // --- MODIFICADO: Payload ahora incluye tipAmount ---
         body: JSON.stringify({ 
           alias, 
           content,
-          tipAmount // <-- Aquí se envía la propina
+          tipAmount
         }),
       });
 
       const data = await res.json();
       if (!res.ok) {
-        // --- MODIFICACIÓN (P1): Manejo de error de modo solo propina ---
         if (data.code === "TIP_ONLY_MODE") {
-             // Este es el error del backend cuando el creador tiene activado el MODO SOLO PROPINAS
              throw new Error(`Este creador solo acepta mensajes con pago. El mínimo es $${MIN_PREMIUM_AMOUNT} MXN.`);
         }
-        // --- FIN MODIFICACIÓN ---
         throw new Error(data.error || "Error enviando el mensaje");
       }
 
       setStatus("success");
 
       if (data.chatId && data.anonToken) {
-        // ... (lógica de guardado en localStorage sin cambios) ...
         const myChats = JSON.parse(localStorage.getItem("myChats") || "[]");
         const otherChats = myChats.filter(chat => chat.creatorPublicId !== publicId);
         const newChatEntry = {
@@ -198,8 +196,14 @@ export default function AnonMessageForm({
     <div className={`anon-form-container ${isMounted ? 'mounted' : ''}`}>
       <form onSubmit={handleSubmit} className="form-element-group">
         
-        {/* --- AÑADIDO (S3): Contrato de Servicio Visible para el Anónimo --- */}
-        <div className="contract-summary-box">
+        {/* --- S3: Contrato de Servicio Visible para el Anónimo --- */}
+        <div className="contract-summary-box" style={{ 
+            padding: '15px', 
+            background: 'rgba(142, 45, 226, 0.15)', 
+            borderRadius: '12px',
+            border: '1px solid rgba(142, 45, 226, 0.4)',
+            marginBottom: '20px'
+        }}>
             <h4 style={{ fontSize: '16px', margin: '0 0 5px', color: 'var(--text-primary)' }}>
                 Contrato de Servicio Premium:
             </h4>
@@ -207,7 +211,7 @@ export default function AnonMessageForm({
                 {contractSummary}
             </p>
         </div>
-        {/* --- FIN AÑADIDO (S3) --- */}
+        {/* --- FIN S3 --- */}
 
         <input
             type="text"
@@ -240,14 +244,12 @@ export default function AnonMessageForm({
           {/* --- FIN DEL BLOQUE --- */}
 
         <button type="submit" disabled={status === "loading" || !content.trim()} className="submit-button">
-          {/* --- MODIFICADO: El texto del botón cambia si hay propina --- */}
           {status === "loading" ? "Enviando..." : (tipAmount > 0 ? `Pagar y Enviar $${tipAmount}` : "Enviar Mensaje Gratis")}
         </button>
       </form>
 
       {status === "success" && (
         <div className="form-status-message success">
-          {/* MODIFICADO: Mensaje de éxito para reflejar el Escrow (P2) */}
           <p>✅ ¡Mensaje Enviado! {tipAmount > 0 ? `Tu pago de $${tipAmount} MXN está retenido hasta que el creador te responda.` : "Se ha enviado tu mensaje."}</p>
           <p className="sub-text">Puedes ver el estado en tu <a href="/chats">bandeja de chats</a>.</p>
         </div>

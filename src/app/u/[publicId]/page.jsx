@@ -150,8 +150,17 @@ export default function PublicPage() {
               setLastActiveTimestamp(new Date().toISOString());
             }
           }
+          
+          // --- HANDLER S3: Actualización de Contrato en Tiempo Real ---
+          // El backend envía este evento cuando el creador guarda el contrato en su Dashboard.
+          if (msg.type === 'CREATOR_INFO_UPDATE' && msg.premiumContract) {
+             // Este cambio de estado dispara la re-renderización del AnonMessageForm
+             setCreatorContract(msg.premiumContract); 
+             console.log("WS: Contrato Premium actualizado.");
+          }
+          // -----------------------------------------------------------
 
-          // Handler 2: Mensajes del Chat
+          // Handler 2: Mensajes del Chat (Actualización de la conversación)
           // (Solo se activa si el chat está activo y el msg es para este chat)
           if (activeChatInfo && msg.chatId === activeChatInfo.chatId) {
             setChatMessages((prev) => {
@@ -162,7 +171,6 @@ export default function PublicPage() {
           }
         } catch (e) { console.error("Error processing WS (MAIN):", e); }
       };
-    };
 
     connectWebSocket();
     
