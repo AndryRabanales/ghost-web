@@ -1,12 +1,30 @@
 // src/components/BalanceSummary.jsx
 "use client";
+// --- MODIFICADO: Importar 'useState' y las utilidades de auth ---
 import React, { useState } from "react";
 import { getAuthHeaders, refreshToken } from "@/utils/auth"; 
 
 const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
 const MIN_WITHDRAWAL_AMOUNT = 1000; // <-- AÑADIDO: $1000 MXN, Mínimo de retiro (P5)
 
-// ... (MoneyIcon y ClockIcon se mantienen) ...
+// --- AÑADIDO: Definición de Iconos (MoneyIcon y ClockIcon) ---
+// Icono de Dólar
+const MoneyIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="12" y1="1" x2="12" y2="23" />
+    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+  </svg>
+);
+
+// Icono de Reloj
+const ClockIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10" />
+    <polyline points="12 6 12 12 16 14" />
+  </svg>
+);
+// --- FIN AÑADIDO ---
+
 
 export default function BalanceSummary({ creator }) {
   // --- AÑADIDO: Estado de carga para el botón ---
@@ -37,7 +55,7 @@ export default function BalanceSummary({ creator }) {
             headers: getAuthHeaders(),
           });
     
-          // ... (Lógica de refresh token y redirección) ...
+          // Lógica de refresh si el token expiró
           if (res.status === 401) {
             const newToken = await refreshToken(localStorage.getItem("publicId"));
             if (newToken) {
@@ -78,9 +96,6 @@ export default function BalanceSummary({ creator }) {
     
     // 3. Simulación de Solicitud Exitosa (MVP Hack - P5)
     const withdrawalAmount = creator.availableBalance;
-    
-    // NOTA: En un MVP real, aquí se llamaría a una API POST /creators/withdrawal-request 
-    // que enviaría una notificación al fundador (tú) para que inicie el pago manual.
     
     // Mostramos el mensaje de éxito por 5 segundos
     setStatusMessage(`✅ Solicitud de retiro por ${formatCurrency(withdrawalAmount)} procesada. Recibirás el pago en 3-5 días hábiles (MVP Hack).`);
