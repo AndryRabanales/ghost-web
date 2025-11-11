@@ -9,7 +9,7 @@ const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.rail
  * Un componente simple para seleccionar montos de propina (simulados)
  */
 const TipSelector = ({ selectedAmount, onSelect }) => {
-  const tipOptions = [20, 50, 100]; // Montos simulados en MXN
+  const tipOptions = [100, 200, 500];
   const MIN_AMOUNT = 100; // <-- AÑADIDO: Mínimo para el premium
 
   // Estilo base del botón de propina
@@ -78,6 +78,7 @@ export default function AnonMessageForm({ publicId, onChatCreated }) {
   const [errorMsg, setErrorMsg] = useState("");
   const [charCount, setCharCount] = useState(0);
   const [isMounted, setIsMounted] = useState(false);
+  const MIN_PREMIUM_AMOUNT = 100; // <-- AÑADIDO (P1)
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -88,10 +89,13 @@ export default function AnonMessageForm({ publicId, onChatCreated }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (content.trim().length < 3) {
-      setErrorMsg("El mensaje debe tener al menos 3 caracteres.");
-      setStatus("error");
-      return;
+    // ... (validación de 3 caracteres se mantiene) ...
+    
+    // --- MODIFICACIÓN (P1): Validación de mínimo si selecciona un monto ---
+    if (tipAmount > 0 && tipAmount < MIN_PREMIUM_AMOUNT) {
+        setErrorMsg(`El monto mínimo por respuesta premium es $${MIN_PREMIUM_AMOUNT} MXN.`);
+        setStatus("error");
+        return;
     }
     setStatus("loading");
     setErrorMsg("");
@@ -109,7 +113,15 @@ export default function AnonMessageForm({ publicId, onChatCreated }) {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Error enviando el mensaje");
+      if (!res.ok) {
+        // --- MODIFICACIÓN (P1): Manejo de error de modo solo propina ---
+        if (data.code === "TIP_ONLY_MODE") {
+            // Este es el error del backend cuando el creador tiene activado el MODO SOLO PROPINAS
+            throw new Error(`Este creador solo acepta mensajes con pago. El mínimo es $${MIN_PREMIUM_AMOUNT} MXN.`);
+        }
+        // --- FIN MODIFICACIÓN ---
+        throw new Error(data.error || "Error enviando el mensaje");
+      }
 
       setStatus("success");
 
@@ -162,7 +174,7 @@ export default function AnonMessageForm({ publicId, onChatCreated }) {
             rows="4"
             maxLength="500"
           ></textarea>
-
+          
           <div className="char-counter">
             {charCount} / 500
           </div>
