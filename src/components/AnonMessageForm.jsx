@@ -6,36 +6,37 @@ const MIN_PREMIUM_AMOUNT = 100; // Mínimo para el premium (P1)
 
 // --- CORRECCIÓN: FUNCIÓN MOVIDA AL NIVEL RAÍZ (S3) ---
 /**
- * Convierte el objeto JSON del contrato a un resumen legible para el Fan.
- * Se recalcula cuando la prop creatorContract cambia (por WebSocket).
- * @param {object} contractData Objeto JSON del creador (o string si la DB no lo parseó).
+ * Muestra el contrato guardado por el creador.
+ * @param {string | null | object} contractData El string o JSON del contrato guardado.
  * @returns {string} Resumen del contrato.
  */
 const formatContract = (contractData) => {
-  // Verificamos si es un string simple y no está vacío
-  if (typeof contractData === 'string' && contractData.trim().length > 0) {
-      // Si el creador escribió "Mi contrato", mostramos "Mi contrato"
-      return contractData.trim();
-  }
+    // Verificamos si es un string simple y no está vacío
+    if (typeof contractData === 'string' && contractData.trim().length > 0) {
+        // Si el creador escribió "Mi contrato", mostramos "Mi contrato"
+        return contractData.trim();
+    }
 
-  // --- Mantenemos la lógica antigua por si acaso (aunque parece no usarse) ---
-  try {
-      const data = typeof contractData === 'string' ? JSON.parse(contractData) : contractData;
-      
-      if (!data || Object.keys(data).length === 0) {
-           return "Respuesta de alta calidad garantizada.";
-      }
-      
-      let parts = [];
-      if (data.include_photo) parts.push("1 Foto Exclusiva");
-      if (data.text_min_chars > 0) parts.push(`Mínimo ${data.text_min_chars} caracteres de texto`);
-      if (data.include_pdf) parts.push("1 Archivo PDF");
-      
-      return parts.length > 0 ? parts.join(', ') : "Respuesta de alta calidad garantizada.";
-  } catch (e) {
-      // Si todo falla (incluso el parseo del string), mostramos el texto por defecto.
-      return "Respuesta de alta calidad garantizada.";
-  }
+    // --- Mantenemos la lógica antigua por si acaso (aunque parece no usarse) ---
+    try {
+        // Aseguramos que es un objeto
+        const data = typeof contractData === 'string' ? JSON.parse(contractData) : contractData;
+        
+        // Manejo de valores no definidos si el contrato es nuevo o JSON vacío
+        if (!data || Object.keys(data).length === 0) {
+             return "Respuesta de alta calidad garantizada.";
+        }
+        
+        let parts = [];
+        if (data.include_photo) parts.push("1 Foto Exclusiva");
+        if (data.text_min_chars > 0) parts.push(`Mínimo ${data.text_min_chars} caracteres de texto`);
+        if (data.include_pdf) parts.push("1 Archivo PDF");
+        
+        return parts.length > 0 ? parts.join(', ') : "Respuesta de alta calidad garantizada.";
+    } catch (e) {
+        // Si todo falla (incluso el parseo del string), mostramos el texto por defecto.
+        return "Respuesta de alta calidad garantizada.";
+    }
 }
 // --- FIN: Función de Formato (S3) ---
 
@@ -102,7 +103,7 @@ export default function AnonMessageForm({
     onChatCreated,
     escasezData, 
     isFull,
-    creatorContract // <-- Prop con el Contrato JSON (S3)
+    creatorContract // <-- Prop con el Contrato (puede ser null al inicio)
 }) {
   const [alias, setAlias] = useState("");
   const [content, setContent] = useState("");
@@ -121,6 +122,7 @@ export default function AnonMessageForm({
   }, []);
     
   // S3: Generar texto del contrato para la vista del anónimo
+  // Usará `creatorContract` si existe, o el texto por defecto si es null
   const contractSummary = formatContract(creatorContract); 
 
 
@@ -173,6 +175,8 @@ export default function AnonMessageForm({
       if (data.chatId && data.anonToken) {
         const myChats = JSON.parse(localStorage.getItem("myChats") || "[]");
         const otherChats = myChats.filter(chat => chat.creatorPublicId !== publicId);
+        
+        // --- CORRECCIÓN: Guardar también el contrato devuelto por la API ---
         const newChatEntry = {
           chatId: data.chatId,
           anonToken: data.anonToken,
@@ -182,13 +186,16 @@ export default function AnonMessageForm({
           creatorName: data.creatorName || "Conversación",
           anonAlias: alias || "Anónimo",
           hasNewReply: false, 
-          previewFrom: 'anon' 
+          previewFrom: 'anon',
+          creatorPremiumContract: data.creatorPremiumContract // <-- Guardar el contrato
         };
+        // --- FIN CORRECCIÓN ---
+
         const updatedChats = [newChatEntry, ...otherChats];
         localStorage.setItem("myChats", JSON.stringify(updatedChats));
 
         if (typeof onChatCreated === "function") {
-          onChatCreated(newChatEntry);
+          onChatCreated(newChatEntry); // Pasamos el objeto completo
         }
       }
     } catch (err) {
