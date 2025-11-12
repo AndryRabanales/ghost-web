@@ -1,370 +1,277 @@
-// src/app/u/[publicId]/page.jsx
 "use client";
-import AnonMessageForm from "@/components/AnonMessageForm";
-import FirstMessageGuideModal from "@/components/FirstMessageGuideModal";
-import PublicChatView from "@/components/PublicChatView";
-import React, { useEffect, useState, useRef, useCallback } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { timeAgo } from "@/utils/timeAgo";
+import { useState, useEffect } from "react";
 
 const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
+const MIN_PREMIUM_AMOUNT = 100; // Mínimo para el premium (P1)
 
-export default function PublicPage() {
-  const params = useParams();
-  const publicId = params?.publicId;
-  const router = useRouter();
-
-  if (publicId === undefined) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', color: 'white', backgroundColor: '#0d0c22' }}>
-        Cargando espacio...
-      </div>
-    );
-  }
-
-  // --- Estados ---
-  const [activeChatInfo, setActiveChatInfo] = useState(null);
-  const [showGuideModal, setShowGuideModal] = useState(false);
-  const [creatorName, setCreatorName] = useState("el creador");
-  const [creatorStatus, setCreatorStatus] = useState(null);
-  const [lastActiveTimestamp, setLastActiveTimestamp] = useState(null);
-  
-  // --- Estados del Chat (ahora en el padre) ---
-  const [chatMessages, setChatMessages] = useState([]); 
-  const [isChatLoading, setIsChatLoading] = useState(true);
-  const [chatError, setChatError] = useState(null); 
-  
-  // --- 👇 CORRECCIÓN: AÑADIR ESTOS ESTADOS FALTANTES 👇 ---
-  const [creatorContract, setCreatorContract] = useState(null);
-  const [escasezData, setEscasezData] = useState(null);
-  const [isFull, setIsFull] = useState(false);
-  // --- 👆 FIN DE LA CORRECCIÓN 👆 ---
-
-  const wsRef = useRef(null);
-
-  // --- Carga el chat guardado en localStorage ---
-  const loadActiveChat = useCallback(() => {
-    try {
-      const stored = JSON.parse(localStorage.getItem("myChats") || "[]");
-      const foundChat = stored.find(chat => chat.creatorPublicId === publicId);
-      
-      if (foundChat) {
-        if (foundChat.creatorName) {
-          setCreatorName(foundChat.creatorName);
-        }
-        return foundChat;
-      }
-      return null;
-    } catch (error) { 
-      console.error("Error al cargar chat activo:", error); 
-      return null; 
+// --- CORRECCIÓN: FUNCIÓN MOVIDA AL NIVEL RAÍZ (S3) ---
+/**
+ * Muestra el contrato guardado por el creador.
+ * @param {string | null | object} contractData El string o JSON del contrato guardado.
+ * @returns {string} Resumen del contrato.
+ */
+const formatContract = (contractData) => {
+    // Verificamos si es un string simple y no está vacío
+    if (typeof contractData === 'string' && contractData.trim().length > 0) {
+        // Si el creador escribió "Mi contrato", mostramos "Mi contrato"
+        return contractData.trim();
     }
-  }, [publicId]);
 
-
-  useEffect(() => {
-    if (!publicId || activeChatInfo) return; // Solo se ejecuta si NO hay un chat activo
-
-    const fetchPublicCreatorInfo = async () => {
-      try {
-        // ASUNCIÓN: Necesitas un endpoint en tu API que devuelva los datos públicos
-        // Si no lo tienes, deberás crearlo.
-        const res = await fetch(`${API}/public/creator/${publicId}`); 
-        if (!res.ok) throw new Error("No se pudo cargar la info del creador");
+    // --- Mantenemos la lógica antigua por si acaso (aunque parece no usarse) ---
+    try {
+        // Aseguramos que es un objeto
+        const data = typeof contractData === 'string' ? JSON.parse(contractData) : contractData;
         
-        const data = await res.json();
+        // Manejo de valores no definidos si el contrato es nuevo o JSON vacío
+        if (!data || Object.keys(data).length === 0) {
+             return "Respuesta de alta calidad garantizada.";
+        }
         
-        // Seteamos los datos que necesitamos para el AnonMessageForm
-        if (data.creatorName) setCreatorName(data.creatorName);
-        if (data.premiumContract) setCreatorContract(data.premiumContract); // <-- ¡AÑADIDO!
-        if (data.escasezData) setEscasezData(data.escasezData); // <-- AÑADIDO
-        if (data.isFull) setIsFull(data.isFull); // <-- AÑADIDO
+        let parts = [];
+        if (data.include_photo) parts.push("1 Foto Exclusiva");
+        if (data.text_min_chars > 0) parts.push(`Mínimo ${data.text_min_chars} caracteres de texto`);
+        if (data.include_pdf) parts.push("1 Archivo PDF");
+        
+        return parts.length > 0 ? parts.join(', ') : "Respuesta de alta calidad garantizada.";
+    } catch (e) {
+        // Si todo falla (incluso el parseo del string), mostramos el texto por defecto.
+        return "Respuesta de alta calidad garantizada.";
+    }
+}
+// --- FIN: Función de Formato (S3) ---
 
-      } catch (err) {
-        console.error("Error cargando info pública del creador:", err);
-      }
+
+// --- COMPONENTE TipSelector (Control de propinas P1) ---
+/**
+ * Un componente simple para seleccionar montos de propina (simulados)
+ */
+const TipSelector = ({ selectedAmount, onSelect }) => {
+    const tipOptions = [100, 200, 500];
+    const MIN_AMOUNT = 100;
+
+    const buttonStyle = (amount) => ({
+        padding: '8px 12px',
+        fontSize: '14px',
+        fontWeight: 'bold',
+        color: selectedAmount === amount ? '#fff' : 'var(--glow-accent-crimson, #c9a4ff)',
+        background: selectedAmount === amount ? 'linear-gradient(90deg, #8e2de2, #4a00e0)' : 'rgba(255, 255, 255, 0.05)',
+        border: selectedAmount === amount ? '1px solid #8e2de2' : '1px solid rgba(255, 255, 255, 0.1)',
+        borderRadius: '10px',
+        cursor: 'pointer',
+        transition: 'all 0.2s ease',
+    });
+
+    const containerStyle = {
+        display: 'flex',
+        gap: '10px',
+        justifyContent: 'center',
+        margin: '15px 0 5px 0'
     };
 
-    fetchPublicCreatorInfo();
-  }, [publicId, activeChatInfo]);
+    const labelStyle = {
+        fontSize: '13px',
+        color: 'var(--text-secondary)',
+        marginBottom: '10px',
+        textAlign: 'center'
+    };
 
-  // --- Carga el chat al inicio ---
+    return (
+        <div>
+            <p style={labelStyle}>Monto por Respuesta Premium (Mínimo ${MIN_AMOUNT} MXN)</p> 
+            <div style={containerStyle}>
+                {tipOptions.map((amount) => (
+                    <button
+                        key={amount}
+                        type="button"
+                        style={buttonStyle(amount)}
+                        onClick={() => onSelect(selectedAmount === amount ? 0 : amount)} 
+                    >
+                        ${amount} MXN
+                    </button>
+                ))}
+            </div>
+            {selectedAmount === 0 && <p style={{fontSize: '12px', color: 'var(--text-secondary)', marginTop: '10px', opacity: 0.7, textAlign: 'center'}}>
+                (El mensaje se enviará sin garantía de respuesta)
+            </p>}
+        </div>
+    );
+};
+
+
+export default function AnonMessageForm({ 
+    publicId, 
+    onChatCreated,
+    escasezData, 
+    isFull,
+    creatorContract // <-- Prop con el Contrato (puede ser null al inicio)
+}) {
+  const [alias, setAlias] = useState("");
+  const [content, setContent] = useState("");
+  const [tipAmount, setTipAmount] = useState(0); 
+
+  const [status, setStatus] = useState("idle");
+  const [errorMsg, setErrorMsg] = useState("");
+  const [charCount, setCharCount] = useState(0);
+  const [isMounted, setIsMounted] = useState(false);
+
   useEffect(() => {
-    const chat = loadActiveChat();
-    if (chat) {
-      setActiveChatInfo(chat);
+    const timer = setTimeout(() => {
+      setIsMounted(true);
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
+    
+  // S3: Generar texto del contrato para la vista del anónimo
+  // Usará `creatorContract` si existe, o el texto por defecto si es null
+  const contractSummary = formatContract(creatorContract); 
+
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!content.trim() || content.trim().length < 3) {
+      setErrorMsg("El mensaje debe tener al menos 3 caracteres.");
+      setStatus("error");
+      return;
     }
-  }, [loadActiveChat]);
-  
-  // --- Carga la info del Creador (nombre, etc.) ---
- // src/app/u/[publicId]/page.jsx (Fragmento del useEffect de WS)
-
-// ... (El código de fetchMessages y el hook de loadActiveChat se mantienen) ...
-
-  // Cargar mensajes iniciales y conectar WebSocket
-  useEffect(() => {
     
-    // 1. Timer para el "hace..." (sin cambios)
-    const interval = setInterval(() => {
-      setLastActiveTimestamp(prev => prev);
-    }, 30000); // Actualiza cada 30 segundos
+    // Validación de mínimo Premium (P1)
+    if (tipAmount > 0 && tipAmount < MIN_PREMIUM_AMOUNT) {
+        setErrorMsg(`El monto mínimo por respuesta premium es $${MIN_PREMIUM_AMOUNT} MXN.`);
+        setStatus("error");
+        return;
+    }
     
-    // --- Función para Cargar Mensajes (ahora vive aquí) ---
-    const fetchMessages = async (token, id) => {
-      if (!token || !id) return;
-      setIsChatLoading(true);
-      setChatError(null);
-      try {
-        const res = await fetch(`${API}/chats/${token}/${id}`);
-        if (!res.ok) throw new Error("No se pudo cargar el chat");
-        const data = await res.json();
-        setChatMessages(data.messages || []);
-        
-        // --- CORRECCIÓN ---
-        // El endpoint del chat también debe devolver el contrato
-        if (data.creatorPremiumContract) {
-            setCreatorContract(data.creatorPremiumContract);
+    // Validación de límite diario si intenta enviar un Premium (S1)
+    if (isFull && tipAmount > 0) {
+        setErrorMsg("El límite diario de mensajes Premium se ha alcanzado. Por favor, espera al reinicio.");
+        setStatus("error");
+        return;
+    }
+    
+    setStatus("loading");
+    setErrorMsg("");
+
+    try {
+      const res = await fetch(`${API}/public/${publicId}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          alias, 
+          content,
+          tipAmount
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        if (data.code === "TIP_ONLY_MODE") {
+             throw new Error(`Este creador solo acepta mensajes con pago. El mínimo es $${MIN_PREMIUM_AMOUNT} MXN.`);
         }
+        throw new Error(data.error || "Error enviando el mensaje");
+      }
+
+      setStatus("success");
+
+      if (data.chatId && data.anonToken) {
+        const myChats = JSON.parse(localStorage.getItem("myChats") || "[]");
+        const otherChats = myChats.filter(chat => chat.creatorPublicId !== publicId);
+        
+        // --- CORRECCIÓN: Guardar también el contrato devuelto por la API ---
+        const newChatEntry = {
+          chatId: data.chatId,
+          anonToken: data.anonToken,
+          creatorPublicId: publicId,
+          preview: content.slice(0, 50) + (content.length > 50 ? "..." : ""),
+          ts: new Date().toISOString(),
+          creatorName: data.creatorName || "Conversación",
+          anonAlias: alias || "Anónimo",
+          hasNewReply: false, 
+          previewFrom: 'anon',
+          creatorPremiumContract: data.creatorPremiumContract // <-- Guardar el contrato
+        };
         // --- FIN CORRECCIÓN ---
 
-      } catch (err) { setChatError("⚠️ Error cargando mensajes"); }
-      finally { setIsChatLoading(false); }
-    };
-    // -----------------------------------------------------------
+        const updatedChats = [newChatEntry, ...otherChats];
+        localStorage.setItem("myChats", JSON.stringify(updatedChats));
 
-    // 2. Conexión WebSocket Única
-    const connectWebSocket = () => {
-      if (wsRef.current) { 
-        // Cierre suave para evitar errores si ya estaba conectado
-        wsRef.current.close(1000, "Reconectando"); 
-      }
-
-      // URL base solo con publicId
-      let wsUrl = `${API.replace(/^http/, "ws")}/ws?publicId=${publicId}`;
-      
-      // Si el chat está activo, añade el anonToken al WS y carga sus mensajes
-      if (activeChatInfo) {
-        wsUrl += `&anonTokens=${activeChatInfo.anonToken}`;
-        fetchMessages(activeChatInfo.anonToken, activeChatInfo.chatId);
-      } else {
-        setIsChatLoading(false);
-        setChatMessages([]);
-        setChatError(null);
-      }
-
-      const ws = new WebSocket(wsUrl);
-      wsRef.current = ws;
-
-      ws.onopen = () => console.log(`WS (Public Page MAIN) conectado: ${wsUrl}`);
-      ws.onerror = (error) => console.error("WS (Public Page MAIN) error:", error);
-      ws.onclose = (event) => {
-        console.log(`WS (Public Page MAIN) disconnected. Code: ${event.code}.`);
-        if (![1000, 1008].includes(event.code)) {
-          console.log("Reconectando WS (MAIN)..."); 
-          setTimeout(connectWebSocket, 5000);
+        if (typeof onChatCreated === "function") {
+          onChatCreated(newChatEntry); // Pasamos el objeto completo
         }
-      };
-
-      // --- Manejador de Mensajes Unificado ---
-      ws.onmessage = (event) => {
-        try {
-          const msg = JSON.parse(event.data);
-          
-          // Handler 1: Estado del Creador
-          if (msg.type === 'CREATOR_STATUS_UPDATE') {
-            setCreatorStatus(msg.status);
-            if (msg.status === 'offline') {
-              setLastActiveTimestamp(new Date().toISOString());
-            }
-          }
-          
-          // --- HANDLER S3: Actualización de Contrato en Tiempo Real ---
-          if (msg.type === 'CREATOR_INFO_UPDATE' && msg.premiumContract) {
-             setCreatorContract(msg.premiumContract); // <-- CORREGIDO
-             console.log("WS: Contrato Premium actualizado.");
-          }
-          // -----------------------------------------------------------
-
-          // Handler 2: Mensajes del Chat (Actualización de la conversación)
-          if (activeChatInfo && msg.chatId === activeChatInfo.chatId) {
-            setChatMessages((prev) => {
-              if (prev.some(m => m.id === msg.id)) return prev;
-              return [...prev, msg];
-            });
-            // E2/E3: Si es una respuesta del creador, forzamos un re-fetch del estado
-            if (msg.from === 'creator') {
-                 fetchMessages(activeChatInfo.anonToken, activeChatInfo.chatId);
-            }
-          }
-        } catch (e) { console.error("Error processing WS (MAIN):", e); }
-      };
-    };
-
-    connectWebSocket();
-    
-    // Limpieza
-    return () => { 
-      clearInterval(interval);
-      if (wsRef.current) { 
-        wsRef.current.onclose = null; 
-        wsRef.current.close(1000, "Componente Page desmontado"); 
-        wsRef.current = null; 
-      } 
-    };
-    // El WS se reconectará si activeChatInfo cambia (cuando el usuario envía el 1er msg)
-  },[publicId, activeChatInfo]);
-
-  
-  // --- Función para cerrar el modal (sin cambios) ---
-  const handleCloseGuide = useCallback(() => { setShowGuideModal(false); }, []);
-
-  // --- Función para cuando se crea el chat (sin cambios) ---
-  const handleChatCreated = useCallback((newChatInfo) => {
-    setActiveChatInfo(newChatInfo);
-    setShowGuideModal(true);
-    if (newChatInfo.creatorName) {
-      setCreatorName(newChatInfo.creatorName);
-    }
-  }, []);
-
-  // --- NUEVO: Función para Enviar Mensajes ---
-  // Se pasará a PublicChatView para que la use
-  const handleSendMessage = async (content) => {
-    if (!activeChatInfo || !content.trim()) return;
-    const { anonToken, chatId } = activeChatInfo;
-    
-    try {
-      const res = await fetch(`${API}/chats/${anonToken}/${chatId}/messages`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content }),
-      });
-      
-      if (!res.ok) {
-        const d = await res.json();
-        throw new Error(d.error || "Error enviando el mensaje");
       }
-      // No necesitamos hacer nada más. El mensaje de vuelta
-      // llegará por el WebSocket que *este* componente (page.jsx) ya está escuchando.
-      
     } catch (err) {
-      console.error("Error enviando mensaje:", err);
-      // Aquí podrías guardar el error en un estado y pasarlo al chat
-      setChatError("⚠️ Error al enviar. Inténtalo de nuevo.");
+      setStatus("error");
+      setErrorMsg(err.message);
     }
   };
 
-  // --- Estilos (sin cambios) ---
-  const pageStyles = `
-    .page-container {
-      background: linear-gradient(-45deg, #0d0c22, #1a1a2e, #2c1a5c, #3c287c);
-      background-size: 400% 400%; animation: gradient-pan 15s ease infinite;
-      min-height: 100vh; display: flex; flex-direction: column; justify-content: center;
-      align-items: center; padding: 40px 20px; font-family: var(--font-main);
-      position: relative; color: var(--text-primary);
-    }
-    @keyframes gradient-pan { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
-    .to-dashboard-button { position: absolute; top: 20px; right: 20px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: #fff; padding: 10px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background-color 0.3s ease, transform 0.3s ease; z-index: 10; }
-    .to-dashboard-button:hover { background: rgba(255, 255, 255, 0.2); transform: scale(1.1); }
-    .create-space-link-container { text-align: center; margin-top: 35px; margin-bottom: 30px; opacity: 0; }
-    .create-space-link { display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; background-color: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 12px; color: var(--glow-accent-crimson); font-size: 15px; font-weight: 600; text-decoration: none; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); }
-    .create-space-link:hover { background-color: rgba(142, 45, 226, 0.2); border-color: var(--glow-accent-crimson); color: #fff; transform: translateY(-2px); box-shadow: 0 8px 25px rgba(142, 45, 226, 0.3); }
-    .create-space-link svg { transition: transform 0.3s ease; }
-    .create-space-link:hover svg { transform: scale(1.1); }
-    @keyframes fadeInUp { from { opacity: 0; transform: translateY(25px); } to { opacity: 1; transform: translateY(0); } }
-    .staggered-fade-in-up { opacity: 0; animation: fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
-    
-    .waiting-title-container {
-      margin-bottom: 25px;
-      text-align: center;
-      min-height: 40px; 
-    }
-    .waiting-title {
-      font-size: 22px; /* Tamaño que ajustaste */
-      font-weight: 800;
-      color: var(--text-primary);
-      text-shadow: 0 0 15px rgba(255,255,255,0.4);
-      animation: subtle-pulse-glow 2.5s ease-in-out infinite, fadeInUp 0.8s ease-out;
-      display: inline-flex; 
-      align-items: center;
-      gap: 8px;
-    }
-    .waiting-title .waiting-dots {
-      position: relative;
-      top: -2px;
-      margin-left: 0;
-    }
-  `;
-  
-  const lastActiveDisplay = timeAgo(lastActiveTimestamp);
-
-  // Lógica para el título "Espera..." (ahora usa los estados del padre)
-  const lastMessage = chatMessages[chatMessages.length - 1];
-  const isWaitingForReplyTitle = activeChatInfo && !isChatLoading && chatMessages.length > 0 && (!lastMessage || lastMessage.from === 'anon');
-
   return (
-    <>
-      <style>{pageStyles}</style>
-      {showGuideModal && <FirstMessageGuideModal onClose={handleCloseGuide} />}
-
-      <div className="page-container">
-        <button onClick={() => router.push('/')} className="to-dashboard-button" title="Ir a mi espacio">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="24" height="24"><path strokeLinecap="round" strokeLinejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-        </button>
-
-        <div style={{ maxWidth: 520, width: '100%' }}>
-
-          {activeChatInfo ? (
-            <>
-              {/* Título "Espera..." (sin cambios) */}
-              <div className="waiting-title-container">
-                {isWaitingForReplyTitle && (
-                  <h1 className="waiting-title">
-                    Espera a que {creatorName} te responda
-                    <span className="waiting-dots"><span>.</span><span>.</span><span>.</span></span>
-                  </h1>
-                )}
-              </div>
-              
-              {/* --- MODIFICADO: Pasa las nuevas props a PublicChatView --- */}
-              <PublicChatView
-                chatId={activeChatInfo.chatId}
-                anonToken={activeChatInfo.anonToken}
-                creatorStatus={creatorStatus}
-                lastActiveDisplay={lastActiveDisplay}
-                creatorName={creatorName || "el creador"}
-                
-                // Pasa el estado del chat
-                messages={chatMessages}
-                isLoading={isChatLoading}
-                error={chatError}
-                
-                // Pasa el manejador de envío
-                onSendMessage={handleSendMessage}
-              />
-            </>
-          ) : (
-            // Formulario de primer mensaje (sin cambios)
-            <>
-              <h1 style={{ textAlign: 'center', marginBottom: '30px', fontSize: '26px', color: '#fff', fontWeight: 800, textShadow: '0 0 20px rgba(255, 255, 255, 0.3)', animation: 'fadeInUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards' }}>
-                Envíale un Mensaje Anónimo a {creatorName}
-              </h1>
-              <AnonMessageForm
-                publicId={publicId}
-                onChatCreated={handleChatCreated}
-                escasezData={escasezData} // <-- PROP AÑADIDA
-                isFull={isFull} // <-- PROP AÑADIDA
-                creatorContract={creatorContract} // <-- ¡PROP AÑADIDA!
-              />
-              <div className="create-space-link-container staggered-fade-in-up" style={{ animationDelay: '0.8s' }}>
-                <a href="/" className="create-space-link">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="20" height="20"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                  Crear tu propio espacio
-                </a>
-              </div>
-            </>
-          )}
+    <div className={`anon-form-container ${isMounted ? 'mounted' : ''}`}>
+      <form onSubmit={handleSubmit} className="form-element-group">
+        
+        {/* --- S3: Contrato de Servicio Visible para el Anónimo --- */}
+        <div className="contract-summary-box" style={{ 
+            padding: '15px', 
+            background: 'rgba(142, 45, 226, 0.15)', 
+            borderRadius: '12px',
+            border: '1px solid rgba(142, 45, 226, 0.4)',
+            marginBottom: '20px'
+        }}>
+            <h4 style={{ fontSize: '16px', margin: '0 0 5px', color: 'var(--text-primary)' }}>
+                Contrato de Servicio Premium:
+            </h4>
+            <p style={{ margin: 0, fontSize: '14px', color: 'var(--glow-accent-crimson)', fontWeight: 'bold' }}>
+                {contractSummary}
+            </p>
         </div>
-      </div>
-    </>
+        {/* --- FIN S3 --- */}
+
+        <input
+            type="text"
+            placeholder="Tu alias (opcional)"
+            value={alias}
+            onChange={(e) => setAlias(e.target.value)}
+            className="form-input-field"
+          />
+          <textarea
+            placeholder="Escribe tu mensaje anónimo..."
+            value={content}
+            onChange={(e) => {
+              setContent(e.target.value);
+              setCharCount(e.target.value.length);
+            }}
+            className="form-input-field"
+            rows="4"
+            maxLength="500"
+          ></textarea>
+          
+          <div className="char-counter">
+            {charCount} / 500
+          </div>
+          
+          {/* --- BLOQUE TipSelector --- */}
+          <TipSelector 
+            selectedAmount={tipAmount}
+            onSelect={setTipAmount}
+          />
+          {/* --- FIN DEL BLOQUE --- */}
+
+        <button type="submit" disabled={status === "loading" || !content.trim()} className="submit-button">
+          {status === "loading" ? "Enviando..." : (tipAmount > 0 ? `Pagar y Enviar $${tipAmount}` : "Enviar Mensaje Gratis")}
+        </button>
+      </form>
+
+      {status === "success" && (
+        <div className="form-status-message success">
+          <p>✅ ¡Mensaje Enviado! {tipAmount > 0 ? `Tu pago de $${tipAmount} MXN está retenido hasta que el creador te responda.` : "Se ha enviado tu mensaje."}</p>
+          <p className="sub-text">Puedes ver el estado en tu <a href="/chats">bandeja de chats</a>.</p>
+        </div>
+      )}
+
+      {status === "error" && (
+        <div className="form-status-message error">
+          <p>{errorMsg || "Hubo un error al enviar tu mensaje."}</p>
+        </div>
+      )}
+    </div>
   );
 }
