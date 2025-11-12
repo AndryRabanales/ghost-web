@@ -63,33 +63,39 @@ export default function AnonMessageForm({
   const [alias, setAlias] = useState("");
   const [content, setContent] = useState("");
   
-  // --- CAMBIO: Nuevo estado para la donación (prioridad) ---
-  const [donationInput, setDonationInput] = useState(""); // El texto del input
+  // --- CAMBIO: Un solo estado para el pago ---
+  const [paymentInput, setPaymentInput] = useState(""); // El texto del input
   
   const [status, setStatus] = useState("idle");
   const [errorMsg, setErrorMsg] = useState("");
   const [charCount, setCharCount] = useState(0);
   const [isMounted, setIsMounted] = useState(false);
 
+  // --- El precio base (en pesos) ---
+  const basePrice = (baseTipAmountCents || (FALLBACK_MIN_PREMIUM_AMOUNT * 100)) / 100;
+  
+  // --- CAMBIO: El monto total es lo que esté en el input ---
+  const totalAmount = Number(paymentInput) || 0;
+
+  // --- CAMBIO: Cargar el precio base en el input cuando el componente esté listo ---
   useEffect(() => {
+    if (basePrice > 0 && !isMounted) {
+      // Establece el precio base como valor inicial del input
+      setPaymentInput(String(basePrice));
+    }
+
     const timer = setTimeout(() => {
       setIsMounted(true);
     }, 100);
     return () => clearTimeout(timer);
-  }, []);
-
-  // --- CAMBIO: El precio base y el total ahora se calculan ---
-  const basePrice = (baseTipAmountCents || (FALLBACK_MIN_PREMIUM_AMOUNT * 100)) / 100;
-  const donationAmount = Number(donationInput) || 0;
-  const totalAmount = basePrice + donationAmount;
-  // --- FIN DEL CAMBIO ---
-
+  }, [basePrice, isMounted]); // Se ejecuta cuando basePrice cambia
+  
   const contractSummary = formatContract(creatorContract); 
 
-  const handleDonationChange = (e) => {
+  const handlePaymentChange = (e) => {
     // Permitir solo números
     const value = e.target.value.replace(/[^0-9]/g, '');
-    setDonationInput(value);
+    setPaymentInput(value);
   };
 
   const handleSubmit = async (e) => {
@@ -100,10 +106,9 @@ export default function AnonMessageForm({
       return;
     }
     
-    // --- CAMBIO: Validación de mínimo ---
-    // (La API también valida esto, pero es bueno tenerlo en el front)
+    // --- CAMBIO: Validación de mínimo (como en tu imagen) ---
     if (totalAmount < basePrice) {
-        setErrorMsg(`El pago mínimo es $${basePrice} MXN.`);
+        setErrorMsg(`El pago mínimo para este creador es $${basePrice.toFixed(2)} MXN.`);
         setStatus("error");
         return;
     }
@@ -132,7 +137,7 @@ export default function AnonMessageForm({
       const data = await res.json();
       if (!res.ok) {
         if (data.code === "MINIMUM_PAYMENT_REQUIRED") {
-             throw new Error(data.error || `El pago mínimo es $${basePrice} MXN.`);
+             throw new Error(data.error || `El pago mínimo es $${basePrice.toFixed(2)} MXN.`);
         }
         throw new Error(data.error || "Error enviando el mensaje");
       }
@@ -170,18 +175,19 @@ export default function AnonMessageForm({
     }
   };
 
-  // El botón está deshabilitado si no hay contenido O si el servidor está ocupado O si está lleno
-  const isDisabled = status === "loading" || !content.trim() || isFull;
+  // El botón está deshabilitado si no hay contenido, si está cargando, o si el monto es menor al base
+  const isDisabled = status === "loading" || !content.trim() || isFull || totalAmount < basePrice;
+
+  // El texto del botón ahora siempre muestra el monto total (o el base si el input está vacío)
+  const buttonText = `Pagar y Enviar $${(totalAmount || basePrice).toFixed(2)}`;
 
   return (
     <div className={`anon-form-container ${isMounted ? 'mounted' : ''}`}>
       
-      {/* --- Contador de Escasez (ya existe) --- */}
       <EscasezCounter data={escasezData} isFull={isFull} />
 
       <form onSubmit={handleSubmit} className="form-element-group">
         
-        {/* --- Contrato de Servicio (ya existe) --- */}
         <div className="contract-summary-box" style={{ 
             padding: '15px', 
             background: 'rgba(142, 45, 226, 0.15)', 
@@ -220,63 +226,63 @@ export default function AnonMessageForm({
             {charCount} / 500
           </div>
           
-          {/* --- CAMBIO: SECCIÓN DE PAGO (REEMPLAZA A TipSelector) --- */}
+          {/* --- CAMBIO DRÁSTICO: SECCIÓN DE PAGO SIMPLIFICADA --- */}
           <div className="payment-section" style={{
               borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-              borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-              padding: '20px 0'
+              paddingTop: '20px',
+              marginTop: '5px'
           }}>
               
-              {/* 1. Precio Base (Texto fijo) */}
-              <div className="payment-input-group" style={{marginBottom: '15px'}}>
-                  <label htmlFor="base-price" style={{flexBasis: 'auto', textAlign: 'left'}}>Precio Base:</label>
-                  <span style={{
-                      fontSize: '18px', 
-                      fontWeight: '700', 
+              <label htmlFor="payment" style={{
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  color: 'var(--text-secondary)',
+                  display: 'block',
+                  marginBottom: '10px'
+              }}>
+                Monto por Respuesta Premium (Mínimo ${basePrice.toFixed(2)} MXN)
+              </label>
+
+              <div className="payment-input-group" style={{marginBottom: '10px'}}>
+                  <span className="currency-symbol" style={{
                       color: 'var(--text-primary)', 
-                      flexGrow: 1, 
-                      textAlign: 'right'
-                  }}>
-                      ${basePrice.toFixed(2)} MXN
-                  </span>
-              </div>
-              
-              {/* 2. Donación (Prioridad) (Input opcional) */}
-              <div className="payment-input-group">
-                  <label htmlFor="donation" style={{flexBasis: 'auto', textAlign: 'left', color: 'var(--glow-accent-crimson)'}}>
-                    Prioriza tu mensaje (Opcional):
-                  </label>
-                  <span className="currency-symbol" style={{color: 'var(--glow-accent-crimson)'}}>$</span>
+                      fontSize: '20px', 
+                      fontWeight: '700',
+                      paddingLeft: '5px'
+                  }}>$</span>
                   <input
-                      type="number"
-                      id="donation"
-                      value={donationInput}
-                      onChange={handleDonationChange}
-                      placeholder="0"
+                      type="number" // Input numérico
+                      id="payment"
+                      value={paymentInput}
+                      onChange={handlePaymentChange}
+                      placeholder={String(basePrice)}
                       className="form-input-field"
                       style={{
                         flexGrow: 1, 
-                        maxWidth: '120px', 
-                        textAlign: 'right', 
-                        borderColor: donationAmount > 0 ? 'var(--glow-accent-crimson)' : 'rgba(255, 255, 255, 0.1)'
+                        textAlign: 'left', 
+                        fontSize: '20px',
+                        fontWeight: '700',
+                        borderColor: totalAmount < basePrice ? '#ff7b7b' : 'var(--glow-accent-crimson)'
                       }}
                   />
-                  <span className="currency-symbol" style={{color: 'var(--glow-accent-crimson)'}}>MXN</span>
+                  <span className="currency-symbol" style={{paddingRight: '5px'}}>MXN</span>
               </div>
               
-              {/* 3. Total (Texto dinámico) */}
-              <div style={{textAlign: 'right', marginTop: '15px', paddingTop: '10px', borderTop: '1px solid rgba(255, 255, 255, 0.1)'}}>
-                  <span style={{fontSize: '16px', color: 'var(--text-secondary)'}}>Total a Pagar: </span>
-                  <span style={{fontSize: '22px', fontWeight: '700', color: 'var(--text-primary)'}}>
-                      ${totalAmount.toFixed(2)} MXN
-                  </span>
-              </div>
+              <p style={{
+                  fontSize: '13px', 
+                  color: 'var(--text-secondary)', 
+                  textAlign: 'center', 
+                  margin: 0, 
+                  opacity: 0.8
+              }}>
+                Puedes ofrecer más para priorizar tu mensaje.
+              </p>
+              
           </div>
           {/* --- FIN DEL CAMBIO --- */}
 
-        {/* --- CAMBIO: Texto del botón --- */}
-        <button type="submit" disabled={isDisabled} className="submit-button">
-          {status === "loading" ? "Procesando..." : `Pagar y Enviar $${totalAmount.toFixed(2)}`}
+        <button type="submit" disabled={isDisabled} className="submit-button" style={{marginTop: '20px'}}>
+          {status === "loading" ? "Procesando..." : buttonText}
         </button>
       </form>
 
