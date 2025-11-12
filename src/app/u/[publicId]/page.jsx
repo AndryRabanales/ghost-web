@@ -1,11 +1,13 @@
+// src/app/u/[publicId]/page.jsx
 "use client";
 import { useState, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation"; // <-- 1. Importar hooks
 
 const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
-// El Mínimo ahora lo dicta el creador, pero dejamos 100 como fallback
 const FALLBACK_MIN_PREMIUM_AMOUNT = 100; 
 
 // --- FUNCIÓN DE FORMATEO DE CONTRATO (S3) ---
+// (Esta función se queda igual)
 const formatContract = (contractData) => {
     if (typeof contractData === 'string' && contractData.trim().length > 0) {
         return contractData.trim();
@@ -16,6 +18,7 @@ const formatContract = (contractData) => {
 
 
 // --- COMPONENTE EscasezCounter (S2) ---
+// (Este componente se queda igual)
 const EscasezCounter = ({ data, isFull }) => {
   if (!data || data.dailyMsgLimit <= 0) {
     return null;
@@ -51,49 +54,41 @@ const EscasezCounter = ({ data, isFull }) => {
 // --- FIN EscasezCounter ---
 
 
-// --- COMPONENTE PRINCIPAL ---
-export default function AnonMessageForm({ 
+// --- 2. COMPONENTE DE FORMULARIO (YA NO ES EL DEFAULT EXPORT) ---
+// Se quitó "export default" de esta función
+function AnonMessageForm({ 
     publicId, 
     onChatCreated,
     escasezData, 
     isFull,
     creatorContract,
-    baseTipAmountCents // <-- ¡NUEVA PROP!
+    baseTipAmountCents
 }) {
+  // (TODA la lógica interna de AnonMessageForm se queda exactamente igual)
   const [alias, setAlias] = useState("");
   const [content, setContent] = useState("");
-  
-  // --- CAMBIO: Un solo estado para el pago ---
-  const [paymentInput, setPaymentInput] = useState(""); // El texto del input
-  
+  const [paymentInput, setPaymentInput] = useState(""); 
   const [status, setStatus] = useState("idle");
   const [errorMsg, setErrorMsg] = useState("");
   const [charCount, setCharCount] = useState(0);
   const [isMounted, setIsMounted] = useState(false);
 
-  // --- El precio base (en pesos) ---
   const basePrice = (baseTipAmountCents || (FALLBACK_MIN_PREMIUM_AMOUNT * 100)) / 100;
-  
-  // --- CAMBIO: El monto total es lo que esté en el input ---
   const totalAmount = Number(paymentInput) || 0;
 
-  // --- CAMBIO: Cargar el precio base en el input cuando el componente esté listo ---
   useEffect(() => {
     if (basePrice > 0 && !isMounted) {
-      // Establece el precio base como valor inicial del input
       setPaymentInput(String(basePrice));
     }
-
     const timer = setTimeout(() => {
       setIsMounted(true);
     }, 100);
     return () => clearTimeout(timer);
-  }, [basePrice, isMounted]); // Se ejecuta cuando basePrice cambia
+  }, [basePrice, isMounted]);
   
   const contractSummary = formatContract(creatorContract); 
 
   const handlePaymentChange = (e) => {
-    // Permitir solo números
     const value = e.target.value.replace(/[^0-9]/g, '');
     setPaymentInput(value);
   };
@@ -106,7 +101,6 @@ export default function AnonMessageForm({
       return;
     }
     
-    // --- CAMBIO: Validación de mínimo (como en tu imagen) ---
     if (totalAmount < basePrice) {
         setErrorMsg(`El pago mínimo para este creador es $${basePrice.toFixed(2)} MXN.`);
         setStatus("error");
@@ -129,7 +123,6 @@ export default function AnonMessageForm({
         body: JSON.stringify({ 
           alias, 
           content,
-          // --- CAMBIO: Enviar el monto total (base + donación) ---
           tipAmount: totalAmount 
         }),
       });
@@ -175,10 +168,7 @@ export default function AnonMessageForm({
     }
   };
 
-  // El botón está deshabilitado si no hay contenido, si está cargando, o si el monto es menor al base
   const isDisabled = status === "loading" || !content.trim() || isFull || totalAmount < basePrice;
-
-  // El texto del botón ahora siempre muestra el monto total (o el base si el input está vacío)
   const buttonText = `Pagar y Enviar $${(totalAmount || basePrice).toFixed(2)}`;
 
   return (
@@ -226,7 +216,7 @@ export default function AnonMessageForm({
             {charCount} / 500
           </div>
           
-          {/* --- CAMBIO DRÁSTICO: SECCIÓN DE PAGO SIMPLIFICADA --- */}
+          {/* --- SECCIÓN DE PAGO SIMPLIFICADA --- */}
           <div className="payment-section" style={{
               borderTop: '1px solid rgba(255, 255, 255, 0.1)',
               paddingTop: '20px',
@@ -251,7 +241,7 @@ export default function AnonMessageForm({
                       paddingLeft: '5px'
                   }}>$</span>
                   <input
-                      type="number" // Input numérico
+                      type="number"
                       id="payment"
                       value={paymentInput}
                       onChange={handlePaymentChange}
@@ -299,6 +289,98 @@ export default function AnonMessageForm({
           <p>{errorMsg || "Hubo un error al enviar tu mensaje."}</p>
         </div>
       )}
+    </div>
+  );
+}
+// --- FIN DEL COMPONENTE DE FORMULARIO ---
+
+
+// --- 3. NUEVO COMPONENTE DE PÁGINA (EL DEFAULT EXPORT) ---
+export default function PublicUserPage() {
+  const params = useParams();
+  const router = useRouter();
+  const { publicId } = params;
+
+  const [creatorInfo, setCreatorInfo] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Carga los datos del creador (contrato, precio, etc.) desde la API
+  useEffect(() => {
+    if (publicId) {
+      const fetchData = async () => {
+        try {
+          const res = await fetch(`${API}/public/creator/${publicId}`);
+          if (!res.ok) {
+            const errData = await res.json();
+            throw new Error(errData.error || "No se pudo cargar la información del creador.");
+          }
+          const data = await res.json();
+          setCreatorInfo(data);
+        } catch (err) {
+          setError(err.message);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchData();
+    }
+  }, [publicId]);
+
+  // Define qué hacer cuando el chat se cree (redirigir)
+  const handleChatCreated = (newChatEntry) => {
+    if (newChatEntry.anonToken && newChatEntry.chatId) {
+      router.push(`/chats/${newChatEntry.anonToken}/${newChatEntry.chatId}`);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div style={{ color: 'white', textAlign: 'center', paddingTop: '100px', fontFamily: 'monospace' }}>
+        Cargando espacio...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{ color: '#ff7b7b', textAlign: 'center', paddingTop: '100px', fontFamily: 'monospace' }}>
+        Error: {error}
+      </div>
+    );
+  }
+
+  if (!creatorInfo) {
+    return (
+      <div style={{ color: 'white', textAlign: 'center', paddingTop: '100px', fontFamily: 'monospace' }}>
+        Creador no encontrado.
+      </div>
+    );
+  }
+
+  // Renderiza el formulario, pasando los datos cargados como props
+  return (
+    <div style={{ maxWidth: '520px', margin: '40px auto', padding: '0 20px' }}>
+      <h1 style={{
+          fontSize: '34px',
+          fontWeight: '800',
+          letterSpacing: '-1.5px',
+          background: 'linear-gradient(90deg, #8e2de2, #c9a4ff)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          margin: '0 0 15px',
+          textAlign: 'center'
+        }}>
+        Enviar a {creatorInfo.creatorName}
+      </h1>
+      <AnonMessageForm
+        publicId={publicId}
+        onChatCreated={handleChatCreated}
+        escasezData={creatorInfo.escasezData}
+        isFull={creatorInfo.isFull}
+        creatorContract={creatorInfo.premiumContract}
+        baseTipAmountCents={creatorInfo.baseTipAmountCents}
+      />
     </div>
   );
 }
