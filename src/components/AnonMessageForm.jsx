@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
 const MIN_PREMIUM_AMOUNT = 100; // Mínimo para el premium (P1)
 
-// --- CORRECCIÓN: FUNCIÓN MOVIDA AL NIVEL RAÍZ (S3) ---
+// --- FUNCIÓN DE FORMATEO DE CONTRATO (S3) ---
 /**
  * Muestra el contrato guardado por el creador.
  * @param {string | null | object} contractData El string o JSON del contrato guardado.
@@ -96,8 +96,57 @@ const TipSelector = ({ selectedAmount, onSelect }) => {
         </div>
     );
 };
+// --- FIN TipSelector ---
 
 
+// --- COMPONENTE EscasezCounter (S2) ---
+/**
+ * Muestra el contador de escasez (S2)
+ */
+const EscasezCounter = ({ data, isFull }) => {
+  // No mostrar nada si no hay datos o el límite es 0 (ilimitado)
+  if (!data || data.dailyMsgLimit <= 0) {
+    return null;
+  }
+
+  const remaining = Math.max(0, data.dailyMsgLimit - data.msgCountToday);
+  
+  // Mensajes dinámicos
+  const text = isFull ? "¡Límite diario alcanzado!" : `¡Solo quedan ${remaining} cupos Premium!`;
+  const subText = isFull ? "Vuelve mañana para asegurar tu lugar." : `El contador se reinicia cada 12 horas.`;
+  
+  // Color dinámico (Rojo si está lleno, Verde/Éxito si hay cupos)
+  const color = isFull ? '#ff7b7b' : 'var(--success-solid, #00ff80)'; 
+
+  // Usamos los estilos globales que ya tienes
+  const animationStyle = {
+    animation: `fadeInUp 0.5s ease forwards`, // Animación de entrada
+    opacity: 0 // Inicia invisible para la animación
+  };
+
+  return (
+    <div style={{
+      padding: '12px 15px',
+      background: 'rgba(0,0,0,0.2)',
+      borderRadius: '12px',
+      border: `1px solid ${color}`,
+      textAlign: 'center',
+      marginBottom: '20px',
+      ...animationStyle
+    }}>
+      <h4 style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: color }}>
+        {text}
+      </h4>
+      <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'var(--text-secondary)'}}>
+        {subText}
+      </p>
+    </div>
+  );
+};
+// --- FIN EscasezCounter ---
+
+
+// --- COMPONENTE PRINCIPAL ---
 export default function AnonMessageForm({ 
     publicId, 
     onChatCreated,
@@ -206,6 +255,10 @@ export default function AnonMessageForm({
 
   return (
     <div className={`anon-form-container ${isMounted ? 'mounted' : ''}`}>
+      
+      {/* --- AQUÍ ESTÁ EL CONTADOR DE ESCASEZ --- */}
+      <EscasezCounter data={escasezData} isFull={isFull} />
+
       <form onSubmit={handleSubmit} className="form-element-group">
         
         {/* --- S3: Contrato de Servicio Visible para el Anónimo --- */}
@@ -217,7 +270,7 @@ export default function AnonMessageForm({
             marginBottom: '20px'
         }}>
             <h4 style={{ fontSize: '16px', margin: '0 0 5px', color: 'var(--text-primary)' }}>
-                Contrato de Servicio Premium:
+                La respuesta del creador contendrá:
             </h4>
             <p style={{ margin: 0, fontSize: '14px', color: 'var(--glow-accent-crimson)', fontWeight: 'bold' }}>
                 {contractSummary}
