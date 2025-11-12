@@ -5,6 +5,8 @@ import { useParams, useRouter } from "next/navigation"; // <-- 1. Importar hooks
 
 const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
 const FALLBACK_MIN_PREMIUM_AMOUNT = 100; 
+// --- 👇 CAMBIO 2: Límite máximo de pago ---
+const MAX_PREMIUM_AMOUNT = 100000; // $100,000 MXN
 
 // --- FUNCIÓN DE FORMATEO DE CONTRATO (S3) ---
 // (Esta función se queda igual)
@@ -89,9 +91,17 @@ function AnonMessageForm({
   const contractSummary = formatContract(creatorContract); 
 
   const handlePaymentChange = (e) => {
-    // --- CAMBIO 1: Permitir números Y un punto decimal ---
     const value = e.target.value.replace(/[^0-9.]/g, '');
-    setPaymentInput(value);
+
+    // --- 👇 CAMBIO 2: Aplicar validación de máximo ---
+    if (value === '') {
+        setPaymentInput('');
+    } else if (Number(value) > MAX_PREMIUM_AMOUNT) {
+        setPaymentInput(String(MAX_PREMIUM_AMOUNT));
+    } else {
+        setPaymentInput(value);
+    }
+    // --- 👆 Fin del Cambio 2 ---
   };
 
   const handleSubmit = async (e) => {
@@ -107,6 +117,14 @@ function AnonMessageForm({
         setStatus("error");
         return;
     }
+    
+    // --- 👇 CAMBIO 2: Validación de máximo en submit ---
+    if (totalAmount > MAX_PREMIUM_AMOUNT) {
+        setErrorMsg(`El pago máximo es $${MAX_PREMIUM_AMOUNT.toFixed(2)} MXN.`);
+        setStatus("error");
+        return;
+    }
+    // --- 👆 Fin del Cambio 2 ---
     
     if (isFull) {
         setErrorMsg("El límite diario de mensajes se ha alcanzado. Por favor, espera al reinicio.");
@@ -169,7 +187,8 @@ function AnonMessageForm({
     }
   };
 
-  const isDisabled = status === "loading" || !content.trim() || isFull || totalAmount < basePrice;
+  // --- 👇 CAMBIO 2: Actualizada la lógica de deshabilitado ---
+  const isDisabled = status === "loading" || !content.trim() || isFull || totalAmount < basePrice || totalAmount > MAX_PREMIUM_AMOUNT;
   const buttonText = `Pagar y Enviar $${(totalAmount || basePrice).toFixed(2)}`;
 
   return (
@@ -217,63 +236,64 @@ function AnonMessageForm({
             {charCount} / 500
           </div>
           
-          {/* --- SECCIÓN DE PAGO (MODIFICADA PARA SER MÁS COMPACTA) --- */}
+          {/* --- SECCIÓN DE PAGO (MODIFICADA) --- */}
           <div className="payment-section" style={{
               borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-              paddingTop: '15px', // <-- CAMBIO 2: Reducido
-              marginTop: '0px'     // <-- CAMBIO 2: Reducido
+              paddingTop: '15px', 
+              marginTop: '0px'     
           }}>
               
               <label htmlFor="payment" style={{
-                  fontSize: '13px', // <-- CAMBIO 2: Reducido
+                  fontSize: '13px', 
                   fontWeight: '600',
                   color: 'var(--text-secondary)',
                   display: 'block',
-                  marginBottom: '8px' // <-- CAMBIO 2: Reducido
+                  marginBottom: '8px' 
               }}>
                 Monto por Respuesta Premium (Mínimo ${basePrice.toFixed(2)} MXN)
               </label>
 
+              {/* --- 👇 CAMBIO 1: Estilo en línea para quitar el foco morado --- */}
               <div className="payment-input-group" style={{
-                  marginBottom: '8px', // <-- CAMBIO 2: Reducido
-                  padding: '4px 14px' // <-- CAMBIO 2: Padding vertical reducido
+                  marginBottom: '8px', 
+                  padding: '4px 14px',
+                  // Esto evita que :focus-within de globals.css ponga el borde y sombra
+                  borderColor: 'rgba(255, 255, 255, 0.1)', 
+                  boxShadow: 'none'
                 }}>
+              {/* --- 👆 Fin del Cambio 1 --- */}
                   <span className="currency-symbol" style={{
                       color: 'var(--text-primary)', 
-                      fontSize: '18px', // <-- CAMBIO 2: Reducido
+                      fontSize: '18px', 
                       fontWeight: '700',
-                      paddingLeft: '0px' // <-- CAMBIO 2: Ajustado
+                      paddingLeft: '0px' 
                   }}>$</span>
                   <input
-                      // --- CAMBIO 1: Eliminación de flechas (scroll) ---
                       type="text"
                       inputMode="decimal" 
-                      // --- Fin del Cambio 1 ---
                       id="payment"
                       value={paymentInput}
                       onChange={handlePaymentChange}
                       placeholder={String(basePrice)}
-                      className="form-input-field" // Mantenemos la clase para otros estilos
+                      className="payment-input" // <-- Usamos la clase correcta (sin borde)
                       style={{
                         flexGrow: 1, 
                         textAlign: 'left', 
-                        fontSize: '18px', // <-- CAMBIO 2: Reducido
+                        fontSize: '18px',
                         fontWeight: '700',
-                        padding: '6px 8px', // <-- CAMBIO 2: Padding interno reducido
-                        borderColor: totalAmount < basePrice ? '#ff7b7b' : 'var(--glow-accent-crimson)'
+                        padding: '6px 8px', 
+                        // --- 👇 CAMBIO 1: Borde de error simple, sin morado ---
+                        color: totalAmount < basePrice ? '#ff7b7b' : 'var(--text-primary)'
                       }}
                   />
-                  <span className="currency-symbol" style={{
-                      paddingRight: '0px', // <-- CAMBIO 2: Ajustado
-                      fontSize: '16px'   // <-- CAMBIO 2: Reducido
-                    }}>MXN</span>
+                  <span className="currency-symbol" style={{paddingRight: '0px', fontSize: '16px'}}>MXN</span>
               </div>
               
               <p style={{
-                  fontSize: '12px', // <-- CAMBIO 2: Reducido
+                  fontSize: '12px', 
                   color: 'var(--text-secondary)', 
                   textAlign: 'center', 
-                  margin: '6px 0 0', // <-- CAMBIO 2: Margen reducido
+                  margin: '6px 0 0', 
                   opacity: 0.8
               }}>
                 Puedes ofrecer más para priorizar tu mensaje.
