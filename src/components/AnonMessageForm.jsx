@@ -2,126 +2,43 @@
 import { useState, useEffect } from "react";
 
 const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
-const MIN_PREMIUM_AMOUNT = 100; // Mínimo para el premium (P1)
+// --- CAMBIO: Mínimo de fallback a 200 MXN como solicitaste ---
+const FALLBACK_MIN_PREMIUM_AMOUNT = 200; 
 
 // --- FUNCIÓN DE FORMATEO DE CONTRATO (S3) ---
-/**
- * Muestra el contrato guardado por el creador.
- * @param {string | null | object} contractData El string o JSON del contrato guardado.
- * @returns {string} Resumen del contrato.
- */
 const formatContract = (contractData) => {
-    // Verificamos si es un string simple y no está vacío
     if (typeof contractData === 'string' && contractData.trim().length > 0) {
-        // Si el creador escribió "Mi contrato", mostramos "Mi contrato"
         return contractData.trim();
     }
-
-    // --- Mantenemos la lógica antigua por si acaso (aunque parece no usarse) ---
     try {
-        // Aseguramos que es un objeto
         const data = typeof contractData === 'string' ? JSON.parse(contractData) : contractData;
-        
-        // Manejo de valores no definidos si el contrato es nuevo o JSON vacío
         if (!data || Object.keys(data).length === 0) {
              return "Respuesta de alta calidad garantizada.";
         }
-        
         let parts = [];
         if (data.include_photo) parts.push("1 Foto Exclusiva");
         if (data.text_min_chars > 0) parts.push(`Mínimo ${data.text_min_chars} caracteres de texto`);
         if (data.include_pdf) parts.push("1 Archivo PDF");
-        
         return parts.length > 0 ? parts.join(', ') : "Respuesta de alta calidad garantizada.";
     } catch (e) {
-        // Si todo falla (incluso el parseo del string), mostramos el texto por defecto.
         return "Respuesta de alta calidad garantizada.";
     }
 }
 // --- FIN: Función de Formato (S3) ---
 
 
-// --- COMPONENTE TipSelector (Control de propinas P1) ---
-/**
- * Un componente simple para seleccionar montos de propina (simulados)
- */
-const TipSelector = ({ selectedAmount, onSelect }) => {
-    const tipOptions = [100, 200, 500];
-    const MIN_AMOUNT = 100;
-
-    const buttonStyle = (amount) => ({
-        padding: '8px 12px',
-        fontSize: '14px',
-        fontWeight: 'bold',
-        color: selectedAmount === amount ? '#fff' : 'var(--glow-accent-crimson, #c9a4ff)',
-        background: selectedAmount === amount ? 'linear-gradient(90deg, #8e2de2, #4a00e0)' : 'rgba(255, 255, 255, 0.05)',
-        border: selectedAmount === amount ? '1px solid #8e2de2' : '1px solid rgba(255, 255, 255, 0.1)',
-        borderRadius: '10px',
-        cursor: 'pointer',
-        transition: 'all 0.2s ease',
-    });
-
-    const containerStyle = {
-        display: 'flex',
-        gap: '10px',
-        justifyContent: 'center',
-        margin: '15px 0 5px 0'
-    };
-
-    const labelStyle = {
-        fontSize: '13px',
-        color: 'var(--text-secondary)',
-        marginBottom: '10px',
-        textAlign: 'center'
-    };
-
-    return (
-        <div>
-            <p style={labelStyle}>Monto por Respuesta Premium (Mínimo ${MIN_AMOUNT} MXN)</p> 
-            <div style={containerStyle}>
-                {tipOptions.map((amount) => (
-                    <button
-                        key={amount}
-                        type="button"
-                        style={buttonStyle(amount)}
-                        onClick={() => onSelect(selectedAmount === amount ? 0 : amount)} 
-                    >
-                        ${amount} MXN
-                    </button>
-                ))}
-            </div>
-            {selectedAmount === 0 && <p style={{fontSize: '12px', color: 'var(--text-secondary)', marginTop: '10px', opacity: 0.7, textAlign: 'center'}}>
-                (El mensaje se enviará sin garantía de respuesta)
-            </p>}
-        </div>
-    );
-};
-// --- FIN TipSelector ---
-
-
 // --- COMPONENTE EscasezCounter (S2) ---
-/**
- * Muestra el contador de escasez (S2)
- */
 const EscasezCounter = ({ data, isFull }) => {
-  // No mostrar nada si no hay datos o el límite es 0 (ilimitado)
   if (!data || data.dailyMsgLimit <= 0) {
     return null;
   }
-
   const remaining = Math.max(0, data.dailyMsgLimit - data.msgCountToday);
-  
-  // Mensajes dinámicos
   const text = isFull ? "¡Límite diario alcanzado!" : `¡Solo quedan ${remaining} cupos Premium!`;
   const subText = isFull ? "Vuelve mañana para asegurar tu lugar." : `El contador se reinicia cada 12 horas.`;
-  
-  // Color dinámico (Rojo si está lleno, Verde/Éxito si hay cupos)
   const color = isFull ? '#ff7b7b' : 'var(--success-solid, #00ff80)'; 
-
-  // Usamos los estilos globales que ya tienes
   const animationStyle = {
-    animation: `fadeInUp 0.5s ease forwards`, // Animación de entrada
-    opacity: 0 // Inicia invisible para la animación
+    animation: `fadeInUp 0.5s ease forwards`,
+    opacity: 0
   };
 
   return (
@@ -152,28 +69,43 @@ export default function AnonMessageForm({
     onChatCreated,
     escasezData, 
     isFull,
-    creatorContract // <-- Prop con el Contrato (puede ser null al inicio)
+    creatorContract,
+    baseTipAmountCents // Esta prop viene de page.jsx
 }) {
   const [alias, setAlias] = useState("");
   const [content, setContent] = useState("");
-  const [tipAmount, setTipAmount] = useState(0); 
-
+  const [paymentInput, setPaymentInput] = useState(""); // Estado para el input de pago
+  
   const [status, setStatus] = useState("idle");
   const [errorMsg, setErrorMsg] = useState("");
-  const [charCount, setCharCount] = useState(0);
   const [isMounted, setIsMounted] = useState(false);
 
+  // Calcula el precio base. Usa el del creador, o el fallback de 200.
+  const basePrice = (baseTipAmountCents || (FALLBACK_MIN_PREMIUM_AMOUNT * 100)) / 100;
+  
+  // El monto total es lo que esté en el input
+  const totalAmount = Number(paymentInput) || 0;
+
+  // Carga el precio base en el input cuando el componente esté listo
   useEffect(() => {
+    // Asegura que el valor inicial sea al menos el mínimo de 200
+    const initialPrice = String(Math.max(basePrice, FALLBACK_MIN_PREMIUM_AMOUNT));
+    if (!isMounted) {
+      setPaymentInput(initialPrice);
+    }
     const timer = setTimeout(() => {
       setIsMounted(true);
     }, 100);
     return () => clearTimeout(timer);
-  }, []);
-    
-  // S3: Generar texto del contrato para la vista del anónimo
-  // Usará `creatorContract` si existe, o el texto por defecto si es null
+  }, [basePrice, isMounted]); // Se ejecuta si basePrice cambia
+  
   const contractSummary = formatContract(creatorContract); 
 
+  const handlePaymentChange = (e) => {
+    // Permitir solo números y un punto decimal
+    const value = e.target.value.replace(/[^0-9.]/g, '');
+    setPaymentInput(value);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -183,16 +115,16 @@ export default function AnonMessageForm({
       return;
     }
     
-    // Validación de mínimo Premium (P1)
-    if (tipAmount > 0 && tipAmount < MIN_PREMIUM_AMOUNT) {
-        setErrorMsg(`El monto mínimo por respuesta premium es $${MIN_PREMIUM_AMOUNT} MXN.`);
+    // Validación de mínimo (usa el valor más alto entre el del creador y 200)
+    const effectiveBasePrice = Math.max(basePrice, FALLBACK_MIN_PREMIUM_AMOUNT);
+    if (totalAmount < effectiveBasePrice) {
+        setErrorMsg(`El pago mínimo es $${effectiveBasePrice.toFixed(2)} MXN.`);
         setStatus("error");
         return;
     }
     
-    // Validación de límite diario si intenta enviar un Premium (S1)
-    if (isFull && tipAmount > 0) {
-        setErrorMsg("El límite diario de mensajes Premium se ha alcanzado. Por favor, espera al reinicio.");
+    if (isFull) {
+        setErrorMsg("El límite diario de mensajes se ha alcanzado. Por favor, espera al reinicio.");
         setStatus("error");
         return;
     }
@@ -207,25 +139,25 @@ export default function AnonMessageForm({
         body: JSON.stringify({ 
           alias, 
           content,
-          tipAmount
+          tipAmount: totalAmount // Enviar el monto total
         }),
       });
 
       const data = await res.json();
       if (!res.ok) {
-        if (data.code === "TIP_ONLY_MODE") {
-             throw new Error(`Este creador solo acepta mensajes con pago. El mínimo es $${MIN_PREMIUM_AMOUNT} MXN.`);
+        if (data.code === "MINIMUM_PAYMENT_REQUIRED") {
+             throw new Error(data.error || `El pago mínimo es $${effectiveBasePrice.toFixed(2)} MXN.`);
         }
         throw new Error(data.error || "Error enviando el mensaje");
       }
 
       setStatus("success");
 
+      // Guardar en localStorage y notificar al padre (page.jsx)
       if (data.chatId && data.anonToken) {
         const myChats = JSON.parse(localStorage.getItem("myChats") || "[]");
         const otherChats = myChats.filter(chat => chat.creatorPublicId !== publicId);
         
-        // --- CORRECCIÓN: Guardar también el contrato devuelto por la API ---
         const newChatEntry = {
           chatId: data.chatId,
           anonToken: data.anonToken,
@@ -236,15 +168,15 @@ export default function AnonMessageForm({
           anonAlias: alias || "Anónimo",
           hasNewReply: false, 
           previewFrom: 'anon',
-          creatorPremiumContract: data.creatorPremiumContract // <-- Guardar el contrato
+          creatorPremiumContract: data.creatorPremiumContract,
+          baseTipAmountCents: baseTipAmountCents // Guardar el precio base real
         };
-        // --- FIN CORRECCIÓN ---
 
         const updatedChats = [newChatEntry, ...otherChats];
         localStorage.setItem("myChats", JSON.stringify(updatedChats));
 
         if (typeof onChatCreated === "function") {
-          onChatCreated(newChatEntry); // Pasamos el objeto completo
+          onChatCreated(newChatEntry);
         }
       }
     } catch (err) {
@@ -253,15 +185,22 @@ export default function AnonMessageForm({
     }
   };
 
+  // Define el precio base efectivo (el mayor entre el del creador y 200)
+  const effectiveBasePrice = Math.max(basePrice, FALLBACK_MIN_PREMIUM_AMOUNT);
+  
+  // El botón está deshabilitado si no hay contenido, si está cargando, o si el monto es menor al base
+  const isDisabled = status === "loading" || !content.trim() || isFull || totalAmount < effectiveBasePrice;
+
+  // El texto del botón se actualiza dinámicamente
+  const buttonText = `Pagar y Enviar $${(totalAmount || effectiveBasePrice).toFixed(2)}`;
+
   return (
     <div className={`anon-form-container ${isMounted ? 'mounted' : ''}`}>
       
-      {/* --- AQUÍ ESTÁ EL CONTADOR DE ESCASEZ --- */}
       <EscasezCounter data={escasezData} isFull={isFull} />
 
       <form onSubmit={handleSubmit} className="form-element-group">
         
-        {/* --- S3: Contrato de Servicio Visible para el Anónimo --- */}
         <div className="contract-summary-box" style={{ 
             padding: '15px', 
             background: 'rgba(142, 45, 226, 0.15)', 
@@ -276,8 +215,8 @@ export default function AnonMessageForm({
                 {contractSummary}
             </p>
         </div>
-        {/* --- FIN S3 --- */}
 
+        {/* Input para Alias */}
         <input
             type="text"
             placeholder="Tu alias (opcional)"
@@ -285,37 +224,55 @@ export default function AnonMessageForm({
             onChange={(e) => setAlias(e.target.value)}
             className="form-input-field"
           />
-          <textarea
+          
+        {/* --- CAMBIO: de <textarea> a <input> --- */}
+        <input
+            type="text"
             placeholder="Escribe tu mensaje anónimo..."
             value={content}
-            onChange={(e) => {
-              setContent(e.target.value);
-              setCharCount(e.target.value.length);
-            }}
+            onChange={(e) => setContent(e.target.value)}
             className="form-input-field"
-            rows="4"
-            maxLength="500"
-          ></textarea>
-          
-          <div className="char-counter">
-            {charCount} / 500
-          </div>
-          
-          {/* --- BLOQUE TipSelector --- */}
-          <TipSelector 
-            selectedAmount={tipAmount}
-            onSelect={setTipAmount}
+            maxLength="280"
           />
-          {/* --- FIN DEL BLOQUE --- */}
+        {/* --- FIN DEL CAMBIO --- */}
+          
+        {/* --- CAMBIO: Contador de caracteres eliminado --- */}
+          
+        {/* --- SECCIÓN DE PAGO (Como en la imagen) --- */}
+        <div className="payment-section">
+            <label htmlFor="payment" className="payment-label">
+              Monto por Respuesta Premium (Mínimo ${effectiveBasePrice.toFixed(2)} MXN)
+            </label>
 
-        <button type="submit" disabled={status === "loading" || !content.trim()} className="submit-button">
-          {status === "loading" ? "Enviando..." : (tipAmount > 0 ? `Pagar y Enviar $${tipAmount}` : "Enviar Mensaje Gratis")}
+            <div className="payment-input-group">
+                <span className="currency-symbol">$</span>
+                <input
+                    type="number" // Input numérico
+                    id="payment"
+                    value={paymentInput}
+                    onChange={handlePaymentChange}
+                    placeholder={String(effectiveBasePrice)}
+                    className="payment-input" // Clase de globals.css
+                    min={effectiveBasePrice}
+                />
+                <span className="currency-symbol">MXN</span>
+            </div>
+            
+            <p className="payment-priority-text">
+              Puedes ofrecer más para priorizar tu mensaje.
+            </p>
+        </div>
+        {/* --- FIN DE SECCIÓN DE PAGO --- */}
+
+        <button type="submit" disabled={isDisabled} className="submit-button" style={{marginTop: '20px'}}>
+          {status === "loading" ? "Procesando..." : buttonText}
         </button>
       </form>
 
+      {/* --- Mensaje de éxito actualizado --- */}
       {status === "success" && (
         <div className="form-status-message success">
-          <p>✅ ¡Mensaje Enviado! {tipAmount > 0 ? `Tu pago de $${tipAmount} MXN está retenido hasta que el creador te responda.` : "Se ha enviado tu mensaje."}</p>
+          <p>✅ ¡Mensaje Enviado! Tu pago de ${totalAmount.toFixed(2)} MXN está retenido hasta que el creador te responda.</p>
           <p className="sub-text">Puedes ver el estado en tu <a href="/chats">bandeja de chats</a>.</p>
         </div>
       )}
