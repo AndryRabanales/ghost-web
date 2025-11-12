@@ -2274,7 +2274,7 @@ body {
 
 /* ... (tus estilos existentes) ... */
 
-/*
+/* ... existing code ... */
 ================================================================================
 |           SECCIÓN 19: ESTILOS PARA INPUT DE PAGO (COMO EN LA IMAGEN)         |
 ================================================================================
@@ -2282,49 +2282,24 @@ body {
 
 .payment-section {
   border-top: 1px solid rgba(255, 255, 255, 0.1);
-  padding-top: 20px;
-  margin-top: 5px;
+  padding-top: 15px; /* Reducido de 20px */
+  margin-top: 0; /* Reducido de 5px */
 }
 
 .payment-label {
-  font-size: 14px;
-  font-weight: 600;
+/* ... existing code ... */
   color: var(--text-secondary);
   display: block;
-  margin-bottom: 12px;
+  margin-bottom: 8px; /* Reducido de 12px */
   text-align: left; /* Alineado a la izquierda como en la imagen */
 }
 
 .payment-input-group {
-  display: flex;
-  align-items: center;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
+/* ... existing code ... */
   padding: 8px 16px;
   transition: all 0.3s ease;
 }
-
-.payment-input-group:focus-within {
-  border-color: rgba(142, 45, 226, 0.8);
-  box-shadow: 0 0 20px rgba(142, 45, 226, 0.4);
-}
-
-.currency-symbol {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--text-secondary);
-}
-
-.payment-input {
-  flex-grow: 1;
-  background: transparent;
-  border: none;
-  outline: none;
-  color: var(--text-primary);
-  font-size: 20px; /* Tamaño grande como en la imagen */
-  font-weight: 700;
-  text-align: left;
+/* ... existing code ... */
   padding: 8px;
   width: 100%;
 }
@@ -2345,6 +2320,6 @@ body {
   font-size: 13px;
   color: var(--text-secondary);
   text-align: center;
-  margin: 12px 0 0;
+  margin: 8px 0 0; /* Reducido de 12px */
   opacity: 0.8;
 }
