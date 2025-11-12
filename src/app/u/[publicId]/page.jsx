@@ -89,7 +89,8 @@ function AnonMessageForm({
   const contractSummary = formatContract(creatorContract); 
 
   const handlePaymentChange = (e) => {
-    const value = e.target.value.replace(/[^0-9]/g, '');
+    // --- CAMBIO 1: Permitir números Y un punto decimal ---
+    const value = e.target.value.replace(/[^0-9.]/g, '');
     setPaymentInput(value);
   };
 
@@ -216,53 +217,63 @@ function AnonMessageForm({
             {charCount} / 500
           </div>
           
-          {/* --- SECCIÓN DE PAGO SIMPLIFICADA --- */}
+          {/* --- SECCIÓN DE PAGO (MODIFICADA PARA SER MÁS COMPACTA) --- */}
           <div className="payment-section" style={{
               borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-              paddingTop: '20px',
-              marginTop: '5px'
+              paddingTop: '15px', // <-- CAMBIO 2: Reducido
+              marginTop: '0px'     // <-- CAMBIO 2: Reducido
           }}>
               
               <label htmlFor="payment" style={{
-                  fontSize: '14px',
+                  fontSize: '13px', // <-- CAMBIO 2: Reducido
                   fontWeight: '600',
                   color: 'var(--text-secondary)',
                   display: 'block',
-                  marginBottom: '10px'
+                  marginBottom: '8px' // <-- CAMBIO 2: Reducido
               }}>
                 Monto por Respuesta Premium (Mínimo ${basePrice.toFixed(2)} MXN)
               </label>
 
-              <div className="payment-input-group" style={{marginBottom: '10px'}}>
+              <div className="payment-input-group" style={{
+                  marginBottom: '8px', // <-- CAMBIO 2: Reducido
+                  padding: '4px 14px' // <-- CAMBIO 2: Padding vertical reducido
+                }}>
                   <span className="currency-symbol" style={{
                       color: 'var(--text-primary)', 
-                      fontSize: '20px', 
+                      fontSize: '18px', // <-- CAMBIO 2: Reducido
                       fontWeight: '700',
-                      paddingLeft: '5px'
+                      paddingLeft: '0px' // <-- CAMBIO 2: Ajustado
                   }}>$</span>
                   <input
-                      type="number"
+                      // --- CAMBIO 1: Eliminación de flechas (scroll) ---
+                      type="text"
+                      inputMode="decimal" 
+                      // --- Fin del Cambio 1 ---
                       id="payment"
                       value={paymentInput}
                       onChange={handlePaymentChange}
                       placeholder={String(basePrice)}
-                      className="form-input-field"
+                      className="form-input-field" // Mantenemos la clase para otros estilos
                       style={{
                         flexGrow: 1, 
                         textAlign: 'left', 
-                        fontSize: '20px',
+                        fontSize: '18px', // <-- CAMBIO 2: Reducido
                         fontWeight: '700',
+                        padding: '6px 8px', // <-- CAMBIO 2: Padding interno reducido
                         borderColor: totalAmount < basePrice ? '#ff7b7b' : 'var(--glow-accent-crimson)'
                       }}
                   />
-                  <span className="currency-symbol" style={{paddingRight: '5px'}}>MXN</span>
+                  <span className="currency-symbol" style={{
+                      paddingRight: '0px', // <-- CAMBIO 2: Ajustado
+                      fontSize: '16px'   // <-- CAMBIO 2: Reducido
+                    }}>MXN</span>
               </div>
               
               <p style={{
-                  fontSize: '13px', 
+                  fontSize: '12px', // <-- CAMBIO 2: Reducido
                   color: 'var(--text-secondary)', 
                   textAlign: 'center', 
-                  margin: 0, 
+                  margin: '6px 0 0', // <-- CAMBIO 2: Margen reducido
                   opacity: 0.8
               }}>
                 Puedes ofrecer más para priorizar tu mensaje.
