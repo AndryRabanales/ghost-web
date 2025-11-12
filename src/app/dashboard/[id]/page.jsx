@@ -1,16 +1,19 @@
 // src/app/dashboard/[id]/page.jsx
 "use client";
-import { useEffect, useState, useMemo, useCallback } from "react"; // Añadido useCallback y useMemo si no estaban
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { refreshToken, getAuthHeaders } from "@/utils/auth"; // Asegúrate que getAuthHeaders esté exportado
+import { refreshToken, getAuthHeaders } from "@/utils/auth";
 import MessageList from "@/components/MessageList";
 import DashboardInfo from "@/components/DashboardInfo";
-import ShareLinkGuideModal from "@/components/ShareLinkGuideModal"; // Importa el modal
+import ShareLinkGuideModal from "@/components/ShareLinkGuideModal";
 import PremiumContractConfig from "@/components/PremiumContractConfig";
+
+// --- 👇 1. AÑADE LA NUEVA IMPORTACIÓN 👇 ---
+import PriceConfig from "@/components/PriceConfig";
 
 const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
 
-const FullPageLoader = () => ( /* ... (tu componente Loader sin cambios) ... */
+const FullPageLoader = () => (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', color: 'rgba(255, 255, 255, 0.8)', }}>
         <svg width="48" height="48" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="white">
              <style>{`.spinner_V8m1{transform-origin:center;animation:spinner_zKoa 2s linear infinite}.spinner_V8m1 circle{stroke-linecap:round;animation:spinner_YpZS 1.5s ease-in-out infinite}@keyframes spinner_zKoa{100%{transform:rotate(360deg)}}@keyframes spinner_YpZS{0%{stroke-dasharray:0 150;stroke-dashoffset:0}47.5%{stroke-dasharray:42 150;stroke-dashoffset:-16}95%,100%{stroke-dasharray:42 150;stroke-dashoffset:-59}}`}</style>
@@ -26,9 +29,8 @@ export default function DashboardPage() {
     const router = useRouter();
     const [creator, setCreator] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [showShareGuideModal, setShowShareGuideModal] = useState(false); // Estado para el modal
+    const [showShareGuideModal, setShowShareGuideModal] = useState(false);
 
-    // --- Estilos Globales y Animaciones ---
     const pageStyles = ` /* ... (tus estilos pageStyles sin cambios) ... */ `;
 
     const handleAuthFailure = useCallback(() => {
@@ -36,82 +38,68 @@ export default function DashboardPage() {
         router.push("/login?session=expired");
     }, [router]);
 
-    // --- Función para cargar datos del creador y chats ---
     const fetchDashboardData = useCallback(async (tokenToUse) => {
-        setLoading(true); // Mostrar carga al inicio
+        setLoading(true);
         try {
             const currentToken = tokenToUse || localStorage.getItem("token");
             if (!currentToken) { handleAuthFailure(); return; }
 
             const headers = getAuthHeaders(currentToken);
-            // Hacemos ambas peticiones en paralelo para eficiencia
             const [meRes, chatsRes] = await Promise.all([
                 fetch(`${API}/creators/me`, { headers, cache: 'no-store' }),
                 fetch(`${API}/dashboard/${id}/chats`, { headers, cache: 'no-store' })
             ]);
 
-            // --- Manejo de errores de autenticación y refresh ---
             if (meRes.status === 401 || chatsRes.status === 401) {
                 const publicId = localStorage.getItem("publicId");
                 if (publicId) {
                     const newToken = await refreshToken(publicId);
                     if (newToken) {
-                        fetchDashboardData(newToken); // Reintentar con el nuevo token
-                        return; // Salir de esta ejecución
+                        fetchDashboardData(newToken);
+                        return;
                     }
                 }
-                handleAuthFailure(); // Si no hay publicId o refresh falla
+                handleAuthFailure();
                 return;
             }
 
-            // --- Procesar respuestas OK ---
             if (!meRes.ok) throw new Error('Error al cargar datos del creador');
             if (!chatsRes.ok) throw new Error('Error al cargar chats');
 
             const meData = await meRes.json();
             const chatsData = await chatsRes.json();
 
-            setCreator(meData); // Guardar datos del creador
+            setCreator(meData);
 
-            // --- 👇 Lógica para mostrar el Modal de Compartir 👇 ---
-            // Construir la clave única para este creador en localStorage
             const guideSeenKey = `hasSeenShareGuide_${meData.publicId}`;
             const hasSeenGuide = localStorage.getItem(guideSeenKey);
 
-            // Mostrar si: No ha visto la guía ANTES Y no tiene chats AHORA
             if (!hasSeenGuide && chatsData.length === 0) {
                 setShowShareGuideModal(true);
             }
-            // --- 👆 Fin de la lógica del Modal 👆 ---
-
         } catch (err) {
             console.error("❌ Error en fetchDashboardData:", err);
-            // Podrías mostrar un mensaje de error al usuario aquí
             if (err.message.includes('401') || err.message.includes('Authentication failed')) {
-                handleAuthFailure(); // Redirigir si el error es de autenticación
+                handleAuthFailure();
             }
         } finally {
-            setTimeout(() => setLoading(false), 400); // Pequeño delay
+            setTimeout(() => setLoading(false), 400);
         }
-    }, [id, handleAuthFailure]); // Dependencias estables
+    }, [id, handleAuthFailure]);
 
-    // --- useEffect inicial para cargar datos ---
     useEffect(() => {
         fetchDashboardData();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []); // Solo se ejecuta una vez al montar
+    }, []);
 
-    // --- Función para cerrar el modal y marcar como visto ---
     const closeShareGuideModal = useCallback(() => {
         if (creator?.publicId) {
-            // Guardar en localStorage que ya se vio para ESTE creador
             const guideSeenKey = `hasSeenShareGuide_${creator.publicId}`;
             localStorage.setItem(guideSeenKey, 'true');
         }
         setShowShareGuideModal(false);
-    }, [creator?.publicId]); // Depende del publicId del creador
+    }, [creator?.publicId]);
 
-    // --- Calcular publicLink ---
     const publicLink = useMemo(() => {
         if (!creator?.publicId || typeof window === 'undefined') return "";
         return `${window.location.origin}/u/${creator.publicId}`;
@@ -126,31 +114,39 @@ export default function DashboardPage() {
 
                 {!loading && creator && (
                     <div>
-                        {/* El DashboardInfo ahora recibe el creator directamente */}
                         <div className="fade-in-up" style={{ animationDelay: '0.1s' }}>
                             <DashboardInfo creator={creator} onChange={setCreator} />
                         </div>
 
-                        <div className="fade-in-up" style={{ animationDelay: '0.2s', marginBottom: '25px' }}>
+                        {/* --- 👇 2. MODIFICACIÓN AQUÍ 👇 --- */}
+                        <div className="fade-in-up" style={{ 
+                            animationDelay: '0.2s', 
+                            marginBottom: '25px', 
+                            background: 'var(--background-core)', // Fondo oscuro
+                            borderRadius: '20px',
+                            border: '1px solid var(--border-color-faint)',
+                            padding: '20px' // Espaciado interno
+                        }}>
+                            {/* Componente de Contrato (existente) */}
                             <PremiumContractConfig creator={creator} onChange={setCreator} />
-                        </div>
 
-                        {/* MessageList necesita el dashboardId */}
+                            {/* Componente de Precio (NUEVO) */}
+                            <PriceConfig creator={creator} onChange={setCreator} />
+                        </div>
+                        {/* --- 👆 FIN DE LA MODIFICACIÓN 👆 --- */}
+
                         <div className="fade-in-up" style={{ animationDelay: '0.3s' }}>
                             <MessageList dashboardId={id} />
                         </div>
                     </div>
                 )}
 
-                {/* --- 👇 Renderizado Condicional del Modal 👇 --- */}
                 {showShareGuideModal && creator && (
                     <ShareLinkGuideModal
                         onClose={closeShareGuideModal}
-                        publicLink={publicLink} // Pasar el link calculado
+                        publicLink={publicLink}
                     />
                 )}
-                {/* --- 👆 Fin Renderizado Condicional 👆 --- */}
-
             </div>
         </>
     );
