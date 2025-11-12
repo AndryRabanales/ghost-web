@@ -33,6 +33,12 @@ export default function PublicPage() {
   const [chatMessages, setChatMessages] = useState([]); 
   const [isChatLoading, setIsChatLoading] = useState(true);
   const [chatError, setChatError] = useState(null); 
+  
+  // --- 👇 CORRECCIÓN: AÑADIR ESTOS ESTADOS FALTANTES 👇 ---
+  const [creatorContract, setCreatorContract] = useState(null);
+  const [escasezData, setEscasezData] = useState(null);
+  const [isFull, setIsFull] = useState(false);
+  // --- 👆 FIN DE LA CORRECCIÓN 👆 ---
 
   const wsRef = useRef(null);
 
@@ -54,6 +60,33 @@ export default function PublicPage() {
       return null; 
     }
   }, [publicId]);
+
+
+  useEffect(() => {
+    if (!publicId || activeChatInfo) return; // Solo se ejecuta si NO hay un chat activo
+
+    const fetchPublicCreatorInfo = async () => {
+      try {
+        // ASUNCIÓN: Necesitas un endpoint en tu API que devuelva los datos públicos
+        // Si no lo tienes, deberás crearlo.
+        const res = await fetch(`${API}/public/creator/${publicId}`); 
+        if (!res.ok) throw new Error("No se pudo cargar la info del creador");
+        
+        const data = await res.json();
+        
+        // Seteamos los datos que necesitamos para el AnonMessageForm
+        if (data.creatorName) setCreatorName(data.creatorName);
+        if (data.premiumContract) setCreatorContract(data.premiumContract); // <-- ¡AÑADIDO!
+        if (data.escasezData) setEscasezData(data.escasezData); // <-- AÑADIDO
+        if (data.isFull) setIsFull(data.isFull); // <-- AÑADIDO
+
+      } catch (err) {
+        console.error("Error cargando info pública del creador:", err);
+      }
+    };
+
+    fetchPublicCreatorInfo();
+  }, [publicId, activeChatInfo]);
 
   // --- Carga el chat al inicio ---
   useEffect(() => {
@@ -86,9 +119,14 @@ export default function PublicPage() {
         if (!res.ok) throw new Error("No se pudo cargar el chat");
         const data = await res.json();
         setChatMessages(data.messages || []);
-        // E2/E3: También actualizamos el status aquí si es un re-fetch
-        setPedidoStatus(data.pedidoStatus || 'FREE');
-        setCreatorPremiumContract(data.creatorPremiumContract || {}); 
+        
+        // --- CORRECCIÓN ---
+        // El endpoint del chat también debe devolver el contrato
+        if (data.creatorPremiumContract) {
+            setCreatorContract(data.creatorPremiumContract);
+        }
+        // --- FIN CORRECCIÓN ---
+
       } catch (err) { setChatError("⚠️ Error cargando mensajes"); }
       finally { setIsChatLoading(false); }
     };
@@ -142,7 +180,7 @@ export default function PublicPage() {
           
           // --- HANDLER S3: Actualización de Contrato en Tiempo Real ---
           if (msg.type === 'CREATOR_INFO_UPDATE' && msg.premiumContract) {
-             setCreatorContract(msg.premiumContract); 
+             setCreatorContract(msg.premiumContract); // <-- CORREGIDO
              console.log("WS: Contrato Premium actualizado.");
           }
           // -----------------------------------------------------------
@@ -313,6 +351,9 @@ export default function PublicPage() {
               <AnonMessageForm
                 publicId={publicId}
                 onChatCreated={handleChatCreated}
+                escasezData={escasezData} // <-- PROP AÑADIDA
+                isFull={isFull} // <-- PROP AÑADIDA
+                creatorContract={creatorContract} // <-- ¡PROP AÑADIDA!
               />
               <div className="create-space-link-container staggered-fade-in-up" style={{ animationDelay: '0.8s' }}>
                 <a href="/" className="create-space-link">

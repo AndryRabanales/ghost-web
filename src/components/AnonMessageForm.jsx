@@ -12,25 +12,30 @@ const MIN_PREMIUM_AMOUNT = 100; // Mínimo para el premium (P1)
  * @returns {string} Resumen del contrato.
  */
 const formatContract = (contractData) => {
-    try {
-        // Aseguramos que es un objeto
-        const data = typeof contractData === 'string' ? JSON.parse(contractData) : contractData;
-        
-        // Manejo de valores no definidos si el contrato es nuevo o JSON vacío
-        if (!data || Object.keys(data).length === 0) {
-             return "Respuesta de alta calidad garantizada.";
-        }
-        
-        let parts = [];
-        if (data.include_photo) parts.push("1 Foto Exclusiva");
-        if (data.text_min_chars > 0) parts.push(`Mínimo ${data.text_min_chars} caracteres de texto`);
-        if (data.include_pdf) parts.push("1 Archivo PDF");
-        
-        return parts.length > 0 ? parts.join(', ') : "Respuesta de alta calidad garantizada.";
-    } catch (e) {
-        // En caso de error de parseo (p. ej. si la DB tiene datos viejos o corruptos)
-        return "Respuesta de alta calidad garantizada.";
-    }
+  // Verificamos si es un string simple y no está vacío
+  if (typeof contractData === 'string' && contractData.trim().length > 0) {
+      // Si el creador escribió "Mi contrato", mostramos "Mi contrato"
+      return contractData.trim();
+  }
+
+  // --- Mantenemos la lógica antigua por si acaso (aunque parece no usarse) ---
+  try {
+      const data = typeof contractData === 'string' ? JSON.parse(contractData) : contractData;
+      
+      if (!data || Object.keys(data).length === 0) {
+           return "Respuesta de alta calidad garantizada.";
+      }
+      
+      let parts = [];
+      if (data.include_photo) parts.push("1 Foto Exclusiva");
+      if (data.text_min_chars > 0) parts.push(`Mínimo ${data.text_min_chars} caracteres de texto`);
+      if (data.include_pdf) parts.push("1 Archivo PDF");
+      
+      return parts.length > 0 ? parts.join(', ') : "Respuesta de alta calidad garantizada.";
+  } catch (e) {
+      // Si todo falla (incluso el parseo del string), mostramos el texto por defecto.
+      return "Respuesta de alta calidad garantizada.";
+  }
 }
 // --- FIN: Función de Formato (S3) ---
 
