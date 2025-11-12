@@ -1,6 +1,5 @@
 // src/app/u/[publicId]/page.jsx
 "use client";
-// Corrección de rutas de importación
 import AnonMessageForm from "../../../components/AnonMessageForm";
 import FirstMessageGuideModal from "../../../components/FirstMessageGuideModal";
 import PublicChatView from "../../../components/PublicChatView";
@@ -29,7 +28,10 @@ export default function PublicPage() {
   
   // --- Estados del Creador (ahora se cargan al inicio) ---
   const [creatorName, setCreatorName] = useState("el creador");
-  const [creatorContract, setCreatorContract] = useState(null); // <-- El contrato
+  const [creatorContract, setCreatorContract] = useState(null);
+  // --- 👇 CAMBIO: Añadido estado para el precio base ---
+  const [baseTipAmountCents, setBaseTipAmountCents] = useState(null); 
+  
   const [escasezData, setEscasezData] = useState(null);
   const [isFull, setIsFull] = useState(false);
   const [creatorStatus, setCreatorStatus] = useState(null);
@@ -52,9 +54,12 @@ export default function PublicPage() {
         if (foundChat.creatorName) {
           setCreatorName(foundChat.creatorName);
         }
-        // Cargar el contrato desde localStorage si ya existe
         if (foundChat.creatorPremiumContract) {
           setCreatorContract(foundChat.creatorPremiumContract);
+        }
+        // --- 👇 CAMBIO: Cargar el precio base desde localStorage si existe ---
+        if (foundChat.baseTipAmountCents) {
+          setBaseTipAmountCents(foundChat.baseTipAmountCents);
         }
         return foundChat;
       }
@@ -74,25 +79,23 @@ export default function PublicPage() {
   }, [loadActiveChat]);
   
   
-  // --- 👇 RE-AÑADIDO: useEffect para Cargar Info Pública del Creador ---
-  // (Ahora que la ruta API existe, esto funcionará)
+  // --- useEffect para Cargar Info Pública del Creador ---
   useEffect(() => {
-    // Solo se ejecuta si NO hay un chat activo (es un nuevo visitante)
     if (!publicId || activeChatInfo) return; 
 
     const fetchPublicCreatorInfo = async () => {
       try {
-        // Esta es la ruta que acabamos de añadir en routes/public.js
         const res = await fetch(`${API}/public/creator/${publicId}`); 
         if (!res.ok) throw new Error("No se pudo cargar la info del creador");
         
         const data = await res.json();
         
-        // Seteamos los datos que necesitamos para el AnonMessageForm
         if (data.creatorName) setCreatorName(data.creatorName);
-        if (data.premiumContract) setCreatorContract(data.premiumContract); // <-- ¡FUNCIONARÁ!
+        if (data.premiumContract) setCreatorContract(data.premiumContract);
         if (data.escasezData) setEscasezData(data.escasezData);
         if (data.isFull) setIsFull(data.isFull);
+        // --- 👇 CAMBIO: Guardar el precio base ---
+        if (data.baseTipAmountCents) setBaseTipAmountCents(data.baseTipAmountCents);
 
       } catch (err) {
         console.error("Error cargando info pública del creador:", err);
@@ -100,19 +103,16 @@ export default function PublicPage() {
     };
 
     fetchPublicCreatorInfo();
-  }, [publicId, activeChatInfo]); // Depende de publicId y activeChatInfo
-  // --- 👆 FIN DEL BLOQUE RE-AÑADIDO ---
+  }, [publicId, activeChatInfo]);
 
 
-  // Cargar mensajes iniciales y conectar WebSocket (MODIFICADO)
+  // Cargar mensajes iniciales y conectar WebSocket
   useEffect(() => {
     
-    // 1. Timer para el "hace..." (sin cambios)
     const interval = setInterval(() => {
       setLastActiveTimestamp(prev => prev);
-    }, 30000); // Actualiza cada 30 segundos
+    }, 30000); 
     
-    // --- Función para Cargar Mensajes ---
     const fetchMessages = async (token, id) => {
       if (!token || !id) return;
       setIsChatLoading(true);
@@ -123,17 +123,18 @@ export default function PublicPage() {
         const data = await res.json();
         setChatMessages(data.messages || []);
         
-        // Cargar contrato si no se cargó al inicio (porque el chat ya existía)
         if (data.creatorPremiumContract && !creatorContract) {
             setCreatorContract(data.creatorPremiumContract);
+        }
+        // --- 👇 CAMBIO: Cargar precio base si no se cargó al inicio ---
+        if (data.baseTipAmountCents && !baseTipAmountCents) {
+            setBaseTipAmountCents(data.baseTipAmountCents);
         }
 
       } catch (err) { setChatError("⚠️ Error cargando mensajes"); }
       finally { setIsChatLoading(false); }
     };
-    // -----------------------------------------------------------
 
-    // 2. Conexión WebSocket Única
     const connectWebSocket = () => {
       if (wsRef.current) { 
         wsRef.current.close(1000, "Reconectando"); 
@@ -163,12 +164,10 @@ export default function PublicPage() {
         }
       };
 
-      // --- Manejador de Mensajes Unificado ---
       ws.onmessage = (event) => {
         try {
           const msg = JSON.parse(event.data);
           
-          // Handler 1: Estado del Creador
           if (msg.type === 'CREATOR_STATUS_UPDATE') {
             setCreatorStatus(msg.status);
             if (msg.status === 'offline') {
@@ -176,14 +175,19 @@ export default function PublicPage() {
             }
           }
           
-          // --- HANDLER S3: Actualización de Contrato en Tiempo Real ---
-          if (msg.type === 'CREATOR_INFO_UPDATE' && msg.premiumContract) {
-             setCreatorContract(msg.premiumContract); 
-             console.log("WS: Contrato Premium actualizado.");
+          // --- HANDLER S3: Actualización de Contrato Y PRECIO en Tiempo Real ---
+          if (msg.type === 'CREATOR_INFO_UPDATE') {
+             if (msg.premiumContract) {
+                setCreatorContract(msg.premiumContract); 
+                console.log("WS: Contrato Premium actualizado.");
+             }
+             // --- 👇 CAMBIO: Actualizar precio base en tiempo real ---
+             if (msg.baseTipAmountCents) {
+                setBaseTipAmountCents(msg.baseTipAmountCents);
+                console.log("WS: Precio Base actualizado.");
+             }
           }
-          // -----------------------------------------------------------
 
-          // Handler 2: Mensajes del Chat (Actualización de la conversación)
           if (activeChatInfo && msg.chatId === activeChatInfo.chatId) {
             setChatMessages((prev) => {
               if (prev.some(m => m.id === msg.id)) return prev;
@@ -199,7 +203,6 @@ export default function PublicPage() {
 
     connectWebSocket();
     
-    // Limpieza
     return () => { 
       clearInterval(interval);
       if (wsRef.current) { 
@@ -208,26 +211,26 @@ export default function PublicPage() {
         wsRef.current = null; 
       } 
     };
-  },[publicId, activeChatInfo, creatorContract]); // <-- creatorContract añadido a dependencias
+  },[publicId, activeChatInfo, creatorContract, baseTipAmountCents]); // <-- Añadido baseTipAmountCents
 
   
-  // --- Función para cerrar el modal (sin cambios) ---
   const handleCloseGuide = useCallback(() => { setShowGuideModal(false); }, []);
 
-  // --- Función para cuando se crea el chat (MODIFICADA) ---
   const handleChatCreated = useCallback((newChatInfo) => {
     setActiveChatInfo(newChatInfo);
     setShowGuideModal(true);
     if (newChatInfo.creatorName) {
       setCreatorName(newChatInfo.creatorName);
     }
-    // Cargar el contrato que la API devolvió al crear el chat
     if (newChatInfo.creatorPremiumContract) {
       setCreatorContract(newChatInfo.creatorPremiumContract);
     }
+    // --- 👇 CAMBIO: Guardar precio base al crear chat ---
+    if (newChatInfo.baseTipAmountCents) {
+      setBaseTipAmountCents(newChatInfo.baseTipAmountCents);
+    }
   }, []);
 
-  // --- Función para Enviar Mensajes ---
   const handleSendMessage = async (content) => {
     if (!activeChatInfo || !content.trim()) return;
     const { anonToken, chatId } = activeChatInfo;
@@ -249,7 +252,6 @@ export default function PublicPage() {
     }
   };
 
-  // --- Estilos (sin cambios) ---
   const pageStyles = `
     .page-container {
       background: linear-gradient(-45deg, #0d0c22, #1a1a2e, #2c1a5c, #3c287c);
@@ -275,7 +277,7 @@ export default function PublicPage() {
       min-height: 40px; 
     }
     .waiting-title {
-      font-size: 22px; /* Tamaño que ajustaste */
+      font-size: 22px;
       font-weight: 800;
       color: var(--text-primary);
       text-shadow: 0 0 15px rgba(255,255,255,0.4);
@@ -289,11 +291,31 @@ export default function PublicPage() {
       top: -2px;
       margin-left: 0;
     }
+    /* --- 👇 NUEVOS ESTILOS PARA EL INPUT DE PAGO 👇 --- */
+    .payment-input-group {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .payment-input-group .form-input-field {
+      flex: 1;
+    }
+    .payment-input-group label {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      flex-basis: 120px;
+      text-align: right;
+    }
+    .payment-input-group .currency-symbol {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-secondary);
+    }
   `;
   
   const lastActiveDisplay = timeAgo(lastActiveTimestamp);
 
-  // Lógica para el título "Espera..." (ahora usa los estados del padre)
   const lastMessage = chatMessages[chatMessages.length - 1];
   const isWaitingForReplyTitle = activeChatInfo && !isChatLoading && chatMessages.length > 0 && (!lastMessage || lastMessage.from === 'anon');
 
@@ -311,7 +333,6 @@ export default function PublicPage() {
 
           {activeChatInfo ? (
             <>
-              {/* Título "Espera..." */}
               <div className="waiting-title-container">
                 {isWaitingForReplyTitle && (
                   <h1 className="waiting-title">
@@ -334,19 +355,19 @@ export default function PublicPage() {
               />
             </>
           ) : (
-            // Formulario de primer mensaje
             <>
               <h1 style={{ textAlign: 'center', marginBottom: '30px', fontSize: '26px', color: '#fff', fontWeight: 800, textShadow: '0 0 20px rgba(255, 255, 255, 0.3)', animation: 'fadeInUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards' }}>
                 Envíale un Mensaje Anónimo a {creatorName}
               </h1>
               
-              {/* Se pasan los estados (ahora sí se cargan al inicio) */}
+              {/* --- 👇 CAMBIO: Pasamos el precio base al formulario 👇 --- */}
               <AnonMessageForm
                 publicId={publicId}
                 onChatCreated={handleChatCreated}
                 escasezData={escasezData} 
                 isFull={isFull} 
                 creatorContract={creatorContract} 
+                baseTipAmountCents={baseTipAmountCents} // <-- NUEVA PROP
               />
               <div className="create-space-link-container staggered-fade-in-up" style={{ animationDelay: '0.8s' }}>
                 <a href="/" className="create-space-link">
