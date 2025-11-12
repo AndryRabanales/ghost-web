@@ -192,8 +192,33 @@ function AnonMessageForm({
 
       <form onSubmit={handleSubmit} className="form-element-group">
         
-        {/* --- 👇 INICIO DEL CAMBIO (ESTILOS MODIFICADOS) 👇 --- */}
-        <div className="contract-summary-box" style={{ 
+       
+
+        <input
+            type="text"
+            placeholder="Tu alias (opcional)"
+            value={alias}
+            onChange={(e) => setAlias(e.target.value)}
+            className="form-input-field"
+          />
+          <textarea
+            placeholder="Escribe tu mensaje anónimo..."
+            value={content}
+            onChange={(e) => {
+              setContent(e.target.value);
+              setCharCount(e.target.value.length);
+            }}
+            className="form-input-field"
+            rows="4"
+            maxLength="500"
+          ></textarea>
+          
+          <div className="char-counter">
+            {charCount} / 500
+          </div>
+          
+ {/* --- 👇 INICIO DEL CAMBIO (ESTILOS MODIFICADOS) 👇 --- */}
+ <div className="contract-summary-box" style={{ 
             padding: '15px',
             background: 'rgba(255, 255, 255, 0.05)', // Fondo como los inputs
             borderRadius: '12px',
@@ -220,29 +245,8 @@ function AnonMessageForm({
         </div>
         {/* --- 👆 FIN DEL CAMBIO 👆 --- */}
 
-        <input
-            type="text"
-            placeholder="Tu alias (opcional)"
-            value={alias}
-            onChange={(e) => setAlias(e.target.value)}
-            className="form-input-field"
-          />
-          <textarea
-            placeholder="Escribe tu mensaje anónimo..."
-            value={content}
-            onChange={(e) => {
-              setContent(e.target.value);
-              setCharCount(e.target.value.length);
-            }}
-            className="form-input-field"
-            rows="4"
-            maxLength="500"
-          ></textarea>
-          
-          <div className="char-counter">
-            {charCount} / 500
-          </div>
-          
+
+
           {/* --- SECCIÓN DE PAGO (Compacta y sin foco morado) --- */}
           <div className="payment-section" style={{
               borderTop: '1px solid rgba(255, 255, 255, 0.1)',
