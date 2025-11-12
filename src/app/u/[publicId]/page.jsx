@@ -5,7 +5,6 @@ import { useParams, useRouter } from "next/navigation"; // <-- 1. Importar hooks
 
 const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
 const FALLBACK_MIN_PREMIUM_AMOUNT = 100; 
-// --- 👇 CAMBIO 2: Límite máximo de pago ---
 const MAX_PREMIUM_AMOUNT = 100000; // $100,000 MXN
 
 // --- FUNCIÓN DE FORMATEO DE CONTRATO (S3) ---
@@ -93,7 +92,6 @@ function AnonMessageForm({
   const handlePaymentChange = (e) => {
     const value = e.target.value.replace(/[^0-9.]/g, '');
 
-    // --- 👇 CAMBIO 2: Aplicar validación de máximo ---
     if (value === '') {
         setPaymentInput('');
     } else if (Number(value) > MAX_PREMIUM_AMOUNT) {
@@ -101,7 +99,6 @@ function AnonMessageForm({
     } else {
         setPaymentInput(value);
     }
-    // --- 👆 Fin del Cambio 2 ---
   };
 
   const handleSubmit = async (e) => {
@@ -118,13 +115,11 @@ function AnonMessageForm({
         return;
     }
     
-    // --- 👇 CAMBIO 2: Validación de máximo en submit ---
     if (totalAmount > MAX_PREMIUM_AMOUNT) {
         setErrorMsg(`El pago máximo es $${MAX_PREMIUM_AMOUNT.toFixed(2)} MXN.`);
         setStatus("error");
         return;
     }
-    // --- 👆 Fin del Cambio 2 ---
     
     if (isFull) {
         setErrorMsg("El límite diario de mensajes se ha alcanzado. Por favor, espera al reinicio.");
@@ -187,7 +182,6 @@ function AnonMessageForm({
     }
   };
 
-  // --- 👇 CAMBIO 2: Actualizada la lógica de deshabilitado ---
   const isDisabled = status === "loading" || !content.trim() || isFull || totalAmount < basePrice || totalAmount > MAX_PREMIUM_AMOUNT;
   const buttonText = `Pagar y Enviar $${(totalAmount || basePrice).toFixed(2)}`;
 
@@ -198,20 +192,33 @@ function AnonMessageForm({
 
       <form onSubmit={handleSubmit} className="form-element-group">
         
+        {/* --- 👇 INICIO DEL CAMBIO (ESTILOS MODIFICADOS) 👇 --- */}
         <div className="contract-summary-box" style={{ 
-            padding: '15px', 
-            background: 'rgba(142, 45, 226, 0.15)', 
+            padding: '15px',
+            background: 'rgba(255, 255, 255, 0.05)', // Fondo como los inputs
             borderRadius: '12px',
-            border: '1px solid rgba(142, 45, 226, 0.4)',
-            marginBottom: '20px'
+            border: '1px solid var(--border-color-faint)', // Borde púrpura tenue
+            marginBottom: '20px',
+            textAlign: 'center' // Alineación central
         }}>
-            <h4 style={{ fontSize: '16px', margin: '0 0 5px', color: 'var(--text-primary)' }}>
+            <h4 style={{ 
+                fontSize: '14px',
+                margin: '0 0 8px', 
+                color: 'var(--text-secondary)', // Color de etiqueta
+                fontWeight: '600'
+            }}>
                 La respuesta del creador contendrá:
             </h4>
-            <p style={{ margin: 0, fontSize: '14px', color: 'var(--glow-accent-crimson)', fontWeight: 'bold' }}>
+            <p style={{ 
+                margin: 0, 
+                fontSize: '15px', 
+                color: 'var(--glow-accent-crimson)', 
+                fontWeight: 'bold' 
+            }}>
                 {contractSummary}
             </p>
         </div>
+        {/* --- 👆 FIN DEL CAMBIO 👆 --- */}
 
         <input
             type="text"
@@ -236,7 +243,7 @@ function AnonMessageForm({
             {charCount} / 500
           </div>
           
-          {/* --- SECCIÓN DE PAGO (MODIFICADA) --- */}
+          {/* --- SECCIÓN DE PAGO (Compacta y sin foco morado) --- */}
           <div className="payment-section" style={{
               borderTop: '1px solid rgba(255, 255, 255, 0.1)',
               paddingTop: '15px', 
@@ -253,15 +260,13 @@ function AnonMessageForm({
                 Monto por Respuesta Premium (Mínimo ${basePrice.toFixed(2)} MXN)
               </label>
 
-              {/* --- 👇 CAMBIO 1: Estilo en línea para quitar el foco morado --- */}
               <div className="payment-input-group" style={{
                   marginBottom: '8px', 
                   padding: '4px 14px',
-                  // Esto evita que :focus-within de globals.css ponga el borde y sombra
+                  // Esto evita que :focus-within ponga el borde y sombra
                   borderColor: 'rgba(255, 255, 255, 0.1)', 
                   boxShadow: 'none'
                 }}>
-              {/* --- 👆 Fin del Cambio 1 --- */}
                   <span className="currency-symbol" style={{
                       color: 'var(--text-primary)', 
                       fontSize: '18px', 
@@ -275,14 +280,13 @@ function AnonMessageForm({
                       value={paymentInput}
                       onChange={handlePaymentChange}
                       placeholder={String(basePrice)}
-                      className="payment-input" // <-- Usamos la clase correcta (sin borde)
+                      className="payment-input" 
                       style={{
                         flexGrow: 1, 
                         textAlign: 'left', 
                         fontSize: '18px',
                         fontWeight: '700',
                         padding: '6px 8px', 
-                        // --- 👇 CAMBIO 1: Borde de error simple, sin morado ---
                         color: totalAmount < basePrice ? '#ff7b7b' : 'var(--text-primary)'
                       }}
                   />
@@ -300,7 +304,7 @@ function AnonMessageForm({
               </p>
               
           </div>
-          {/* --- FIN DEL CAMBIO --- */}
+          {/* --- FIN SECCIÓN PAGO --- */}
 
         <button type="submit" disabled={isDisabled} className="submit-button" style={{marginTop: '20px'}}>
           {status === "loading" ? "Procesando..." : buttonText}
