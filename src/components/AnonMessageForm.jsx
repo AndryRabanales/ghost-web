@@ -202,6 +202,12 @@ function AnonMessageForm({
   // El texto del botón se actualiza dinámicamente
   const buttonText = `Pagar y Enviar $${(totalAmount || effectiveBasePrice).toFixed(2)}`;
 
+  // --- 👇 AÑADE ESTA LÍNEA AQUÍ 👇 ---
+  const placeholderText = topicPreference 
+      ? `Escribe sobre: "${topicPreference}"` 
+      : "Escribe tu mensaje anónimo...";
+  // --- 👆 FIN DE LA LÍNEA AÑADIDA 👆 ---
+
   return (
     <div className={`anon-form-container ${isMounted ? 'mounted' : ''}`}>
       
