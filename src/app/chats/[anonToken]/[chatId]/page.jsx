@@ -86,15 +86,6 @@ export default function PublicChatPage() {
                 // Usamos la función para actualizar
                 updateLocalStorage((c) => ({ ...c, creatorName: data.creatorName }));
               }
-
-              // Ya no necesitamos actualizar el alias aquí
-              // const firstAnon = data.messages.find((m) => m.from === "anon");
-              // if (firstAnon?.alias) {
-              //   // setAnonAlias(firstAnon.alias); <--- No necesario
-              //   updateLocalStorage((c) => ({ ...c, anonAlias: firstAnon.alias }));
-              // }
-
-              // Marcar como leído (ya lo hace el otro useEffect, pero redundancia no hace daño aquí)
               markChatAsRead();
 
             } else {
@@ -111,20 +102,27 @@ export default function PublicChatPage() {
 
     fetchMessages(); // Carga inicial
 
-    // Conectar WebSocket
-    const wsUrl = `${API.replace(/^http/, "ws")}/ws?chatId=${chatId}&anonToken=${anonToken}`;
+    // --- 👇 AQUÍ ESTÁ LA CORRECCIÓN 👇 ---
+    // El servidor (websocket.js) espera "anonTokens" (plural)
+    const wsUrl = `${API.replace(/^http/, "ws")}/ws?anonTokens=${anonToken}`;
+    // --- 👆 FIN DE LA CORRECCIÓN 👆 ---
+
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
-     ws.onopen = () => console.log(`WebSocket conectado a chat ${chatId}`);
+     ws.onopen = () => console.log(`WebSocket conectado (Anónimo) escuchando token: ${anonToken}`);
      ws.onerror = (error) => console.error("WebSocket error:", error);
-     ws.onclose = () => console.log(`WebSocket desconectado de chat ${chatId}`);
+     ws.onclose = () => console.log(`WebSocket desconectado (Anónimo)`);
 
     ws.onmessage = (event) => {
       // ... (lógica onmessage sin cambios, pero llama a markChatAsRead) ...
       try {
             const msg = JSON.parse(event.data);
-            if (msg.chatId === chatId) { // Asegura que el mensaje es para este chat
+            
+            // --- MODIFICACIÓN: Chequeo más simple ---
+            // Si el mensaje es de tipo 'message' y es de 'creator', lo añadimos.
+            // El backend ya se encarga de enviarlo solo al anonToken correcto.
+            if (msg.type === "message" && msg.from === "creator") { 
                 setMessages((prev) => {
                     // Evitar duplicados
                     if (prev.some(m => m.id === msg.id)) return prev;
