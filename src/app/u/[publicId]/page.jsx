@@ -412,9 +412,7 @@ export default function PublicUserPage() {
         }}>
         Enviar a {creatorInfo.creatorName}
       </h1>
-      //
-// ... (dentro de la función PublicUserPage)
-      <AnonMessageForm
+        <AnonMessageForm
         publicId={publicId}
         onChatCreated={handleChatCreated}
         escasezData={creatorInfo.escasezData}
@@ -424,7 +422,7 @@ export default function PublicUserPage() {
         creatorName={creatorInfo.creatorName} // <--- AÑADE ESTA LÍNEA
         baseTipAmountCents={creatorInfo.baseTipAmountCents}
       />
-// ...
+
     </div>
   );
 }
