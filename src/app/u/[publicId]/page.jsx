@@ -7,31 +7,7 @@ const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.rail
 const FALLBACK_MIN_PREMIUM_AMOUNT = 100; 
 const MAX_PREMIUM_AMOUNT = 100000; // $100,000 MXN
 
-// --- FUNCIÓN DE FORMATEO DE CONTRATO (S3) ---
-// (Esta función se queda igual)
-const formatContract = (contractData) => {
-    if (typeof contractData === 'string' && contractData.trim().length > 0) {
-        return contractData.trim();
-    }
-    return "Respuesta de alta calidad garantizada.";
-}
-// --- FIN: Función de Formato (S3) ---
 
-
-// --- COMPONENTE EscasezCounter (S2) ---
-// (Este componente se queda igual)
-const EscasezCounter = ({ data, isFull }) => {
-  if (!data || data.dailyMsgLimit <= 0) {
-    return null;
-  }
-  const remaining = Math.max(0, data.dailyMsgLimit - data.msgCountToday);
-  const text = isFull ? "¡Límite diario alcanzado!" : `¡Solo quedan ${remaining} cupos!`;
-  const subText = isFull ? "Vuelve mañana para asegurar tu lugar." : `El contador se reinicia cada 12 horas.`;
-  const color = isFull ? '#ff7b7b' : 'var(--success-solid, #00ff80)'; 
-  const animationStyle = {
-    animation: `fadeInUp 0.5s ease forwards`,
-    opacity: 0
-  };
 
   return (
     <div style={{
