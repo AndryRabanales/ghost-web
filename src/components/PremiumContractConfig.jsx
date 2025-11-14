@@ -103,8 +103,8 @@ export default function PremiumContractConfig({ creator, onChange }) {
       <button 
         onClick={() => handleSave('contract')} 
         disabled={loadingContract || contract.trim().length < 5} 
-        className="save-contract-button"
-        style={{marginTop: '10px', minWidth: '150px'}}
+        className="submit-button" // <--- CAMBIO DE CLASE
+        style={{marginTop: '10px', width: '100%'}} // <--- CAMBIO DE ESTILO
       >
         {loadingContract ? 'Guardando...' : 'Guardar Contrato'}
       </button>
@@ -141,8 +141,8 @@ export default function PremiumContractConfig({ creator, onChange }) {
         <button 
             onClick={() => handleSave('topic')} 
             disabled={loadingTopic || topic.trim().length < 5} 
-            className="save-contract-button"
-            style={{marginTop: '10px', minWidth: '150px'}}
+            className="submit-button" // <--- CAMBIO DE CLASE
+            style={{marginTop: '10px', width: '100%'}} // <--- CAMBIO DE ESTILO
         >
             {loadingTopic ? 'Guardando...' : 'Guardar Tema'}
         </button>
