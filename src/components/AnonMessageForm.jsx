@@ -64,15 +64,22 @@ const EscasezCounter = ({ data, isFull }) => {
 
 
 // --- COMPONENTE PRINCIPAL ---
-export default function AnonMessageForm({ 
-    publicId, 
-    onChatCreated,
-    escasezData, 
-    isFull,
-    creatorContract,
-    topicPreference, // <--- AÑADE ESTA PROP
-    baseTipAmountCents // Esta prop viene de page.jsx
+//
+// --- 2. COMPONENTE DE FORMULARIO (YA NO ES EL DEFAULT EXPORT) ---
+//
+// --- 2. COMPONENTE DE FORMULARIO (YA NO ES EL DEFAULT EXPORT) ---
+function AnonMessageForm({ 
+  publicId, 
+  onChatCreated,
+  escasezData, 
+  isFull,
+  creatorContract,
+  topicPreference,
+  creatorName, // <--- AÑADE ESTA PROP
+  baseTipAmountCents
 }) {
+// ...
+// ...
   const [alias, setAlias] = useState("");
   const [content, setContent] = useState("");
   const [paymentInput, setPaymentInput] = useState(""); // Estado para el input de pago
@@ -212,7 +219,7 @@ export default function AnonMessageForm({
             className="form-input-field"
           />
           <textarea
-            placeholder="Escribe tu mensaje anónimo..."
+            placeholder={placeholderText}
             value={content}
             onChange={(e) => {
               setContent(e.target.value);
