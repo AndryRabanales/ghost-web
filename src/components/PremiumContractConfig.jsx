@@ -4,14 +4,12 @@ import React, { useState } from 'react';
 import { getAuthHeaders, refreshToken } from "@/utils/auth";
 
 const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
-const MAX_LENGTH_CONTRACT = 120; // Límite para el contrato
-const MAX_LENGTH_TOPIC = 100; // Límite para el nuevo campo de tema
+const MAX_LENGTH_CONTRACT = 120;
+const MAX_LENGTH_TOPIC = 100;
 
 export default function PremiumContractConfig({ creator, onChange }) {
-  // --- MODIFICADO: Añadido estado para la preferencia de tema ---
   const [contract, setContract] = useState(creator.premiumContract || "Respuesta de alta calidad.");
   const [topic, setTopic] = useState(creator.topicPreference || "Cualquier mensaje respetuoso y constructivo.");
-  // --- FIN DE MODIFICACIÓN ---
   const [loadingContract, setLoadingContract] = useState(false);
   const [loadingTopic, setLoadingTopic] = useState(false);
   const [statusContract, setStatusContract] = useState(null);
@@ -31,7 +29,7 @@ export default function PremiumContractConfig({ creator, onChange }) {
         loadingSetter = setLoadingTopic;
         statusSetter = setStatusTopic;
         value = topic;
-        endpoint = `${API}/creators/${creator.id}/update-topic`; // Ruta nueva
+        endpoint = `${API}/creators/${creator.id}/update-topic`;
         successMessage = 'Filtro de Temas actualizado.';
         creatorKey = 'topicPreference';
     }
@@ -48,7 +46,6 @@ export default function PremiumContractConfig({ creator, onChange }) {
         body: JSON.stringify({ [creatorKey]: value }),
       });
 
-      // Lógica de refresh si el token expiró
       if (res.status === 401) {
         const newToken = await refreshToken(localStorage.getItem("publicId"));
         if (newToken) {
@@ -63,11 +60,8 @@ export default function PremiumContractConfig({ creator, onChange }) {
       if (!res.ok) throw new Error("Error al guardar la configuración.");
 
       statusSetter({ type: 'success', message: successMessage });
-      
-      // Actualizar el estado del creador en el componente padre
-      if (onChange) {
-        onChange({ ...creator, [creatorKey]: value });
-      }
+
+      if (onChange) onChange({ ...creator, [creatorKey]: value });
 
     } catch (err) {
       statusSetter({ type: 'error', message: err.message || "Error de red." });
@@ -80,12 +74,14 @@ export default function PremiumContractConfig({ creator, onChange }) {
   return (
     <div className="premium-contract-config-container">
       
-      {/* 1. SECCIÓN DE CONTRATO (Garantía de Calidad) */}
+      {/* SECCIÓN CONTRATO */}
       <h3 style={{fontSize: '1.2em', fontWeight: '700', margin: '0 0 10px', color: 'var(--text-primary)'}}>
         📜 Contrato de Servicio (S3)
       </h3>
-      <p className="contract-guide-text">Define lo que **garantizas** en tu respuesta de texto. (El envío de fotos/PDF no está disponible en esta versión).</p>
-      
+      <p className="contract-guide-text">
+        Define lo que <b>garantizas</b> en tu respuesta de texto.
+      </p>
+
       <div className="contract-input-wrapper">
         <input
           type="text"
@@ -95,65 +91,81 @@ export default function PremiumContractConfig({ creator, onChange }) {
           placeholder="Ej: Una respuesta detallada de al menos 100 caracteres."
           className="form-input-field contract-input"
         />
-        <div className="char-count" style={{ color: contract.length > MAX_LENGTH_CONTRACT - 20 ? '#ff7b7b' : 'var(--text-secondary)' }}>
+        <div className="char-count" style={{
+          color: contract.length > MAX_LENGTH_CONTRACT - 20 ? '#ff7b7b' : 'var(--text-secondary)'
+        }}>
           {contract.length} / {MAX_LENGTH_CONTRACT}
         </div>
       </div>
 
+      {/* ✅ BOTÓN CON BORDE */}
       <button 
         onClick={() => handleSave('contract')} 
         disabled={loadingContract || contract.trim().length < 5} 
         className="save-contract-button"
-        style={{marginTop: '10px', minWidth: '150px'}}
+        style={{
+          marginTop: '10px',
+          minWidth: '150px',
+          border: '1px solid var(--border-color)'
+        }}
       >
         {loadingContract ? 'Guardando...' : 'Guardar Contrato'}
       </button>
 
       {statusContract && (
-        <p className={`contract-status ${statusContract.type === 'error' ? 'auth-error' : 'form-status-message success'}`} style={{textAlign: 'center', marginTop: '15px'}}>
+        <p className={`contract-status ${statusContract.type === 'error' ? 'auth-error' : 'form-status-message success'}`} 
+           style={{textAlign: 'center', marginTop: '15px'}}>
           {statusContract.message}
         </p>
       )}
 
-      {/* --- 👇 2. NUEVA SECCIÓN DE FILTRO DE TEMA (E4) 👇 --- */}
+      {/* SECCIÓN TEMA */}
       <div style={{borderTop: '1px solid var(--border-color-faint)', paddingTop: '20px', marginTop: '30px'}}>
         <h3 style={{fontSize: '1.2em', fontWeight: '700', margin: '0 0 10px', color: 'var(--text-primary)'}}>
             🤖 Filtro de Relevancia (E4)
         </h3>
+
         <p className="contract-guide-text" style={{fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.5, margin: '0 0 15px'}}>
-            Describe el tipo de mensajes que más te interesan. La IA usará esto para priorizar los mensajes relevantes.
+            Describe el tipo de mensajes que más te interesan.
         </p>
 
         <div className="contract-input-wrapper">
-            <input
+          <input
             type="text"
             value={topic}
             onChange={(e) => setTopic(e.target.value.slice(0, MAX_LENGTH_TOPIC))}
             disabled={loadingTopic}
             placeholder="Ej: Quiero recibir mensajes de apoyo o consejos de negocios."
             className="form-input-field contract-input"
-            />
-            <div className="char-count" style={{ color: topic.length > MAX_LENGTH_TOPIC - 10 ? '#ff7b7b' : 'var(--text-secondary)' }}>
+          />
+          <div className="char-count" style={{
+            color: topic.length > MAX_LENGTH_TOPIC - 10 ? '#ff7b7b' : 'var(--text-secondary)'
+          }}>
             {topic.length} / {MAX_LENGTH_TOPIC}
-            </div>
+          </div>
         </div>
 
+        {/* ✅ BOTÓN CON BORDE */}
         <button 
-            onClick={() => handleSave('topic')} 
-            disabled={loadingTopic || topic.trim().length < 5} 
-            className="save-contract-button"
-            style={{marginTop: '10px', minWidth: '150px'}}
+          onClick={() => handleSave('topic')} 
+          disabled={loadingTopic || topic.trim().length < 5} 
+          className="save-contract-button"
+          style={{
+            marginTop: '10px',
+            minWidth: '150px',
+            border: '1px solid var(--border-color)'
+          }}
         >
-            {loadingTopic ? 'Guardando...' : 'Guardar Tema'}
+          {loadingTopic ? 'Guardando...' : 'Guardar Tema'}
         </button>
-        
+
         {statusTopic && (
-            <p className={`contract-status ${statusTopic.type === 'error' ? 'auth-error' : 'form-status-message success'}`} style={{textAlign: 'center', marginTop: '15px'}}>
+          <p className={`contract-status ${statusTopic.type === 'error' ? 'auth-error' : 'form-status-message success'}`} 
+             style={{textAlign: 'center', marginTop: '15px'}}>
             {statusTopic.message}
-            </p>
+          </p>
         )}
       </div>
-      {/* --- 👆 FIN DE NUEVA SECCIÓN 👆 --- */}
     </div>
   );
 }
