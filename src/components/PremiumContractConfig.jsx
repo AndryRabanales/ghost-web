@@ -121,7 +121,7 @@ export default function PremiumContractConfig({ creator, onChange }) {
             🤖 Filtro de Relevancia (E4)
         </h3>
         <p className="contract-guide-text" style={{fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.5, margin: '0 0 15px'}}>
-            Describe el tipo de mensajes que más te interesan. La IA usará esto para priorizar los mensajes relevantes.
+            Describe el tipo de mensajes que más te interesan. La IA usará esto solo para permitir ese tipo de mensajes!
         </p>
 
         <div className="contract-input-wrapper">
