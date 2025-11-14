@@ -242,34 +242,6 @@ export default function AnonMessageForm({
             {charCount} / 500
           </div>
 
-          {/* --- 👇 INICIO: MOSTRAR EL TEMA ESPERADO (AÑADIDO) 👇 --- */}
-          <div className="topic-preference-box" style={{ 
-              padding: '15px',
-              background: 'rgba(0, 0, 0, 0.2)', // Fondo oscuro
-              borderRadius: '12px',
-              border: '1px solid var(--border-color-faint)', 
-              marginBottom: '20px', // Espacio antes del siguiente cuadro
-              textAlign: 'center' 
-          }}>
-              <h4 style={{ 
-                  fontSize: '14px',
-                  margin: '0 0 8px', 
-                  color: 'var(--text-secondary)',
-                  fontWeight: '600'
-              }}>
-                  Tema preferido por el creador (Filtrado por IA):
-              </h4>
-              <p style={{ 
-                  margin: 0, 
-                  fontSize: '15px', 
-                  color: '#fff', // Blanco para que resalte
-                  fontWeight: 'bold' 
-              }}>
-                  {topicPreference}
-              </p>
-          </div>
-          {/* --- 👆 FIN: MOSTRAR EL TEMA ESPERADO (AÑADIDO) 👆 --- */}
-          
           {/* --- Caja de Contrato de Servicio (Sin cambios) --- */}
           <div className="contract-summary-box" style={{ 
             padding: '15px',
