@@ -70,6 +70,7 @@ export default function AnonMessageForm({
     escasezData, 
     isFull,
     creatorContract,
+    topicPreference, // <--- AÑADE ESTA PROP
     baseTipAmountCents // Esta prop viene de page.jsx
 }) {
   const [alias, setAlias] = useState("");
@@ -201,22 +202,8 @@ export default function AnonMessageForm({
 
       <form onSubmit={handleSubmit} className="form-element-group">
         
-        <div className="contract-summary-box" style={{ 
-            padding: '15px', 
-            background: 'rgba(142, 45, 226, 0.15)', 
-            borderRadius: '12px',
-            border: '1px solid rgba(142, 45, 226, 0.4)',
-            marginBottom: '20px'
-        }}>
-            <h4 style={{ fontSize: '16px', margin: '0 0 5px', color: 'var(--text-primary)' }}>
-                La respuesta del creador contendrá:
-            </h4>
-            <p style={{ margin: 0, fontSize: '14px', color: 'var(--glow-accent-crimson)', fontWeight: 'bold' }}>
-                {contractSummary}
-            </p>
-        </div>
+       
 
-        {/* Input para Alias */}
         <input
             type="text"
             placeholder="Tu alias (opcional)"
@@ -224,52 +211,147 @@ export default function AnonMessageForm({
             onChange={(e) => setAlias(e.target.value)}
             className="form-input-field"
           />
-          
-        {/* --- CAMBIO: de <textarea> a <input> --- */}
-        <input
-            type="text"
+          <textarea
             placeholder="Escribe tu mensaje anónimo..."
             value={content}
-            onChange={(e) => setContent(e.target.value)}
+            onChange={(e) => {
+              setContent(e.target.value);
+              setCharCount(e.target.value.length);
+            }}
             className="form-input-field"
-            maxLength="280"
-          />
-        {/* --- FIN DEL CAMBIO --- */}
+            rows="4"
+            maxLength="500"
+          ></textarea>
           
-        {/* --- CAMBIO: Contador de caracteres eliminado --- */}
-          
-        {/* --- SECCIÓN DE PAGO (Como en la imagen) --- */}
-        <div className="payment-section">
-            <label htmlFor="payment" className="payment-label">
-              Monto por Respuesta Premium (Mínimo ${effectiveBasePrice.toFixed(2)} MXN)
-            </label>
+          <div className="char-counter">
+            {charCount} / 500
+          </div>
 
-            <div className="payment-input-group">
-                <span className="currency-symbol">$</span>
-                <input
-                    type="number" // Input numérico
-                    id="payment"
-                    value={paymentInput}
-                    onChange={handlePaymentChange}
-                    placeholder={String(effectiveBasePrice)}
-                    className="payment-input" // Clase de globals.css
-                    min={effectiveBasePrice}
-                />
-                <span className="currency-symbol">MXN</span>
-            </div>
-            
-            <p className="payment-priority-text">
-              Puedes ofrecer más para priorizar tu mensaje.
+          {/* --- 👇 INICIO: MOSTRAR EL TEMA ESPERADO (AÑADIDO) 👇 --- */}
+          <div className="topic-preference-box" style={{ 
+              padding: '15px',
+              background: 'rgba(0, 0, 0, 0.2)', // Fondo oscuro
+              borderRadius: '12px',
+              border: '1px solid var(--border-color-faint)', 
+              marginBottom: '20px', // Espacio antes del siguiente cuadro
+              textAlign: 'center' 
+          }}>
+              <h4 style={{ 
+                  fontSize: '14px',
+                  margin: '0 0 8px', 
+                  color: 'var(--text-secondary)',
+                  fontWeight: '600'
+              }}>
+                  Tema preferido por el creador (Filtrado por IA):
+              </h4>
+              <p style={{ 
+                  margin: 0, 
+                  fontSize: '15px', 
+                  color: '#fff', // Blanco para que resalte
+                  fontWeight: 'bold' 
+              }}>
+                  {topicPreference}
+              </p>
+          </div>
+          {/* --- 👆 FIN: MOSTRAR EL TEMA ESPERADO (AÑADIDO) 👆 --- */}
+          
+          {/* --- Caja de Contrato de Servicio (Sin cambios) --- */}
+          <div className="contract-summary-box" style={{ 
+            padding: '15px',
+            background: 'rgba(255, 255, 255, 0.05)', // Fondo como los inputs
+            borderRadius: '12px',
+            border: '1px solid var(--border-color-faint)', // Borde púrpura tenue
+            marginBottom: '20px',
+            textAlign: 'center' // Alineación central
+          }}>
+            <h4 style={{ 
+                fontSize: '14px',
+                margin: '0 0 8px', 
+                color: 'var(--text-secondary)', // Color de etiqueta
+                fontWeight: '600'
+            }}>
+                La respuesta del creador contendrá:
+            </h4>
+            <p style={{ 
+                margin: 0, 
+                fontSize: '15px', 
+                color: 'var(--glow-accent-crimson)', 
+                fontWeight: 'bold' 
+            }}>
+                {contractSummary}
             </p>
-        </div>
-        {/* --- FIN DE SECCIÓN DE PAGO --- */}
+          </div>
+          {/* --- Fin Caja Contrato --- */}
+
+
+          {/* --- SECCIÓN DE PAGO (Sin cambios) --- */}
+          <div className="payment-section" style={{
+              borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+              paddingTop: '15px', 
+              marginTop: '0px'     
+          }}>
+              
+              <label htmlFor="payment" style={{
+                  fontSize: '13px', 
+                  fontWeight: '600',
+                  color: 'var(--text-secondary)',
+                  display: 'block',
+                  marginBottom: '8px' 
+              }}>
+                Monto por Respuesta Premium (Mínimo ${basePrice.toFixed(2)} MXN)
+              </label>
+
+              <div className="payment-input-group" style={{
+                  marginBottom: '8px', 
+                  padding: '4px 14px',
+                  borderColor: 'rgba(255, 255, 255, 0.1)', 
+                  boxShadow: 'none'
+                }}>
+                  <span className="currency-symbol" style={{
+                      color: 'var(--text-primary)', 
+                      fontSize: '18px', 
+                      fontWeight: '700',
+                      paddingLeft: '0px' 
+                  }}>$</span>
+                  <input
+                      type="text"
+                      inputMode="decimal" 
+                      id="payment"
+                      value={paymentInput}
+                      onChange={handlePaymentChange}
+                      placeholder={String(basePrice)}
+                      className="payment-input" 
+                      style={{
+                        flexGrow: 1, 
+                        textAlign: 'left', 
+                        fontSize: '18px',
+                        fontWeight: '700',
+                        padding: '6px 8px', 
+                        color: totalAmount < basePrice ? '#ff7b7b' : 'var(--text-primary)'
+                      }}
+                  />
+                  <span className="currency-symbol" style={{paddingRight: '0px', fontSize: '16px'}}>MXN</span>
+              </div>
+              
+              <p style={{
+                  fontSize: '12px', 
+                  color: 'var(--text-secondary)', 
+                  textAlign: 'center', 
+                  margin: '6px 0 0', 
+                  opacity: 0.8
+              }}>
+                Puedes ofrecer más para priorizar tu mensaje.
+              </p>
+              
+          </div>
+          {/* --- FIN SECCIÓN PAGO --- */}
 
         <button type="submit" disabled={isDisabled} className="submit-button" style={{marginTop: '20px'}}>
           {status === "loading" ? "Procesando..." : buttonText}
         </button>
       </form>
 
-      {/* --- Mensaje de éxito actualizado --- */}
+      {/* --- Mensaje de éxito (Sin cambios) --- */}
       {status === "success" && (
         <div className="form-status-message success">
           <p>✅ ¡Mensaje Enviado! Tu pago de ${totalAmount.toFixed(2)} MXN está retenido hasta que el creador te responda.</p>
@@ -277,6 +359,7 @@ export default function AnonMessageForm({
         </div>
       )}
 
+      {/* --- Mensaje de error (Sin cambios) --- */}
       {status === "error" && (
         <div className="form-status-message error">
           <p>{errorMsg || "Hubo un error al enviar tu mensaje."}</p>
