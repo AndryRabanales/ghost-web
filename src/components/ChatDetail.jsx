@@ -8,7 +8,7 @@ import MessageForm from "@/components/MessageForm";
 const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
 
 // --- Componente Message (sin cambios) ---
-const Message = ({ msg, creatorName, anonAlias }) => { /* ... (sin cambios) ... */
+const Message = ({ msg, creatorName, anonAlias }) => {
   const isCreator = msg.from === "creator";
   const senderName = isCreator ? creatorName : (msg.alias || anonAlias);
 
@@ -32,9 +32,8 @@ export default function ChatDetail({ dashboardId, chatId, onBack }) {
   const [messages, setMessages] = useState([]);
   const [chatInfo, setChatInfo] = useState(null);
   
-  // --- 👇 NUEVO ESTADO PARA EL ANÓNIMO 👇 ---
-  const [isAnonOnline, setIsAnonOnline] = useState(false);
-  // --- 👆 FIN NUEVO ESTADO 👆 ---
+  // --- 👇 1. ELIMINADO EL ESTADO 'isAnonOnline' 👇 ---
+  // const [isAnonOnline, setIsAnonOnline] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -57,7 +56,7 @@ export default function ChatDetail({ dashboardId, chatId, onBack }) {
     if (!dashboardId || !chatId) return;
 
     // 1. Cargar mensajes (sin cambios)
-    const fetchChatData = async (token) => { /* ... (sin cambios) ... */
+    const fetchChatData = async (token) => {
       setLoading(true);
       setError(null);
       try {
@@ -80,7 +79,7 @@ export default function ChatDetail({ dashboardId, chatId, onBack }) {
 
         const data = await res.json();
         setMessages(data.messages || []);
-        setChatInfo(data); // chatInfo todavía contiene las 'vidas' de la API, pero ya no las usamos
+        setChatInfo(data); 
       } catch (err) {
         setError(err.message);
       } finally {
@@ -101,7 +100,7 @@ export default function ChatDetail({ dashboardId, chatId, onBack }) {
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
-    // --- 👇 MANEJADOR DE WEBSOCKET MODIFICADO 👇 ---
+    // --- 👇 2. MANEJADOR DE WEBSOCKET MODIFICADO (SIN LÓGICA DE ESTADO) 👇 ---
     ws.onmessage = (event) => {
       try {
         const msg = JSON.parse(event.data);
@@ -114,11 +113,8 @@ export default function ChatDetail({ dashboardId, chatId, onBack }) {
           });
         }
 
-        // 2. NUEVO: Manejador de estado (filtrando por este chatId)
-        if (msg.type === "ANON_STATUS_UPDATE" && msg.chatId === chatId) {
-          console.log("WS (ChatDetail) Status Update Recibido:", msg);
-          setIsAnonOnline(msg.status === 'online');
-        }
+        // 2. ELIMINADO: Manejador de estado 'ANON_STATUS_UPDATE'
+        
       } catch (e) {
         console.error("Error procesando WS:", e);
       }
@@ -138,20 +134,16 @@ export default function ChatDetail({ dashboardId, chatId, onBack }) {
 
   const anonAlias = chatInfo?.anonAlias || "Anónimo";
 
+  // --- 👇 3. AÑADIDO: OBTENER LA ÚLTIMA PREGUNTA DEL ANÓNIMO 👇 ---
+  const lastAnonMessage = messages.filter(m => m.from === 'anon').pop();
+
   return (
     <div className="chat-detail-container">
-      {/* --- 👇 HEADER MODIFICADO 👇 --- */}
+      {/* --- 👇 4. HEADER MODIFICADO (SIN ESTADO "DESCONECTADO") 👇 --- */}
       <div className="chat-header">
-        {/* Contenedor para alinear nombre y estado */}
         <div className="chat-header-info">
           <h3>Chat con {anonAlias}</h3>
-          <div className="chat-header-status">
-            {isAnonOnline ? (
-              <span className="status-online">En línea 🟢</span>
-            ) : (
-              <span className="status-offline">Desconectado ⚪</span>
-            )}
-          </div>
+          {/* ELIMINADO EL DIV .chat-header-status */}
         </div>
         <button onClick={onBack} className="back-button">← Volver</button>
       </div>
@@ -171,11 +163,12 @@ export default function ChatDetail({ dashboardId, chatId, onBack }) {
       </div>
 
       <div className="chat-footer">
-        {/* --- MODIFICADO: Props de 'vidas' eliminadas --- */}
+        {/* --- 👇 5. MODIFICADO: Pasar la prop 'lastAnonQuestion' 👇 --- */}
         <MessageForm
           dashboardId={dashboardId}
           chatId={chatId}
           onMessageSent={() => {}}
+          lastAnonQuestion={lastAnonMessage?.content}
         />
       </div>
     </div>
