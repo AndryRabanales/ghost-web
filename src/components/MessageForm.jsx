@@ -4,8 +4,8 @@ import { useState } from "react";
 import { refreshToken } from "@/utils/auth";
 
 const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
-// --- 👇 2. SUBE EL MÍNIMO A 50 👇 ---
-const MIN_RESPONSE_LENGTH = 50; 
+// --- 👇 2. SUBE EL MÍNIMO A 40 👇 ---
+const MIN_RESPONSE_LENGTH = 40; 
 
 export default function MessageForm({
   dashboardId,

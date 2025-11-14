@@ -172,7 +172,7 @@ export default function AnonMessageForm({
           chatId: data.chatId,
           anonToken: data.anonToken,
           creatorPublicId: publicId,
-          preview: content.slice(0, 50) + (content.length > 50 ? "..." : ""),
+          preview: content.slice(0, 50) + (content.length > 40 ? "..." : ""),
           ts: new Date().toISOString(),
           creatorName: data.creatorName || "Conversación",
           anonAlias: alias || "Anónimo",
