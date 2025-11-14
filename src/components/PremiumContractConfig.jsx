@@ -107,24 +107,27 @@ export default function PremiumContractConfig({ creator, onChange }) {
           marginTop: '10px',
           minWidth: '150px',
           padding: '10px 20px',
-          border: '1px solid var(--border-color)',
-          backgroundColor: loadingContract ? 'var(--bg-secondary)' : 'var(--primary-color)',
+          border: 'none',
+          backgroundColor: loadingContract || contract.trim().length < 5 ? '#d4b5e0' : '#b794f4',
           color: '#fff',
           borderRadius: '8px',
           fontWeight: '600',
           fontSize: '14px',
           cursor: loadingContract || contract.trim().length < 5 ? 'not-allowed' : 'pointer',
-          opacity: loadingContract || contract.trim().length < 5 ? 0.6 : 1,
           transition: 'all 0.2s ease',
           boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
         }}
         onMouseEnter={(e) => {
           if (!loadingContract && contract.trim().length >= 5) {
+            e.target.style.backgroundColor = '#a67dd9';
             e.target.style.transform = 'translateY(-1px)';
-            e.target.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
+            e.target.style.boxShadow = '0 4px 8px rgba(183, 148, 244, 0.3)';
           }
         }}
         onMouseLeave={(e) => {
+          if (!loadingContract && contract.trim().length >= 5) {
+            e.target.style.backgroundColor = '#b794f4';
+          }
           e.target.style.transform = 'translateY(0)';
           e.target.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
         }}
@@ -174,24 +177,27 @@ export default function PremiumContractConfig({ creator, onChange }) {
             marginTop: '10px',
             minWidth: '150px',
             padding: '10px 20px',
-            border: '1px solid var(--border-color)',
-            backgroundColor: loadingTopic ? 'var(--bg-secondary)' : 'var(--primary-color)',
+            border: 'none',
+            backgroundColor: loadingTopic || topic.trim().length < 5 ? '#d4b5e0' : '#b794f4',
             color: '#fff',
             borderRadius: '8px',
             fontWeight: '600',
             fontSize: '14px',
             cursor: loadingTopic || topic.trim().length < 5 ? 'not-allowed' : 'pointer',
-            opacity: loadingTopic || topic.trim().length < 5 ? 0.6 : 1,
             transition: 'all 0.2s ease',
             boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
           }}
           onMouseEnter={(e) => {
             if (!loadingTopic && topic.trim().length >= 5) {
+              e.target.style.backgroundColor = '#a67dd9';
               e.target.style.transform = 'translateY(-1px)';
-              e.target.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
+              e.target.style.boxShadow = '0 4px 8px rgba(183, 148, 244, 0.3)';
             }
           }}
           onMouseLeave={(e) => {
+            if (!loadingTopic && topic.trim().length >= 5) {
+              e.target.style.backgroundColor = '#b794f4';
+            }
             e.target.style.transform = 'translateY(0)';
             e.target.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
           }}
