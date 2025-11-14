@@ -65,10 +65,8 @@ const EscasezCounter = ({ data, isFull }) => {
 
 // --- COMPONENTE PRINCIPAL ---
 //
-// --- 2. COMPONENTE DE FORMULARIO (YA NO ES EL DEFAULT EXPORT) ---
-//
-// --- 2. COMPONENTE DE FORMULARIO (YA NO ES EL DEFAULT EXPORT) ---
-function AnonMessageForm({ 
+// --- 2. COMPONENTE DE FORMULARIO (AHORA SÍ ES EL DEFAULT EXPORT) ---
+export default function AnonMessageForm({ 
   publicId, 
   onChatCreated,
   escasezData, 
@@ -86,6 +84,7 @@ function AnonMessageForm({
   
   const [status, setStatus] = useState("idle");
   const [errorMsg, setErrorMsg] = useState("");
+  const [charCount, setCharCount] = useState(0); // <--- AÑADIDO
   const [isMounted, setIsMounted] = useState(false);
 
   // Calcula el precio base. Usa el del creador, o el fallback de 200.
@@ -155,6 +154,9 @@ function AnonMessageForm({
       if (!res.ok) {
         if (data.code === "MINIMUM_PAYMENT_REQUIRED") {
              throw new Error(data.error || `El pago mínimo es $${effectiveBasePrice.toFixed(2)} MXN.`);
+        }
+        if (data.code === "MESSAGE_NOT_RELEVANT") { // <--- AÑADIDO
+             throw new Error(data.error || "El mensaje no es relevante para el creador.");
         }
         throw new Error(data.error || "Error enviando el mensaje");
       }
