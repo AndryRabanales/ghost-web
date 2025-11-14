@@ -84,7 +84,7 @@ export default function PremiumContractConfig({ creator, onChange }) {
       <h3 style={{fontSize: '1.2em', fontWeight: '700', margin: '0 0 10px', color: 'var(--text-primary)'}}>
         📜 Contrato de Servicio (S3)
       </h3>
-      <p className="contract-guide-text">Define lo que **garantizas** al fan para justificar tu precio.</p>
+      <p className="contract-guide-text">Define lo que **garantizas** en tu respuesta de texto. (El envío de fotos/PDF no está disponible en esta versión).</p>
       
       <div className="contract-input-wrapper">
         <input
@@ -92,7 +92,7 @@ export default function PremiumContractConfig({ creator, onChange }) {
           value={contract}
           onChange={(e) => setContract(e.target.value.slice(0, MAX_LENGTH_CONTRACT))}
           disabled={loadingContract}
-          placeholder="Ej: Recibirás 1 foto exclusiva y 50 caracteres de texto."
+          placeholder="Ej: Una respuesta detallada de al menos 100 caracteres."
           className="form-input-field contract-input"
         />
         <div className="char-count" style={{ color: contract.length > MAX_LENGTH_CONTRACT - 20 ? '#ff7b7b' : 'var(--text-secondary)' }}>
