@@ -98,7 +98,7 @@ export default function PremiumContractConfig({ creator, onChange }) {
         </div>
       </div>
 
-      {/* ✅ BOTÓN CON BORDE */}
+      {/* ✅ BOTÓN GUARDAR CONTRATO CON DISEÑO */}
       <button 
         onClick={() => handleSave('contract')} 
         disabled={loadingContract || contract.trim().length < 5} 
@@ -106,7 +106,27 @@ export default function PremiumContractConfig({ creator, onChange }) {
         style={{
           marginTop: '10px',
           minWidth: '150px',
-          border: '1px solid var(--border-color)'
+          padding: '10px 20px',
+          border: '1px solid var(--border-color)',
+          backgroundColor: loadingContract ? 'var(--bg-secondary)' : 'var(--primary-color)',
+          color: '#fff',
+          borderRadius: '8px',
+          fontWeight: '600',
+          fontSize: '14px',
+          cursor: loadingContract || contract.trim().length < 5 ? 'not-allowed' : 'pointer',
+          opacity: loadingContract || contract.trim().length < 5 ? 0.6 : 1,
+          transition: 'all 0.2s ease',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+        }}
+        onMouseEnter={(e) => {
+          if (!loadingContract && contract.trim().length >= 5) {
+            e.target.style.transform = 'translateY(-1px)';
+            e.target.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
+          }
+        }}
+        onMouseLeave={(e) => {
+          e.target.style.transform = 'translateY(0)';
+          e.target.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
         }}
       >
         {loadingContract ? 'Guardando...' : 'Guardar Contrato'}
@@ -145,7 +165,7 @@ export default function PremiumContractConfig({ creator, onChange }) {
           </div>
         </div>
 
-        {/* ✅ BOTÓN CON BORDE */}
+        {/* ✅ BOTÓN GUARDAR TEMA CON DISEÑO */}
         <button 
           onClick={() => handleSave('topic')} 
           disabled={loadingTopic || topic.trim().length < 5} 
@@ -153,7 +173,27 @@ export default function PremiumContractConfig({ creator, onChange }) {
           style={{
             marginTop: '10px',
             minWidth: '150px',
-            border: '1px solid var(--border-color)'
+            padding: '10px 20px',
+            border: '1px solid var(--border-color)',
+            backgroundColor: loadingTopic ? 'var(--bg-secondary)' : 'var(--primary-color)',
+            color: '#fff',
+            borderRadius: '8px',
+            fontWeight: '600',
+            fontSize: '14px',
+            cursor: loadingTopic || topic.trim().length < 5 ? 'not-allowed' : 'pointer',
+            opacity: loadingTopic || topic.trim().length < 5 ? 0.6 : 1,
+            transition: 'all 0.2s ease',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+          }}
+          onMouseEnter={(e) => {
+            if (!loadingTopic && topic.trim().length >= 5) {
+              e.target.style.transform = 'translateY(-1px)';
+              e.target.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.transform = 'translateY(0)';
+            e.target.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
           }}
         >
           {loadingTopic ? 'Guardando...' : 'Guardar Tema'}
