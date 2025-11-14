@@ -108,7 +108,7 @@ export default function PremiumContractConfig({ creator, onChange }) {
           minWidth: '150px',
           padding: '10px 20px',
           border: 'none',
-          backgroundColor: loadingContract || contract.trim().length < 5 ? '#d4b5e0' : '#b794f4',
+          backgroundColor: loadingContract || contract.trim().length < 5 ? '#b8a3c9' : '#8b7ba8',
           color: '#fff',
           borderRadius: '8px',
           fontWeight: '600',
@@ -119,14 +119,14 @@ export default function PremiumContractConfig({ creator, onChange }) {
         }}
         onMouseEnter={(e) => {
           if (!loadingContract && contract.trim().length >= 5) {
-            e.target.style.backgroundColor = '#a67dd9';
+            e.target.style.backgroundColor = '#75668f';
             e.target.style.transform = 'translateY(-1px)';
-            e.target.style.boxShadow = '0 4px 8px rgba(183, 148, 244, 0.3)';
+            e.target.style.boxShadow = '0 4px 8px rgba(139, 123, 168, 0.4)';
           }
         }}
         onMouseLeave={(e) => {
           if (!loadingContract && contract.trim().length >= 5) {
-            e.target.style.backgroundColor = '#b794f4';
+            e.target.style.backgroundColor = '#8b7ba8';
           }
           e.target.style.transform = 'translateY(0)';
           e.target.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
@@ -178,7 +178,7 @@ export default function PremiumContractConfig({ creator, onChange }) {
             minWidth: '150px',
             padding: '10px 20px',
             border: 'none',
-            backgroundColor: loadingTopic || topic.trim().length < 5 ? '#d4b5e0' : '#b794f4',
+            backgroundColor: loadingTopic || topic.trim().length < 5 ? '#b8a3c9' : '#8b7ba8',
             color: '#fff',
             borderRadius: '8px',
             fontWeight: '600',
@@ -189,14 +189,14 @@ export default function PremiumContractConfig({ creator, onChange }) {
           }}
           onMouseEnter={(e) => {
             if (!loadingTopic && topic.trim().length >= 5) {
-              e.target.style.backgroundColor = '#a67dd9';
+              e.target.style.backgroundColor = '#75668f';
               e.target.style.transform = 'translateY(-1px)';
-              e.target.style.boxShadow = '0 4px 8px rgba(183, 148, 244, 0.3)';
+              e.target.style.boxShadow = '0 4px 8px rgba(139, 123, 168, 0.4)';
             }
           }}
           onMouseLeave={(e) => {
             if (!loadingTopic && topic.trim().length >= 5) {
-              e.target.style.backgroundColor = '#b794f4';
+              e.target.style.backgroundColor = '#8b7ba8';
             }
             e.target.style.transform = 'translateY(0)';
             e.target.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
