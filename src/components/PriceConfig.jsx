@@ -119,7 +119,7 @@ export default function PriceConfig({ creator, onChange }) {
                         minWidth: '150px',
                         padding: '10px 20px',
                         border: 'none',
-                        backgroundColor: loading || Number(priceInPesos) < MIN_PRICE_PESOS ? '#b8a3c9' : '#8b7ba8',
+                        backgroundColor: loading || Number(priceInPesos) < MIN_PRICE_PESOS ? '#8a6bb3' : '#503382',
                         color: '#fff',
                         borderRadius: '8px',
                         fontWeight: '600',
@@ -130,14 +130,14 @@ export default function PriceConfig({ creator, onChange }) {
                     }}
                     onMouseEnter={(e) => {
                         if (!loading && Number(priceInPesos) >= MIN_PRICE_PESOS) {
-                            e.target.style.backgroundColor = '#75668f';
+                            e.target.style.backgroundColor = '#3f2868';
                             e.target.style.transform = 'translateY(-1px)';
-                            e.target.style.boxShadow = '0 4px 8px rgba(139, 123, 168, 0.4)';
+                            e.target.style.boxShadow = '0 4px 8px rgba(80, 51, 130, 0.4)';
                         }
                     }}
                     onMouseLeave={(e) => {
                         if (!loading && Number(priceInPesos) >= MIN_PRICE_PESOS) {
-                            e.target.style.backgroundColor = '#8b7ba8';
+                            e.target.style.backgroundColor = '#503382';
                         }
                         e.target.style.transform = 'translateY(0)';
                         e.target.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
