@@ -115,12 +115,12 @@ export default function PriceConfig({ creator, onChange }) {
                     style={{flexGrow: 1}}
                 />
                 
-                {/* Botón de Guardar */}
+                {/* --- 👇 CORRECCIÓN AQUÍ --- */}
                 <button 
                     onClick={handleSave} 
                     disabled={loading || Number(priceInPesos) < MIN_PRICE_PESOS} 
-                    className="save-contract-button" 
-                    style={{minWidth: '100px'}}
+                    className="submit-button" // <-- Se cambió la clase
+                    // style={{minWidth: '100px'}} <-- Se eliminó el estilo en línea
                 >
                     {loading ? '...' : 'Guardar'}
                 </button>
@@ -138,10 +138,3 @@ export default function PriceConfig({ creator, onChange }) {
         </div>
     );
 }
-
-// Reutilizamos algunas clases de CSS que ya existen
-// .premium-contract-config-container
-// .contract-guide-text
-// .contract-input-wrapper
-// .form-input-field
-// .save-contract-button
