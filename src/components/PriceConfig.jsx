@@ -110,14 +110,40 @@ export default function PriceConfig({ creator, onChange }) {
                     style={{flexGrow: 1}}
                 />
 
-                {/* ✅ BOTÓN CON BORDE AÑADIDO */}
+                {/* ✅ BOTÓN CON MISMO ESTILO QUE PREMIUM CONTRACT */}
                 <button 
                     onClick={handleSave} 
                     disabled={loading || Number(priceInPesos) < MIN_PRICE_PESOS} 
                     className="submit-button"
-                    style={{ border: '1px solid var(--border-color)' }}
+                    style={{
+                        minWidth: '150px',
+                        padding: '10px 20px',
+                        border: 'none',
+                        backgroundColor: loading || Number(priceInPesos) < MIN_PRICE_PESOS ? '#b8a3c9' : '#8b7ba8',
+                        color: '#fff',
+                        borderRadius: '8px',
+                        fontWeight: '600',
+                        fontSize: '14px',
+                        cursor: loading || Number(priceInPesos) < MIN_PRICE_PESOS ? 'not-allowed' : 'pointer',
+                        transition: 'all 0.2s ease',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                    }}
+                    onMouseEnter={(e) => {
+                        if (!loading && Number(priceInPesos) >= MIN_PRICE_PESOS) {
+                            e.target.style.backgroundColor = '#75668f';
+                            e.target.style.transform = 'translateY(-1px)';
+                            e.target.style.boxShadow = '0 4px 8px rgba(139, 123, 168, 0.4)';
+                        }
+                    }}
+                    onMouseLeave={(e) => {
+                        if (!loading && Number(priceInPesos) >= MIN_PRICE_PESOS) {
+                            e.target.style.backgroundColor = '#8b7ba8';
+                        }
+                        e.target.style.transform = 'translateY(0)';
+                        e.target.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+                    }}
                 >
-                    {loading ? '...' : 'Guardar'}
+                    {loading ? 'Guardando...' : 'Guardar'}
                 </button>
             </div>
 
