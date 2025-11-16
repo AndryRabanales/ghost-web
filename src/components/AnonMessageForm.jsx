@@ -63,14 +63,20 @@ export default function AnonMessageForm({
 
   const basePrice = (baseTipAmountCents || (FALLBACK_MIN_PREMIUM_AMOUNT * 100)) / 100;
   const totalAmount = Number(paymentInput) || 0;
+  
+  // --- 👇 CORRECCIÓN DE ERROR 'effectiveBasePrice is not defined' 👇 ---
+  // Esta variable debe ser definida aquí, fuera del handleSubmit
+  const effectiveBasePrice = Math.max(basePrice, FALLBACK_MIN_PREMIUM_AMOUNT);
+  // --- 👆 FIN DE LA CORRECCIÓN 👆 ---
 
   useEffect(() => {
-    const initialPrice = String(Math.max(basePrice, FALLBACK_MIN_PREMIUM_AMOUNT));
+    // Usamos la variable corregida
+    const initialPrice = String(effectiveBasePrice);
     if (!isMounted) {
       setPaymentInput(initialPrice);
       setIsMounted(true);
     }
-  }, [basePrice, isMounted]);
+  }, [basePrice, isMounted, effectiveBasePrice]); // Añadida 'effectiveBasePrice' a las dependencias
   
   const contractSummary = formatContract(creatorContract); 
 
@@ -96,7 +102,7 @@ export default function AnonMessageForm({
       return;
     }
 
-    const effectiveBasePrice = Math.max(basePrice, FALLBACK_MIN_PREMIUM_AMOUNT);
+    // Usamos la variable 'effectiveBasePrice' que ya está definida fuera
     if (totalAmount < effectiveBasePrice) {
         setErrorMsg(`El pago mínimo es $${effectiveBasePrice.toFixed(2)} MXN.`);
         setStatus("error");
