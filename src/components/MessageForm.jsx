@@ -1,23 +1,34 @@
+// src/components/MessageForm.jsx
 "use client";
-// --- 👇 1. AÑADE 'useState' 👇 ---
+// --- 1. 'useState' ya estaba importado ---
 import { useState } from "react";
 import { refreshToken } from "@/utils/auth";
 
 const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
-// --- 👇 2. SUBE EL MÍNIMO A 40 👇 ---
 const MIN_RESPONSE_LENGTH = 40; 
 
 export default function MessageForm({
   dashboardId,
   chatId,
   onMessageSent,
-  lastAnonQuestion // <--- 3. AÑADE LA NUEVA PROP
+  lastAnonQuestion 
 }) {
   const [newMsg, setNewMsg] = useState("");
   const [loading, setLoading] = useState(false);
-  // --- 👇 4. AÑADE EL ESTADO DE ERROR 👇 ---
   const [error, setError] = useState(null); 
   const charCount = newMsg.length;
+
+  // --- 2. CREA UNA INSTANCIA DE AUDIO (reutilizable) ---
+  // Usamos useState para asegurarnos de que solo se cree una vez en el cliente.
+  const [chachingSound, setChachingSound] = useState(null);
+  
+  useState(() => {
+    // Esto solo se ejecutará en el cliente (client-side)
+    if (typeof Audio !== "undefined") {
+      setChachingSound(new Audio('/chaching.mp3'));
+    }
+  }, []);
+  // --- FIN DE MODIFICACIÓN 2 ---
 
   const getAuthHeaders = (token) => {
     const t = token || localStorage.getItem("token");
@@ -29,7 +40,7 @@ export default function MessageForm({
     if (!newMsg.trim() || loading || charCount < MIN_RESPONSE_LENGTH) return;
     
     setLoading(true);
-    setError(null); // <--- 5. Limpia errores antiguos
+    setError(null); 
 
     try {
       let res = await fetch(
@@ -55,19 +66,26 @@ export default function MessageForm({
           }
       }
 
-      // --- 👇 6. MANEJO DE ERROR MEJORADO 👇 ---
       if (!res.ok) {
-        // Si el backend nos da un 400 (baja calidad), capturamos el JSON
         const errorData = await res.json();
         throw new Error(errorData.error || "Error enviando mensaje");
       }
 
       const msgData = await res.json();
+
+      // --- 👇 3. REPRODUCE EL SONIDO AQUÍ 👇 ---
+      if (chachingSound) {
+        chachingSound.currentTime = 0; // Reinicia el sonido si se usa rápido
+        chachingSound.play().catch(err => {
+          console.warn("No se pudo reproducir el sonido 'cha-ching':", err);
+        });
+      }
+      // --- 👆 FIN DE MODIFICACIÓN 3 👆 ---
+
       setNewMsg("");
       if (onMessageSent) onMessageSent(msgData);
     } catch (err) {
       console.error("Error en handleSend:", err);
-      // ¡Aquí está la magia! Mostramos el error de la IA al creador
       setError(err.message); 
     } finally {
       setLoading(false);
@@ -96,13 +114,11 @@ export default function MessageForm({
         </button>
       </form>
       
-      {/* --- 👇 7. SECCIÓN DE CONTEXTO Y ERRORES AÑADIDA 👇 --- */}
-      
-      {/* Aviso de error de la IA (si existe) */}
+      {/* --- (El resto del componente de error y guía no cambia) --- */}
       {error && (
         <div style={{
           fontSize: '13px',
-          color: '#ff7b7b', // Color rojo error
+          color: '#ff7b7b', 
           textAlign: 'center',
           fontWeight: '600',
           marginTop: '10px',
@@ -115,7 +131,6 @@ export default function MessageForm({
         </div>
       )}
 
-      {/* Guía de contexto (la pregunta del anónimo) */}
       {lastAnonQuestion && !error && (
         <div style={{
           fontSize: '12px',
@@ -131,7 +146,6 @@ export default function MessageForm({
         </div>
       )}
       
-      {/* Contador de caracteres (se muestra si no hay error) */}
       {!error && (
         <div style={{
             fontSize: '12px',
@@ -142,7 +156,6 @@ export default function MessageForm({
             {charCount} / {MIN_RESPONSE_LENGTH} caracteres (Mínimo para garantizar calidad)
         </div>
       )}
-      {/* --- 👆 FIN DE SECCIÓN AÑADIDA 👆 --- */}
     </>
   );
 }
