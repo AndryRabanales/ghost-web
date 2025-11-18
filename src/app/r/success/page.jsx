@@ -46,7 +46,7 @@ function SuccessPageContent() {
             setTimeout(() => setRetryCount(prevCount => prevCount + 1), 2000); 
           } else {
             // Si falla después de 5 intentos o es otro error
-            throw new Error(data.error || "No se pudo recuperar tu chat.");
+            throw new Error(data.error || "No se pudo recuperar tu chat");
           }
           return;
         }
