@@ -16,9 +16,7 @@ export default function PublicChatPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // --- AÑADIDO: Estado para la copia del link ---
   const [linkCopied, setLinkCopied] = useState(false);
-  // ---------------------------------------------
 
   const [creatorStatus, setCreatorStatus] = useState({ status: 'offline', lastActiveAt: null });
   const [lastActiveDisplay, setLastActiveDisplay] = useState(null);
@@ -152,7 +150,7 @@ export default function PublicChatPage() {
         wsRef.current.close();
       }
     };
-  }, [chatId, anonToken, updateLocalStorage, markChatAsRead]); // Added markChatAsRead to dependency array
+  }, [chatId, anonToken, updateLocalStorage, markChatAsRead]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -179,7 +177,6 @@ export default function PublicChatPage() {
         );
     };
 
-  // --- AÑADIDO: Función de copiar link ---
   const copyPageUrl = () => {
     if (typeof window !== "undefined") {
       const url = window.location.href;
@@ -191,7 +188,6 @@ export default function PublicChatPage() {
         .catch(err => console.error("Error al copiar:", err));
     }
   };
-  // --------------------------------------
 
   if (loading) return <p style={{ padding: 20, textAlign: 'center', color: 'var(--text-secondary)' }}>Cargando chat…</p>;
 
@@ -217,50 +213,7 @@ export default function PublicChatPage() {
            <a href="/chats" className="back-button" style={{ textDecoration: 'none' }}>← Mis Chats</a>
       </div>
 
-      {/* --- 👇 AÑADIDO: BLOQUE DE SEGURIDAD VISUAL 👇 --- */}
-      <div style={{
-          background: 'rgba(255, 193, 7, 0.1)', 
-          border: '1px solid rgba(255, 193, 7, 0.3)',
-          borderRadius: '12px',
-          padding: '12px',
-          marginBottom: '20px',
-          fontSize: '13px',
-          color: '#ffeeba', // Amarillo claro legible
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '15px',
-          animation: 'fadeInUp 0.5s ease forwards'
-      }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <strong style={{ color: '#ffc107' }}>⚠ Importante:</strong>
-            <span style={{ opacity: 0.9 }}>
-              Guarda este enlace. Si cierras esta pestaña sin tener cuenta, podrías perder el chat.
-            </span>
-          </div>
-          
-          <button 
-            onClick={copyPageUrl}
-            style={{
-                background: linkCopied ? 'rgba(40, 167, 69, 0.2)' : 'rgba(255, 193, 7, 0.15)',
-                border: `1px solid ${linkCopied ? '#28a745' : 'rgba(255, 193, 7, 0.5)'}`,
-                color: linkCopied ? '#75b798' : '#ffc107',
-                padding: '8px 14px',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontSize: '12px',
-                fontWeight: 'bold',
-                whiteSpace: 'nowrap',
-                transition: 'all 0.2s ease',
-                minWidth: '90px',
-                textAlign: 'center'
-            }}
-          >
-            {linkCopied ? "¡Copiado!" : "Copiar Link"}
-          </button>
-      </div>
-      {/* --- 👆 FIN DEL BLOQUE DE SEGURIDAD 👆 --- */}
-
+      {/* EL BLOQUE DE SEGURIDAD YA NO ESTÁ AQUÍ ARRIBA */}
 
       <div className="messages-display">
         {error && <p style={{ color: "red", textAlign: 'center' }}>{error}</p>}
@@ -288,6 +241,51 @@ export default function PublicChatPage() {
             <span>¡Respuesta recibida! El chat ha finalizado.</span>
           </div>
         )}
+
+        {/* --- 👇 AHORA EL BLOQUE ESTÁ AQUÍ ABAJO 👇 --- */}
+        <div style={{
+            background: 'rgba(255, 193, 7, 0.1)', 
+            border: '1px solid rgba(255, 193, 7, 0.3)',
+            borderRadius: '12px',
+            padding: '12px',
+            marginTop: '20px', // Añadido margen superior para separar del "Esperando..."
+            marginBottom: '10px',
+            fontSize: '13px',
+            color: '#ffeeba',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '15px',
+            animation: 'fadeInUp 0.5s ease forwards'
+        }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <strong style={{ color: '#ffc107' }}>⚠ Importante:</strong>
+              <span style={{ opacity: 0.9 }}>
+                Esta página fue enviada a tu email. Guarda este enlace, podrías perder el chat.
+              </span>
+            </div>
+            
+            <button 
+              onClick={copyPageUrl}
+              style={{
+                  background: linkCopied ? 'rgba(40, 167, 69, 0.2)' : 'rgba(255, 193, 7, 0.15)',
+                  border: `1px solid ${linkCopied ? '#28a745' : 'rgba(255, 193, 7, 0.5)'}`,
+                  color: linkCopied ? '#75b798' : '#ffc107',
+                  padding: '8px 14px',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  fontWeight: 'bold',
+                  whiteSpace: 'nowrap',
+                  transition: 'all 0.2s ease',
+                  minWidth: '90px',
+                  textAlign: 'center'
+              }}
+            >
+              {linkCopied ? "¡Copiado!" : "Copiar Link"}
+            </button>
+        </div>
+        {/* --- 👆 FIN DEL BLOQUE DE SEGURIDAD 👆 --- */}
       </div>
       
     </div>
