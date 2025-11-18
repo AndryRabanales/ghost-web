@@ -1,4 +1,3 @@
-[CONTENIDO DEL ARCHIVO: andryrabanales/ghost-web/ghost-web-492a7fdaff6d2bdce1bfb60bf94d3aa7e7972aa0/src/app/chats/[anonToken]/[chatId]/page.jsx]
 // src/app/chats/[anonToken]/[chatId]/page.jsx
 "use client";
 import React, { useEffect, useState, useRef, useCallback } from "react"; // Añadir useCallback
