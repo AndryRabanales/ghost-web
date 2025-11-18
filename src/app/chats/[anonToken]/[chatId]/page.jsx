@@ -1,3 +1,4 @@
+[CONTENIDO DEL ARCHIVO: andryrabanales/ghost-web/ghost-web-492a7fdaff6d2bdce1bfb60bf94d3aa7e7972aa0/src/app/chats/[anonToken]/[chatId]/page.jsx]
 // src/app/chats/[anonToken]/[chatId]/page.jsx
 "use client";
 import React, { useEffect, useState, useRef, useCallback } from "react"; // Añadir useCallback
@@ -128,6 +129,16 @@ export default function PublicChatPage() {
                     if (prev.some(m => m.id === msg.id)) return prev;
                     return [...prev, msg];
                 });
+                
+                // --- 👇 AÑADIDO: Actualizar localStorage con la nueva respuesta 👇 ---
+                updateLocalStorage((c) => ({
+                  ...c,
+                  hasNewReply: true,
+                  preview: msg.content.length > 50 ? msg.content.substring(0, 47) + '...' : msg.content,
+                  ts: msg.createdAt
+                }));
+                // --- 👆 FIN AÑADIDO 👆 ---
+
                 // Marcar como leído si la ventana está activa
                 if (document.visibilityState === 'visible') {
                     markChatAsRead();

@@ -1,3 +1,4 @@
+[CONTENIDO DEL ARCHIVO: andryrabanales/ghost-web/ghost-web-492a7fdaff6d2bdce1bfb60bf94d3aa7e7972aa0/src/app/r/success/page.jsx]
 "use client";
 
 // Es necesario usar Suspense para useSearchParams en el App Router de Next.js
@@ -51,13 +52,39 @@ function SuccessPageContent() {
           return;
         }
 
-        const { chatId, anonToken } = data;
+        // --- 👇 INICIO DE MODIFICACIÓN (TAREA #2) 👇 ---
+        const { chatId, anonToken, creatorName, anonAlias, preview, ts } = data;
+
         if (chatId && anonToken) {
-          setStatus("¡Éxito! Redirigiendo a tu chat...");
-          
-          // NOTA: No podemos guardar en "myChats" aquí porque nos falta
-          // el nombre del creador y el alias. El usuario tendrá que
-          // visitar /chats manualmente, pero SÍ podrá acceder a su chat.
+          setStatus("¡Éxito! Guardando y redirigiendo a tu chat...");
+
+          try {
+            const newChatEntry = {
+              chatId,
+              anonToken,
+              creatorName: creatorName || "Creador",
+              anonAlias: anonAlias || "Anónimo",
+              preview: preview ? (preview.length > 50 ? preview.substring(0, 47) + '...' : preview) : "...",
+              ts: ts || new Date().toISOString(),
+              hasNewReply: false // El chat es nuevo, no tiene respuesta
+            };
+
+            const storedChats = JSON.parse(localStorage.getItem("myChats") || "[]");
+            
+            // Evitar duplicados si el usuario refresca la página de éxito
+            const isAlreadySaved = storedChats.some(c => c.chatId === chatId);
+            
+            if (!isAlreadySaved) {
+              // Añadir al principio de la lista
+              const updatedChats = [newChatEntry, ...storedChats];
+              localStorage.setItem("myChats", JSON.stringify(updatedChats));
+            }
+
+          } catch (storageError) {
+            console.error("Error al guardar en localStorage:", storageError);
+            // No es un error fatal, simplemente continuamos a la redirección
+          }
+          // --- 👆 FIN DE MODIFICACIÓN 👆 ---
           
           // Redirigir al chat
           router.push(`/chats/${anonToken}/${chatId}`);
