@@ -19,7 +19,7 @@ const Message = ({ msg, creatorName }) => {
   );
 };
 
-// --- Componente Principal PublicChatView (MODIFICADO) ---
+// --- Componente Principal PublicChatView ---
 export default function PublicChatView({ 
   chatId, 
   anonToken,
@@ -35,15 +35,10 @@ export default function PublicChatView({
 }) {
   
   const [newMsg, setNewMsg] = useState("");
+  const [linkCopied, setLinkCopied] = useState(false); // Estado para el botón de copiar
   const bottomRef = useRef(null);
 
-  // --- ELIMINADOS:
-  // - const [messages, setMessages]
-  // - const [loading, setLoading]
-  // - const [error, setError]
-  // - const wsRef
-
-  // --- MODIFICADO: markChatAsRead (ahora usa props) ---
+  // --- Función para marcar como leído (usa props) ---
   const markChatAsRead = useCallback(() => {
     try {
       const storedChats = JSON.parse(localStorage.getItem("myChats") || "[]");
@@ -54,18 +49,28 @@ export default function PublicChatView({
       );
       localStorage.setItem("myChats", JSON.stringify(updatedChats));
     } catch (e) { console.error("Error updating localStorage:", e); }
-  }, [chatId, anonToken]); // Depende de las props
+  }, [chatId, anonToken]);
 
-  // --- MODIFICADO: useEffect de scroll (solo depende de messages) ---
+  // --- Scroll automático ---
   useEffect(() => {
     markChatAsRead(); 
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, markChatAsRead]);
 
-  // --- ELIMINADO: El 'useEffect' principal de fetchMessages y WebSocket ---
-  // (Toda esa lógica ahora está en el padre: page.jsx)
+  // --- Función para copiar el enlace actual ---
+  const copyPageUrl = () => {
+    if (typeof window !== "undefined") {
+      const url = window.location.href;
+      navigator.clipboard.writeText(url)
+        .then(() => {
+          setLinkCopied(true);
+          setTimeout(() => setLinkCopied(false), 2000);
+        })
+        .catch(err => console.error("Error al copiar:", err));
+    }
+  };
 
-  // --- MODIFICADO: handleSend ---
+  // --- Manejo del envío de mensajes ---
   const handleSend = async (e) => {
     e.preventDefault();
     if (!newMsg.trim() || !onSendMessage) return;
@@ -77,12 +82,10 @@ export default function PublicChatView({
     setNewMsg(""); 
   };
 
-  // --- ELIMINADA: Lógica de isWaitingForReply (ahora en el padre) ---
-
-  // Renderizado
+  // --- Renderizado ---
   return (
     <div className="public-chat-view">
-      {/* Header (sin cambios, usa props) */}
+      {/* Header */}
       <div className="chat-view-header">
         <div className="chat-header-info">
           <h3>Chat con {creatorName}</h3>
@@ -98,7 +101,51 @@ export default function PublicChatView({
         </div>
       </div>
 
-      {/* Cuerpo del Chat (usa props 'isLoading', 'error', 'messages') */}
+      {/* 👇 BLOQUE DE SEGURIDAD: RECUPERACIÓN DE ENLACE 👇 */}
+      <div style={{
+          background: 'rgba(255, 193, 7, 0.1)', 
+          border: '1px solid rgba(255, 193, 7, 0.3)',
+          borderRadius: '12px',
+          padding: '12px',
+          marginBottom: '20px',
+          fontSize: '13px',
+          color: '#ffeeba', // Amarillo claro legible
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '15px',
+          animation: 'fadeInUp 0.5s ease forwards'
+      }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <strong style={{ color: '#ffc107' }}>⚠ Importante:</strong>
+            <span style={{ opacity: 0.9 }}>
+              Guarda este enlace. Si cierras esta pestaña sin tener cuenta, podrías perder el chat.
+            </span>
+          </div>
+          
+          <button 
+            onClick={copyPageUrl}
+            style={{
+                background: linkCopied ? 'rgba(40, 167, 69, 0.2)' : 'rgba(255, 193, 7, 0.15)',
+                border: `1px solid ${linkCopied ? '#28a745' : 'rgba(255, 193, 7, 0.5)'}`,
+                color: linkCopied ? '#75b798' : '#ffc107',
+                padding: '8px 14px',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '12px',
+                fontWeight: 'bold',
+                whiteSpace: 'nowrap',
+                transition: 'all 0.2s ease',
+                minWidth: '90px',
+                textAlign: 'center'
+            }}
+          >
+            {linkCopied ? "¡Copiado!" : "Copiar Link"}
+          </button>
+      </div>
+      {/* 👆 FIN DEL BLOQUE 👆 */}
+
+      {/* Cuerpo del Chat */}
       <div className="messages-display">
         {isLoading && <p style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>Cargando mensajes...</p>}
         {error && <p style={{ color: '#ff7b7b', textAlign: 'center' }}>{error}</p>}
@@ -107,18 +154,19 @@ export default function PublicChatView({
           <Message key={m.id || Math.random()} msg={m} creatorName={creatorName} />
         ))}
         
-        {/* Placeholder de "Esperando" eliminado de aquí */}
-        
         <div ref={bottomRef} />
       </div>
 
-      {/* Formulario de envío (usa handleSend modificado) */}
+      {/* Formulario de envío */}
       <form onSubmit={handleSend} className="chat-reply-form">
         <input
-          type="text" value={newMsg} onChange={(e) => setNewMsg(e.target.value)}
-          placeholder="Escribe una respuesta..." className="form-input-field reply-input"
+          type="text" 
+          value={newMsg} 
+          onChange={(e) => setNewMsg(e.target.value)}
+          placeholder="Escribe una respuesta..." 
+          className="form-input-field reply-input"
         />
-        <button type-="submit" disabled={!newMsg.trim()} className="submit-button reply-button">
+        <button type="submit" disabled={!newMsg.trim()} className="submit-button reply-button">
           Enviar
         </button>
       </form>
