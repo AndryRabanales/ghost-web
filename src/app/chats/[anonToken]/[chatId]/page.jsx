@@ -1,9 +1,7 @@
 // src/app/chats/[anonToken]/[chatId]/page.jsx
 "use client";
-// --- MODIFICADO: Añadido 'useCallback', quitado 'useRouter' si no se usa ---
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useParams } from "next/navigation";
-// --- AÑADIDO: Importar la función timeAgo ---
 import { timeAgo } from "@/utils/timeAgo"; 
 
 const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
@@ -13,22 +11,21 @@ export default function PublicChatPage() {
   const { anonToken, chatId } = params;
 
   const [messages, setMessages] = useState([]);
-  // --- ELIMINADO: 'newMsg' ya no es necesario ---
-  // const [newMsg, setNewMsg] = useState("");
   const [creatorName, setCreatorName] = useState("Respuesta");
   const [anonAlias, setAnonAlias] = useState("Tú"); 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // --- AÑADIDO: Estados para la presencia del creador ---
+  // --- AÑADIDO: Estado para la copia del link ---
+  const [linkCopied, setLinkCopied] = useState(false);
+  // ---------------------------------------------
+
   const [creatorStatus, setCreatorStatus] = useState({ status: 'offline', lastActiveAt: null });
   const [lastActiveDisplay, setLastActiveDisplay] = useState(null);
-  // --- FIN AÑADIDO ---
 
   const bottomRef = useRef(null);
   const wsRef = useRef(null);
 
-  // --- Función para marcar como leído (sin cambios) ---
   const markChatAsRead = useCallback(() => {
     try {
         const storedChats = JSON.parse(localStorage.getItem("myChats") || "[]");
@@ -43,7 +40,6 @@ export default function PublicChatPage() {
     }
   }, [chatId, anonToken]); 
 
-  // Scroll automático al fondo (sin cambios)
   useEffect(() => {
     if (bottomRef.current) {
       bottomRef.current.scrollIntoView({ behavior: "smooth" });
@@ -51,7 +47,6 @@ export default function PublicChatPage() {
      markChatAsRead();
   }, [messages, markChatAsRead]);
 
-  // Recuperar alias y nombre guardados (sin cambios)
    useEffect(() => {
     const stored = JSON.parse(localStorage.getItem("myChats") || "[]");
     const found = stored.find(
@@ -61,7 +56,6 @@ export default function PublicChatPage() {
     if (found?.anonAlias) setAnonAlias(found.anonAlias);
   }, [chatId, anonToken]);
 
-  // Función para guardar actualizaciones en localStorage (sin cambios)
    const updateLocalStorage = useCallback((updater) => {
         try {
             const stored = JSON.parse(localStorage.getItem("myChats") || "[]");
@@ -75,7 +69,6 @@ export default function PublicChatPage() {
    }, [chatId, anonToken]);
 
 
-  // Cargar mensajes iniciales y conectar WebSocket
   useEffect(() => {
     const fetchMessages = async () => {
       try {
@@ -92,13 +85,11 @@ export default function PublicChatPage() {
                 updateLocalStorage((c) => ({ ...c, creatorName: data.creatorName }));
               }
               
-              // --- AÑADIDO: Guardar estado inicial del creador ---
               if (data.creatorLastActive) {
                 const status = { status: 'offline', lastActiveAt: data.creatorLastActive };
                 setCreatorStatus(status);
                 setLastActiveDisplay(timeAgo(data.creatorLastActive));
               }
-              // --- FIN AÑADIDO ---
               
               markChatAsRead();
 
@@ -114,9 +105,8 @@ export default function PublicChatPage() {
           }
     };
 
-    fetchMessages(); // Carga inicial
+    fetchMessages();
 
-    // Conexión WebSocket (URL corregida)
     const wsUrl = `${API.replace(/^http/, "ws")}/ws?anonTokens=${anonToken}`;
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
@@ -129,24 +119,20 @@ export default function PublicChatPage() {
       try {
             const msg = JSON.parse(event.data);
             
-            // 1. Si llega un mensaje del creador
             if (msg.type === "message" && msg.from === "creator") { 
                 setMessages((prev) => {
                     if (prev.some(m => m.id === msg.id)) return prev;
                     return [...prev, msg];
                 });
                 
-                // --- AÑADIDO: Actualizar estado de "Nueva Respuesta" ---
                 updateLocalStorage((c) => ({ ...c, hasNewReply: true }));
                 
                 if (document.visibilityState === 'visible') {
                     markChatAsRead();
                 }
-                // Si el creador envía un mensaje, está "en línea"
                 setCreatorStatus({ status: 'online', lastActiveAt: new Date().toISOString() });
             }
 
-            // --- AÑADIDO: Si llega una actualización de estado del creador ---
             if (msg.type === 'CREATOR_STATUS_UPDATE') {
               setCreatorStatus(prev => ({ ...prev, status: msg.status }));
               if (msg.status === 'offline') {
@@ -155,49 +141,36 @@ export default function PublicChatPage() {
                 setLastActiveDisplay(timeAgo(now));
               }
             }
-            // --- FIN AÑADIDO ---
 
         } catch (e) {
             console.error("Error procesando WebSocket:", e);
         }
     };
 
-    // Limpieza
     return () => {
       if (wsRef.current) {
         wsRef.current.close();
       }
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chatId, anonToken, updateLocalStorage]); // Incluir updateLocalStorage
+  }, [chatId, anonToken, updateLocalStorage, markChatAsRead]); // Added markChatAsRead to dependency array
 
-  // --- AÑADIDO: useEffect para actualizar el "hace X minutos" ---
   useEffect(() => {
-    // Actualiza el 'timeAgo' cada minuto
     const interval = setInterval(() => {
       if (creatorStatus.status === 'offline' && creatorStatus.lastActiveAt) {
         setLastActiveDisplay(timeAgo(creatorStatus.lastActiveAt));
       }
-    }, 60000); // 60 segundos
+    }, 60000);
     return () => clearInterval(interval);
   }, [creatorStatus]);
-  // --- FIN AÑADIDO ---
 
-
-  // --- ELIMINADO: La función handleSend ya no es necesaria ---
-
-   // Componente Message (adaptado para esta vista)
    const Message = ({ msg, creatorName }) => {
         const isCreator = msg.from === "creator";
-        // --- MODIFICADO: Usamos el alias guardado ---
         const senderName = isCreator ? creatorName : (anonAlias || "Tú"); 
 
         return (
-             // Alineación: Creador a la izquierda ('anon'), Anónimo a la derecha ('creator')
             <div className={`message-bubble-wrapper ${isCreator ? 'anon' : 'creator'}`}>
               <div>
                   <div className="message-alias">{senderName}</div>
-                   {/* Estilo: Creador gris ('anon'), Anónimo púrpura ('creator') */}
                   <div className={`message-bubble ${isCreator ? 'anon' : 'creator'}`}>
                       {msg.content}
                   </div>
@@ -206,20 +179,28 @@ export default function PublicChatPage() {
         );
     };
 
+  // --- AÑADIDO: Función de copiar link ---
+  const copyPageUrl = () => {
+    if (typeof window !== "undefined") {
+      const url = window.location.href;
+      navigator.clipboard.writeText(url)
+        .then(() => {
+          setLinkCopied(true);
+          setTimeout(() => setLinkCopied(false), 2000);
+        })
+        .catch(err => console.error("Error al copiar:", err));
+    }
+  };
+  // --------------------------------------
+
   if (loading) return <p style={{ padding: 20, textAlign: 'center', color: 'var(--text-secondary)' }}>Cargando chat…</p>;
 
-  // --- AÑADIDO: Lógica para saber si se está esperando respuesta ---
   const lastMessage = messages.length > 0 ? messages[messages.length - 1] : null;
-  // Está esperando si el último mensaje es del anónimo, o si no hay mensajes
   const isWaitingForReply = !lastMessage || lastMessage.from === 'anon';
-  // --- FIN AÑADIDO ---
-
 
   return (
-    // Reutilizamos clases de la vista unificada si es posible
     <div className="public-chat-view" style={{ maxWidth: 600, margin: "40px auto", padding: 20, height: 'auto', maxHeight: 'none' }}>
       
-      {/* --- MODIFICADO: Header ahora muestra el estado del creador --- */}
       <div className="chat-view-header">
            <div className="chat-header-info">
              <h3>Chat con {creatorName}</h3>
@@ -235,7 +216,50 @@ export default function PublicChatPage() {
            </div>
            <a href="/chats" className="back-button" style={{ textDecoration: 'none' }}>← Mis Chats</a>
       </div>
-      {/* --- FIN MODIFICACIÓN --- */}
+
+      {/* --- 👇 AÑADIDO: BLOQUE DE SEGURIDAD VISUAL 👇 --- */}
+      <div style={{
+          background: 'rgba(255, 193, 7, 0.1)', 
+          border: '1px solid rgba(255, 193, 7, 0.3)',
+          borderRadius: '12px',
+          padding: '12px',
+          marginBottom: '20px',
+          fontSize: '13px',
+          color: '#ffeeba', // Amarillo claro legible
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '15px',
+          animation: 'fadeInUp 0.5s ease forwards'
+      }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <strong style={{ color: '#ffc107' }}>⚠ Importante:</strong>
+            <span style={{ opacity: 0.9 }}>
+              Guarda este enlace. Si cierras esta pestaña sin tener cuenta, podrías perder el chat.
+            </span>
+          </div>
+          
+          <button 
+            onClick={copyPageUrl}
+            style={{
+                background: linkCopied ? 'rgba(40, 167, 69, 0.2)' : 'rgba(255, 193, 7, 0.15)',
+                border: `1px solid ${linkCopied ? '#28a745' : 'rgba(255, 193, 7, 0.5)'}`,
+                color: linkCopied ? '#75b798' : '#ffc107',
+                padding: '8px 14px',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '12px',
+                fontWeight: 'bold',
+                whiteSpace: 'nowrap',
+                transition: 'all 0.2s ease',
+                minWidth: '90px',
+                textAlign: 'center'
+            }}
+          >
+            {linkCopied ? "¡Copiado!" : "Copiar Link"}
+          </button>
+      </div>
+      {/* --- 👆 FIN DEL BLOQUE DE SEGURIDAD 👆 --- */}
 
 
       <div className="messages-display">
@@ -251,10 +275,8 @@ export default function PublicChatPage() {
         <div ref={bottomRef} />
       </div>
 
-      {/* --- MODIFICACIÓN: Formulario eliminado y reemplazado por indicador --- */}
       <div className="chat-footer" style={{paddingTop: '15px', borderTop: '1px solid rgba(255, 255, 255, 0.1)'}}>
         {isWaitingForReply ? (
-          // Reutiliza los estilos 'waiting-indicator' de globals.css
           <div className="waiting-indicator">
             <span>Esperando respuesta de {creatorName}</span>
             <div className="waiting-dots">
@@ -267,7 +289,6 @@ export default function PublicChatPage() {
           </div>
         )}
       </div>
-      {/* --- FIN MODIFICACIÓN --- */}
       
     </div>
   );
