@@ -1,4 +1,3 @@
-[CONTENIDO DEL ARCHIVO: andryrabanales/ghost-web/ghost-web-492a7fdaff6d2bdce1bfb60bf94d3aa7e7972aa0/src/app/r/success/page.jsx]
 "use client";
 
 // Es necesario usar Suspense para useSearchParams en el App Router de Next.js
