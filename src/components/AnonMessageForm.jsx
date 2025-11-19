@@ -6,15 +6,12 @@ const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.rail
 const FALLBACK_MIN_PREMIUM_AMOUNT = 200; 
 
 // --- FUNCIÓN DE FORMATEO DE CONTRATO (S3) ---
-// --- TAREA 3: Modificada para eliminar promesas de "fotos" ---
 const formatContract = (contractData) => {
     if (typeof contractData === 'string' && contractData.trim().length > 0) {
         return contractData.trim();
     }
     return "Respuesta de texto garantizada (mín. 40 caracteres).";
 }
-// --- FIN: Función de Formato (S3) ---
-
 
 // --- COMPONENTE EscasezCounter (S2) ---
 const EscasezCounter = ({ data, isFull }) => {
@@ -38,13 +35,11 @@ const EscasezCounter = ({ data, isFull }) => {
     </div>
   );
 };
-// --- FIN EscasezCounter ---
 
-
-// --- COMPONENTE PRINCIPAL (MODIFICADO) ---
+// --- COMPONENTE PRINCIPAL (CORREGIDO) ---
 export default function AnonMessageForm({ 
   publicId, 
-  onChatCreated, // (Ya no se usa aquí)
+  onChatCreated, 
   escasezData, 
   isFull,
   creatorContract,
@@ -55,7 +50,7 @@ export default function AnonMessageForm({
   const [alias, setAlias] = useState("");
   const [content, setContent] = useState("");
   const [paymentInput, setPaymentInput] = useState(""); 
-  const [fanEmail, setFanEmail] = useState(""); // (E2 / Tarea 4)
+  const [fanEmail, setFanEmail] = useState(""); 
   const [status, setStatus] = useState("idle");
   const [errorMsg, setErrorMsg] = useState("");
   const [charCount, setCharCount] = useState(0); 
@@ -64,19 +59,15 @@ export default function AnonMessageForm({
   const basePrice = (baseTipAmountCents || (FALLBACK_MIN_PREMIUM_AMOUNT * 100)) / 100;
   const totalAmount = Number(paymentInput) || 0;
   
-  // --- 👇 CORRECCIÓN DE ERROR 'effectiveBasePrice is not defined' 👇 ---
-  // Esta variable debe ser definida aquí, fuera del handleSubmit
   const effectiveBasePrice = Math.max(basePrice, FALLBACK_MIN_PREMIUM_AMOUNT);
-  // --- 👆 FIN DE LA CORRECCIÓN 👆 ---
 
   useEffect(() => {
-    // Usamos la variable corregida
     const initialPrice = String(effectiveBasePrice);
     if (!isMounted) {
       setPaymentInput(initialPrice);
       setIsMounted(true);
     }
-  }, [basePrice, isMounted, effectiveBasePrice]); // Añadida 'effectiveBasePrice' a las dependencias
+  }, [basePrice, isMounted, effectiveBasePrice]); 
   
   const contractSummary = formatContract(creatorContract); 
 
@@ -85,7 +76,6 @@ export default function AnonMessageForm({
     setPaymentInput(value);
   };
 
-  // --- ESTE CÓDIGO FUNCIONA IGUAL PARA STRIPE QUE PARA MERCADOPAGO ---
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg("");
@@ -102,7 +92,6 @@ export default function AnonMessageForm({
       return;
     }
 
-    // Usamos la variable 'effectiveBasePrice' que ya está definida fuera
     if (totalAmount < effectiveBasePrice) {
         setErrorMsg(`El pago mínimo es $${effectiveBasePrice.toFixed(2)} MXN.`);
         setStatus("error");
@@ -115,10 +104,9 @@ export default function AnonMessageForm({
         return;
     }
     
-    setStatus("loading"); // Botón muestra "Procesando..."
+    setStatus("loading"); 
 
     try {
-      // Llama al "Vendedor"
       const res = await fetch(`${API}/public/${publicId}/create-checkout-session`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -131,14 +119,12 @@ export default function AnonMessageForm({
       });
 
       const data = await res.json();
+      
+      // --- MANEJO DE ERRORES DEL BACKEND (INCLUYENDO IA) ---
       if (!res.ok) {
-        if (data.code) {
-             throw new Error(data.error);
-        }
-        throw new Error(data.error || "Error al crear la sesión de pago");
+        throw new Error(data.error || "Error al procesar la solicitud");
       }
 
-      // Redirige a la URL de pago (sea Stripe o MP)
       if (data.url) { 
           window.location.href = data.url;
       } else {
@@ -146,9 +132,10 @@ export default function AnonMessageForm({
       }
 
     } catch (err) {
-      setStatus("error");
-      setErrorMsg(err.message);
-      setStatus("idle"); 
+      console.error("Error submit:", err);
+      setErrorMsg(err.message); // Mostramos el mensaje de la IA (o cualquier otro error)
+      setStatus("error");       // Mantenemos el estado en error
+      // NOTA: NO hacemos setStatus("idle") aquí para que el mensaje persista
     }
   };
   
