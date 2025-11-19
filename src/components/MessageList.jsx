@@ -1,6 +1,5 @@
 // src/components/MessageList.jsx
 "use client";
-// --- MODIFICADO: Importar useState y useRef ---
 import { useEffect, useState, useRef } from "react";
 import { refreshToken } from "@/utils/auth";
 import { useRouter } from "next/navigation";
@@ -17,26 +16,12 @@ const IconVer = () => (
     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
   </svg>
 );
-const IconEspera = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
-  </svg>
-);
 
-// --- SUBCOMPONENTE ChatItem (MODIFICADO) ---
-// --- Añadida la prop 'isOnline' ---
-const ChatItem = ({ chat, onOpenChat, disabled, minutesNext, isOnline }) => {
+// --- SUBCOMPONENTE ChatItem (SIMPLIFICADO) ---
+const ChatItem = ({ chat, onOpenChat, isOnline }) => {
   const preview = chat.previewMessage;
 
-  const getButtonContent = () => { /* ... (sin cambios) ... */
-    if (disabled) {
-      return (
-        <>
-          <IconEspera />
-          {minutesNext > 0 ? `${minutesNext}m` : "..."}
-        </>
-      );
-    }
+  const getButtonContent = () => {
     if (chat.anonReplied) {
       return (
         <>
@@ -48,6 +33,7 @@ const ChatItem = ({ chat, onOpenChat, disabled, minutesNext, isOnline }) => {
     if (chat.isOpened) {
       return (<><IconVer />Ver</>);
     }
+    // Por defecto (aunque no esté abierto, ahora se puede responder siempre)
     return (
       <>
         <IconResponder />
@@ -58,17 +44,16 @@ const ChatItem = ({ chat, onOpenChat, disabled, minutesNext, isOnline }) => {
 
   return (
     <div
-      className={`chat-item ${disabled ? 'disabled' : ''} ${chat.anonReplied ? 'new-reply' : ''} ${!chat.isOpened ? 'unopened' : ''}`}
-      onClick={() => !disabled && onOpenChat(chat.id)}
+      className={`chat-item ${chat.anonReplied ? 'new-reply' : ''} ${!chat.isOpened ? 'unopened' : ''}`}
+      onClick={() => onOpenChat(chat.id)}
     >
       <div className="chat-item-main">
         <div className="chat-item-alias">
           {chat.anonAlias || "Anónimo"}
 
-          {/* --- 👇 INDICADOR EN LÍNEA AÑADIDO 👇 --- */}
+          {/* --- INDICADOR EN LÍNEA --- */}
           {isOnline && <span className="online-indicator-dot"></span>}
-          {/* --- 👆 FIN DEL INDICADOR 👆 --- */}
-
+          
           {chat.anonReplied && <span className="new-reply-indicator">Nuevo mensaje</span>}
         </div>
         <div className="chat-item-content">
@@ -81,7 +66,7 @@ const ChatItem = ({ chat, onOpenChat, disabled, minutesNext, isOnline }) => {
           }
         </div>
       </div>
-      <button className="chat-item-button" disabled={disabled}>
+      <button className="chat-item-button">
         {getButtonContent()}
       </button>
     </div>
@@ -89,24 +74,21 @@ const ChatItem = ({ chat, onOpenChat, disabled, minutesNext, isOnline }) => {
 };
 
 
-// --- Icono de Fantasma para la bandeja vacía (SIN CAMBIOS) ---
+// --- Icono de Fantasma para la bandeja vacía ---
 const EmptyInboxIcon = () => (
   <svg className="empty-inbox-icon" width="64" height="64" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
     <path d="M5.29241 12.7238C4.24584 10.2965 5.06019 7.40698 7.12053 5.61865C9.18087 3.83032 12.0673 3.36383 14.545 4.39088C17.0227 5.41793 18.6739 7.74542 18.7198 10.4387C18.7656 13.1319 17.2023 15.5168 14.809 16.67L15 18H9C6.46667 18 5 19.4667 5 22H19V21.5C18.0253 20.5222 17.5025 19.2433 17.5 17.9142C17.5 16.5 18 15 19 14C19 14 19 11 17 10C15 9 14 10 14 10C14 10 13 8 11 9C9 10 8 12 8 12C6.89543 12 6 12.8954 6 14C6 15.1046 6.89543 16 8 16H9.1909C6.79773 14.8432 5.23444 12.4583 5.29241 9.76506C5.35038 7.07183 6.97728 4.74433 9.45498 3.71728C11.9327 2.69023 14.8191 3.15672 16.8795 4.94505C18.9398 6.73338 19.7542 9.62291 18.7076 12.0502" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
-// --- COMPONENTE PRINCIPAL MessageList (MODIFICADO) ---
+// --- COMPONENTE PRINCIPAL MessageList ---
 export default function MessageList({ dashboardId }) {
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [livesLeft, setLivesLeft] = useState(null);
-  const [minutesNext, setMinutesNext] = useState(null);
   const [error, setError] = useState(null);
   
-  // --- 👇 NUEVO ESTADO PARA LOS ANÓNIMOS 👇 ---
+  // Estado para los anónimos en línea
   const [anonStatuses, setAnonStatuses] = useState({});
-  // --- 👆 FIN NUEVO ESTADO 👆 ---
 
   const router = useRouter();
   const wsRef = useRef(null);
@@ -114,11 +96,13 @@ export default function MessageList({ dashboardId }) {
   const getAuthHeaders = (token) => token ? { Authorization: `Bearer ${token}` } : { Authorization: `Bearer ${localStorage.getItem("token")}` };
   const handleAuthFailure = () => { localStorage.clear(); router.push("/login?session=expired"); };
 
-  // --- fetchData (sin cambios) ---
-  const fetchData = async (token) => { /* ... (sin cambios) ... */
+  // --- fetchData (Simplificado) ---
+  const fetchData = async (token) => {
     if (!dashboardId) return;
     try {
       const headers = getAuthHeaders(token);
+      // Ya no necesitamos llamar a /creators/me para las vidas, pero lo dejamos si necesitas otros datos del perfil
+      // Si solo te importan los chats, podrías quitar meRes, pero por seguridad de sesión lo dejamos.
       const [meRes, chatsRes] = await Promise.all([
         fetch(`${API}/creators/me`, { headers, cache: 'no-store' }),
         fetch(`${API}/dashboard/${dashboardId}/chats`, { headers, cache: 'no-store' })
@@ -130,11 +114,6 @@ export default function MessageList({ dashboardId }) {
         return;
       }
 
-      if (meRes.ok) {
-        const meData = await meRes.json();
-        setLivesLeft(meData.lives);
-        setMinutesNext(meData.minutesToNextLife);
-      }
       if (chatsRes.ok) {
         const data = await chatsRes.json();
         setChats(data);
@@ -149,20 +128,20 @@ export default function MessageList({ dashboardId }) {
     }
   };
 
-  // --- handleOpenChat (sin cambios) ---
-  const handleOpenChat = async (chatId) => { /* ... (sin cambios) ... */
+  // --- handleOpenChat (Simplificado) ---
+  const handleOpenChat = async (chatId) => {
     try {
       const res = await fetch(`${API}/dashboard/${dashboardId}/chats/${chatId}/open`, {
         method: 'POST',
         headers: getAuthHeaders(),
       });
       const data = await res.json();
+      
       if (!res.ok) {
         alert(data.error || "No se pudo abrir el chat");
-        if (data.livesLeft !== undefined) setLivesLeft(data.livesLeft);
-        if (data.minutesToNextLife !== undefined) setMinutesNext(data.minutesToNextLife);
         return;
       }
+      
       router.push(`/dashboard/${dashboardId}/chats/${chatId}`);
     } catch (err) {
       console.error("Error al abrir chat:", err);
@@ -170,7 +149,7 @@ export default function MessageList({ dashboardId }) {
     }
   };
 
-  // --- useEffect (MODIFICADO para WebSocket) ---
+  // --- useEffect (WebSocket) ---
   useEffect(() => {
     fetchData();
 
@@ -184,16 +163,15 @@ export default function MessageList({ dashboardId }) {
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
-    // --- 👇 MANEJADOR DE WEBSOCKET MODIFICADO 👇 ---
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
 
-      // 1. Manejador de nuevos mensajes (sin cambios)
+      // 1. Manejador de nuevos mensajes
       if (data.type === 'new_message' || data.type === 'message') {
-        fetchData(); // Recarga toda la lista y datos
+        fetchData(); 
       }
 
-      // 2. NUEVO: Manejador de estado del anónimo
+      // 2. Manejador de estado del anónimo
       if (data.type === 'ANON_STATUS_UPDATE') {
         console.log("WS (Dashboard) Status Update Recibido:", data);
         setAnonStatuses(prev => ({
@@ -202,7 +180,6 @@ export default function MessageList({ dashboardId }) {
         }));
       }
     };
-    // --- 👆 FIN DE MODIFICACIÓN 👆 ---
 
     return () => {
       if (wsRef.current) {
@@ -241,9 +218,6 @@ export default function MessageList({ dashboardId }) {
               <ChatItem
                 chat={c}
                 onOpenChat={handleOpenChat}
-                disabled={!c.isOpened && livesLeft === 0}
-                minutesNext={minutesNext}
-                // --- 👇 PASA LA PROP DE ESTADO 👇 ---
                 isOnline={anonStatuses[c.id] === 'online'}
               />
             </div>
