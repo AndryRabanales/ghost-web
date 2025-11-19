@@ -315,11 +315,6 @@ body::after {
 
 /* -------------------------------------------------------------------------- */
 
-.lives-status-container {
-  background: rgba(0,0,0,0.2); border: 1px solid var(--accent-electric-purple); border-radius: 16px;
-  padding: 10px; text-align: center; overflow: hidden; box-shadow: inset 0 0 15px rgba(157, 0, 255, 0.3);
-  animation: container-breathing 9s infinite;
-}
 
 .premium-status-display { padding: 8px; animation: core-heartbeat 3s infinite; }
 .star-icon { font-size: 24px; animation: star-flare 2.5s infinite; }

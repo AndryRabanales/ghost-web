@@ -67,9 +67,17 @@ export default function BalanceSummary({ creator }) {
 
       const data = await res.json();
       
-      if (!res.ok) throw new Error(data.error || "Error de conexión con Stripe.");
+      if (!res.ok) {
+          // Si el backend detectó un error de cuenta (ej: borrada), recargamos la página
+          // para que el usuario vea el estado actualizado (botón "Configurar" de nuevo).
+          if (res.status === 400 && data.error.includes("configura tus pagos")) {
+              window.location.reload();
+              return;
+          }
+          throw new Error(data.error || "Error de conexión con Stripe.");
+      }
 
-      // Redirigimos a la URL que nos dio el backend
+      // Redirigimos a la URL que nos dio el backend (Onboarding o Dashboard Express)
       const redirectUrl = data.onboarding_url || data.url;
       
       if (redirectUrl) {
@@ -145,7 +153,7 @@ export default function BalanceSummary({ creator }) {
          </p>
       ) : (
         <p className="balance-setup-note" style={{color: 'var(--success-solid)'}}>
-           ✅ Cuenta conectada. Los pagos se transfieren automáticamente
+           ✅ Cuenta conectada. Los pagos se transfieren automáticamente.
         </p>
       )}
     </div>
