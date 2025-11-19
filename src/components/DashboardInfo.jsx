@@ -81,7 +81,7 @@ export default function DashboardInfo({ creator, onChange }) {
         
         {/* --- AÑADIDO: El componente de Balance --- */}
         {/* Lo colocamos antes del botón Premium */}
-        <BalanceSummary creator={creator} />\
+        <BalanceSummary creator={creator} />
       </div>
       
       {/* Botón de colapso */}
