@@ -1,161 +1,99 @@
-// src/components/BalanceSummary.jsx
 "use client";
-import React, { useState } from "react";
-import { getAuthHeaders, refreshToken } from "@/utils/auth"; 
-
-const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
-
-// Icono de Dólar
-const MoneyIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="12" y1="1" x2="12" y2="23" />
-    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-  </svg>
-);
-
-// Icono de Reloj
-const ClockIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10" />
-    <polyline points="12 6 12 12 16 14" />
-  </svg>
-);
+import { useState } from "react";
 
 export default function BalanceSummary({ creator }) {
   const [loading, setLoading] = useState(false);
-  const [statusMessage, setStatusMessage] = useState(null); 
-  const [isError, setIsError] = useState(false);
+  const API = process.env.NEXT_PUBLIC_API;
 
-  if (!creator) return null;
-
-  const formatCurrency = (amount) => {
-    return `$${(amount || 0).toFixed(2)} MXN`;
-  };
-
-  // Manejo de Fondos (Stripe Connect Real)
-  const handleManageFunds = async () => {
+  // 1. Manejar la redirección al Dashboard de Stripe (La Billetera Real)
+  const handleOpenStripe = async () => {
     setLoading(true);
-    setStatusMessage(null);
-    setIsError(false);
-    
-    const isConfigured = creator.stripeAccountOnboarded; 
-    
-    // Endpoint diferente según si configura o si ve ganancias
-    const endpoint = isConfigured 
-        ? `${API}/creators/stripe-dashboard` // Ver billetera
-        : `${API}/creators/stripe-onboarding`; // Configurar primera vez
-
     try {
-      let res = await fetch(endpoint, {
-        method: 'POST',
-        headers: getAuthHeaders(),
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API}/creators/stripe-dashboard`, {
+        method: "POST",
+        headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+        },
       });
-
-      // Lógica de refresh de token si expiró
-      if (res.status === 401) {
-        const publicId = localStorage.getItem("publicId");
-        const newToken = await refreshToken(publicId);
-        if (newToken) {
-          res = await fetch(endpoint, {
-            method: 'POST',
-            headers: getAuthHeaders(newToken),
-          });
-        } else {
-          throw new Error("Sesión expirada. Recarga la página.");
-        }
-      }
-
       const data = await res.json();
-      
-      if (!res.ok) {
-          // Si el backend detectó un error de cuenta (ej: borrada), recargamos la página
-          // para que el usuario vea el estado actualizado (botón "Configurar" de nuevo).
-          if (res.status === 400 && data.error.includes("configura tus pagos")) {
-              window.location.reload();
-              return;
-          }
-          throw new Error(data.error || "Error de conexión con Stripe.");
-      }
-
-      // Redirigimos a la URL que nos dio el backend (Onboarding o Dashboard Express)
-      const redirectUrl = data.onboarding_url || data.url;
-      
-      if (redirectUrl) {
-         window.location.href = redirectUrl;
+      if (data.url) {
+        window.location.href = data.url; // Redirigir a Stripe
       } else {
-         throw new Error("No se recibió la URL de redirección.");
+        alert("Error al abrir el panel de pagos.");
       }
-
-    } catch (err) {
-      console.error("❌ Error Stripe Connect:", err);
-      setStatusMessage(err.message);
-      setIsError(true);
+    } catch (error) {
+      console.error(error);
+      alert("Error de conexión.");
+    } finally {
       setLoading(false);
     }
   };
-  
-  const isAccountReady = creator.stripeAccountOnboarded;
-  const buttonText = isAccountReady ? "Ver Billetera (Stripe)" : "Configurar Pagos";
-  
+
+  // 2. Manejar el Onboarding (Si aún no configura pagos)
+  const handleSetup = async () => {
+    setLoading(true);
+    try {
+        const token = localStorage.getItem("token");
+        const res = await fetch(`${API}/creators/stripe-onboarding`, {
+            method: "POST",
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (data.onboarding_url) window.location.href = data.onboarding_url;
+    } catch (e) {
+        alert("Error iniciando configuración.");
+    } finally {
+        setLoading(false);
+    }
+  };
+
+  const isReady = creator.stripeAccountId && creator.stripeAccountOnboarded;
+
   return (
-    <div className="balance-container">
-      <h3 className="balance-title">Tus Ganancias</h3>
-      
-      {/* Balance Total Generado */}
-      <div className="balance-section available">
-        <div className="balance-icon"><MoneyIcon /></div>
-        <div className="balance-details">
-          <span className="balance-label">Ingresos Totales</span>
-          <span className="balance-amount">
-            {formatCurrency(creator.availableBalance)}
-          </span>
-        </div>
+    <div className="w-full p-6 bg-gray-900 rounded-2xl border border-gray-800 mb-8">
+      <div className="flex flex-col md:flex-row justify-between items-center gap-6">
         
-        {/* Botón Acción (Configurar o Ver) */}
-        <button 
-          className="withdraw-button" 
-          onClick={handleManageFunds}
-          disabled={loading}
-          style={{ minWidth: '130px' }}
-        >
-          {loading ? "Cargando..." : buttonText}
-        </button>
-      </div>
+        {/* IZQUIERDA: Estado de la Cuenta */}
+        <div className="text-center md:text-left">
+            <h2 className="text-gray-400 text-sm font-medium uppercase tracking-wider mb-1">
+                Estado Financiero
+            </h2>
+            <div className="flex items-center justify-center md:justify-start gap-2">
+                <div className={`w-3 h-3 rounded-full ${isReady ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]' : 'bg-yellow-500 animate-pulse'}`}></div>
+                <span className={`text-2xl font-bold ${isReady ? 'text-white' : 'text-yellow-500'}`}>
+                    {isReady ? 'Activo y Cobrando' : 'Configuración Pendiente'}
+                </span>
+            </div>
+            {isReady && (
+                <p className="text-gray-500 text-xs mt-2">
+                    Los depósitos y saldos se gestionan directamente en Stripe.
+                </p>
+            )}
+        </div>
 
-      {/* Balance Pendiente de Respuesta */}
-      <div className="balance-section pending">
-        <div className="balance-icon"><ClockIcon /></div>
-        <div className="balance-details">
-          <span className="balance-label">En retención (Responde para liberar)</span>
-          <span className="balance-amount">
-            {formatCurrency(creator.pendingBalance)}
-          </span>
+        {/* DERECHA: El Único Botón que Importa */}
+        <div>
+            {!isReady ? (
+                <button 
+                    onClick={handleSetup}
+                    disabled={loading}
+                    className="bg-white text-black px-6 py-3 rounded-full font-bold hover:scale-105 transition-transform shadow-lg"
+                >
+                    {loading ? "Cargando..." : "🏦 Conectar Cuenta Bancaria"}
+                </button>
+            ) : (
+                <button 
+                    onClick={handleOpenStripe}
+                    disabled={loading}
+                    className="bg-gradient-to-r from-[#635BFF] to-[#635BFF] text-white px-8 py-3 rounded-full font-bold hover:shadow-[0_0_20px_rgba(99,91,255,0.4)] transition-all border border-[#7a73ff]"
+                >
+                    {loading ? "Abriendo..." : "Ver Billetera & Retirar ↗"}
+                </button>
+            )}
         </div>
       </div>
-      
-      {/* Mensajes de Estado */}
-      {statusMessage && (
-        <p style={{ 
-            fontSize: '13px', 
-            textAlign: 'center', 
-            color: isError ? '#ff7b7b' : '#00ff80', 
-            marginTop: '10px',
-            fontWeight: '600'
-        }}>
-            {statusMessage}
-        </p>
-      )}
-
-      {/* Nota Informativa */}
-      {!isAccountReady ? (
-         <p className="balance-setup-note">
-           Configura tu cuenta para recibir depósitos automáticos en tu banco.
-         </p>
-      ) : (
-        <p className="balance-setup-note" style={{color: 'var(--success-solid)'}}>
-           ✅ Cuenta conectada. Los pagos se transfieren automáticamente.
-        </p>
-      )}
     </div>
   );
 }
