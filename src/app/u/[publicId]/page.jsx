@@ -1,3 +1,4 @@
+// src/app/u/[publicId]/page.jsx
 "use client";
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -100,7 +101,7 @@ export default function PublicUserPage() {
         onChatCreated={handleChatCreated}
         escasezData={creatorInfo.escasezData}
         isFull={creatorInfo.isFull}
-        creatorContract={creatorInfo.premiumContract}
+        // ❌ ELIMINADO: creatorContract
         topicPreference={creatorInfo.topicPreference} 
         creatorName={creatorInfo.creatorName}
         baseTipAmountCents={creatorInfo.baseTipAmountCents}
