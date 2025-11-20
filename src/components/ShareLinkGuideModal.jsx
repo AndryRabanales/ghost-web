@@ -1,9 +1,8 @@
 // src/components/ShareLinkGuideModal.jsx
 "use client";
 import React, { useEffect, useState } from 'react';
-import Image from 'next/image';
 
-// --- ESTILOS (Puedes moverlos a globals.css si prefieres) ---
+// --- ESTILOS ---
 const modalOverlayStyle = {
     position: 'fixed',
     top: 0,
@@ -38,35 +37,28 @@ const modalContentStyle = {
 
 const titleStyle = {
     fontSize: '24px',
-    fontWeight: '700',
+    fontWeight: '800', // Más peso para impacto
     color: '#fff',
     marginBottom: '10px',
+    textShadow: '0 0 10px rgba(201, 164, 255, 0.5)'
 };
 
 const textStyle = {
-    color: 'rgba(235, 235, 245, 0.7)',
-    lineHeight: 1.7,
+    color: 'rgba(235, 235, 245, 0.8)',
+    lineHeight: 1.6,
     fontSize: '15px',
     marginBottom: '15px',
-};
-
-const highlightTextStyle = {
-    fontWeight: '600',
-    color: '#fff',
-    marginTop: '15px',
-    marginBottom: '15px',
-    fontSize: '16px',
 };
 
 const linkInputContainerStyle = {
     display: 'flex',
     alignItems: 'center',
-    background: 'rgba(0, 0, 0, 0.3)',
+    background: 'rgba(0, 0, 0, 0.4)',
     borderRadius: '12px',
     padding: '10px',
     marginTop: '20px',
     marginBottom: '20px',
-    border: '1px solid rgba(255, 255, 255, 0.1)',
+    border: '1px solid rgba(142, 45, 226, 0.3)', // Borde sutil morado
 };
 
 const linkInputStyle = {
@@ -78,12 +70,12 @@ const linkInputStyle = {
     fontSize: '14px',
     padding: '5px',
     whiteSpace: 'nowrap',
-    overflowX: 'scroll', // Permite scroll horizontal si el link es muy largo
-    scrollbarWidth: 'none', // Oculta la barra de scroll en Firefox
-    MsOverflowStyle: 'none', // Oculta la barra de scroll en IE/Edge
+    overflowX: 'scroll',
+    scrollbarWidth: 'none',
+    MsOverflowStyle: 'none',
+    fontFamily: 'monospace'
 };
 
-// Oculta la barra de scroll en navegadores WebKit (Chrome, Safari)
 const scrollbarHideStyle = `
   .link-input-scroll::-webkit-scrollbar {
     display: none;
@@ -92,22 +84,24 @@ const scrollbarHideStyle = `
 
 const copyButtonStyle = {
     background: 'rgba(255, 255, 255, 0.1)',
-    border: 'none',
+    border: '1px solid rgba(255, 255, 255, 0.2)',
     borderRadius: '8px',
-    color: '#fff',
-    fontSize: '14px',
-    fontWeight: '600',
+    color: '#c9a4ff', // Acento
+    fontSize: '13px',
+    fontWeight: '700',
     padding: '8px 12px',
     cursor: 'pointer',
-    transition: 'background-color 0.2s ease, transform 0.2s ease',
+    transition: 'all 0.2s ease',
     display: 'flex',
     alignItems: 'center',
     gap: '5px',
+    whiteSpace: 'nowrap'
 };
 
 const copyButtonHoverStyle = {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    transform: 'scale(1.05)',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderColor: '#c9a4ff',
+    transform: 'translateY(-1px)'
 };
 
 const buttonStyle = {
@@ -117,11 +111,12 @@ const buttonStyle = {
     border: 'none',
     borderRadius: '12px',
     color: '#fff',
-    fontWeight: 'bold',
+    fontWeight: '800',
     fontSize: '16px',
     cursor: 'pointer',
     transition: 'transform 0.2s ease, box-shadow 0.3s ease',
-    boxShadow: '0 5px 15px rgba(74, 0, 224, 0.3)',
+    boxShadow: '0 5px 15px rgba(74, 0, 224, 0.4)',
+    width: '100%'
 };
 
 // --- COMPONENTE ---
@@ -130,87 +125,75 @@ export default function ShareLinkGuideModal({ onClose, publicLink }) {
 
     useEffect(() => {
         const handleKeyDown = (event) => {
-            if (event.key === 'Escape') {
-                onClose();
-            }
+            if (event.key === 'Escape') onClose();
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [onClose]);
 
-    // Opcional: Cerrar automáticamente después de un tiempo
-    useEffect(() => {
-      const timer = setTimeout(onClose, 20000); // Cierra después de 20 segundos
-      return () => clearTimeout(timer);
-    }, [onClose]);
-
     const handleCopyLink = async () => {
         try {
             await navigator.clipboard.writeText(publicLink);
-            setCopyText('¡Copiado!');
-            setTimeout(() => setCopyText('Copiar'), 2000); // Restablece el texto después de 2 segundos
-        } catch (err) {
-            console.error('Error al copiar el enlace:', err);
-            setCopyText('Error');
+            setCopyText('¡Listo!');
             setTimeout(() => setCopyText('Copiar'), 2000);
+        } catch (err) {
+            console.error('Error al copiar:', err);
+            setCopyText('Error');
         }
     };
 
     return (
         <div style={modalOverlayStyle} onClick={onClose}>
             <div style={modalContentStyle} onClick={(e) => e.stopPropagation()}>
-                <h2 style={titleStyle}>¡Tu Espacio Anónimo Está Listo! ✨</h2>
-
-               
+                
+                {/* TÍTULO DE NEGOCIO, NO DE APP */}
+                <h2 style={titleStyle}>💸 Estás listo para cobrar</h2>
 
                 <p style={textStyle}>
-                    Comparte este link para empezar a recibir mensajes anónimos.
+                    El secreto no es compartir el link, es <b>crear curiosidad</b>.
                 </p>
 
+                {/* INPUT DE LINK */}
                 <div style={linkInputContainerStyle}>
                     <input
                         type="text"
                         value={publicLink}
                         readOnly
                         style={linkInputStyle}
-                        className="link-input-scroll" // Clase para ocultar scrollbar
+                        className="link-input-scroll"
                     />
                     <button
                         onClick={handleCopyLink}
                         style={copyButtonStyle}
                         onMouseOver={(e) => Object.assign(e.currentTarget.style, copyButtonHoverStyle)}
-                        onMouseOut={(e) => Object.assign(e.currentTarget.style, copyButtonStyle)} // Vuelve al estilo original
+                        onMouseOut={(e) => Object.assign(e.currentTarget.style, copyButtonStyle)}
                     >
-                        {copyText === 'Copiar' && (
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="18" height="18"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125H9.75a1.125 1.125 0 01-1.125-1.125V17.25m12 0v-4.125c0-.621-.504-1.125-1.125-1.125h-4.125m5.25 5.25L17.25 17.25m0 0L21 13.5m-3.75 3.75l-3.75-3.75M3.75 16.5V20.25c0 .621.504 1.125 1.125 1.125h4.5a1.125 1.125 0 001.125-1.125V16.5m-1.5-4.5H3.75c-.621 0-1.125-.504-1.125-1.125V4.875c0-.621.504-1.125 1.125-1.125h10.5c.621 0 1.125.504 1.125 1.125v4.5m-13.5 0H12" /></svg>
-                        )}
                         {copyText}
                     </button>
                 </div>
 
-                <p style={highlightTextStyle}>
-                    ¡Simplemente pega la url en "Enlace"!
-                </p>
-                 {/* Esta imagen es solo ilustrativa, si quieres puedes usar una diferente o quitarla */}
-                 <Image
-                    src="/enlace.jpg" // Puedes cambiar esto por una imagen más adecuada para "compartir"
-                    alt="Persona compartiendo un enlace"
-                    width={300}
-                    height={150}
-                    style={{
-                        display: 'block',
-                        maxWidth: '85%', // Ajustado para que la imagen no sea tan dominante
-                        height: 'auto',
-                        margin: '15px auto',
-                        borderRadius: '16px',
-                        boxShadow: '0 10px 30px rgba(0, 0, 0, 0.4)',
-                    }}
-                    priority
-                />
-
-                <p style={highlightTextStyle}>
-                    ¡Anímate y compártelo ahora!
-                </p>
+                {/* ESTRATEGIA MIMÉTICA (EL GUION DE VENTA) */}
+                <div style={{
+                    background: 'rgba(255,255,255,0.05)', 
+                    padding: '15px', 
+                    borderRadius: '12px', 
+                    textAlign: 'left', 
+                    marginTop: '20px',
+                    border: '1px solid rgba(255,255,255,0.08)'
+                }}>
+                    <p style={{fontSize: '12px', color: '#c9a4ff', fontWeight: 'bold', margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '1px'}}>
+                        💡 Estrategia Pro:
+                    </p>
+                    <p style={{fontSize: '14px', color: 'rgba(255,255,255,0.9)', margin: 0, lineHeight: '1.6'}}>
+                        Sube una Historia a Instagram/Twitter con este texto exacto:
+                        <br/><br/>
+                        <span style={{fontStyle: 'italic', color: '#fff'}}>
+                            "Voy a responder las preguntas más interesantes (y picantes) por aquí. Solo gente seria."
+                        </span>
+                        <br/><br/>
+                        ...y pega el link usando el Sticker de Enlace.
+                    </p>
+                </div>
 
                 <button
                     style={buttonStyle}
@@ -218,13 +201,12 @@ export default function ShareLinkGuideModal({ onClose, publicLink }) {
                     onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
                     onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
                 >
-                    Entendido
+                    Entendido, a cobrar
                 </button>
             </div>
             <style>{`
                 @keyframes fadeInOverlay { to { opacity: 1; backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); } }
                 @keyframes popUpModal { to { transform: translateY(0) scale(1); opacity: 1; } }
-                @keyframes bounceArrow { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(8px); } }
                 ${scrollbarHideStyle}
             `}</style>
         </div>
