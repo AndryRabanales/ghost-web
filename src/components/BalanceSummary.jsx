@@ -4,11 +4,34 @@ import { useState } from "react";
 
 export default function BalanceSummary({ creator }) {
   const [loading, setLoading] = useState(false);
-  
-  // Aseguramos que la API no tenga slash al final
+  // Asegura que use la URL correcta, sin slash al final
   const API = (process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app").replace(/\/$/, "");
 
-  // 1. ABRIR EL PANEL DE STRIPE (Ver Dinero)
+  // Función auxiliar para iniciar el proceso de conexión
+  const startOnboarding = async () => {
+    try {
+        const token = localStorage.getItem("token");
+        const res = await fetch(`${API}/creators/stripe-onboarding`, {
+            method: "POST",
+            headers: { 
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}` 
+            },
+            body: JSON.stringify({}) 
+        });
+        
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Error al iniciar configuración.");
+        
+        if (data.onboarding_url) {
+            window.location.href = data.onboarding_url;
+        }
+    } catch (e) {
+        console.error(e);
+        alert(e.message || "Error conectando con Stripe.");
+    }
+  };
+
   const handleOpenStripe = async () => {
     setLoading(true);
     try {
@@ -24,19 +47,17 @@ export default function BalanceSummary({ creator }) {
       const data = await res.json();
 
       if (!res.ok) {
-        // Si da error 400, es probable que la cuenta ya no sea válida (cambio Test -> Live).
-        // Avisamos y recargamos para que aparezca el botón de "Conectar" de nuevo.
+        // 🔥 FIX: Si falla (400), no recargamos. Asumimos cuenta rota y REPARAMOS YA.
         if (res.status === 400) {
-             alert("⚠️ Tu conexión con Stripe ha caducado o cambiado. Por favor, conéctala de nuevo.");
-             window.location.reload(); 
+             alert("⚠️ Tu conexión necesita actualizarse. Redirigiendo...");
+             await startOnboarding(); // <--- Salto directo a conectar
              return;
         }
         throw new Error(data.error || "Error al abrir panel.");
       }
 
-      if (data.url) {
-        window.location.href = data.url;
-      }
+      if (data.url) window.location.href = data.url;
+
     } catch (error) {
       console.error(error);
       alert(error.message);
@@ -45,44 +66,11 @@ export default function BalanceSummary({ creator }) {
     }
   };
 
-  // 2. CONECTAR CUENTA (Onboarding)
-  const handleSetup = async () => {
-    setLoading(true);
-    try {
-        const token = localStorage.getItem("token");
-        const res = await fetch(`${API}/creators/stripe-onboarding`, {
-            method: "POST",
-            headers: { 
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${token}` 
-            },
-            // 👇 EL FIX CLAVE: Enviar un objeto vacío para evitar error 400 en Fastify
-            body: JSON.stringify({}) 
-        });
-        
-        const data = await res.json();
-        
-        if (!res.ok) throw new Error(data.error || "Error al iniciar configuración.");
-        
-        if (data.onboarding_url) {
-            window.location.href = data.onboarding_url;
-        }
-    } catch (e) {
-        console.error(e);
-        alert(e.message || "Error conectando con Stripe.");
-    } finally {
-        setLoading(false);
-    }
-  };
-
-  // Estado de la cuenta
   const isReady = creator.stripeAccountId && creator.stripeAccountOnboarded;
 
   return (
     <div className="w-full p-6 bg-[#1a1a2e] rounded-2xl border border-[#2c1a5c] mb-8 shadow-lg">
       <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-        
-        {/* TEXTO DE ESTADO */}
         <div className="text-center md:text-left">
             <h2 className="text-gray-400 text-sm font-bold uppercase tracking-wider mb-1">
                 TU BILLETERA
@@ -100,11 +88,10 @@ export default function BalanceSummary({ creator }) {
             </p>
         </div>
 
-        {/* BOTÓN DE ACCIÓN */}
         <div>
             {!isReady ? (
                 <button 
-                    onClick={handleSetup}
+                    onClick={() => { setLoading(true); startOnboarding().finally(() => setLoading(false)); }}
                     disabled={loading}
                     className="bg-white text-black px-6 py-3 rounded-xl font-bold hover:scale-105 transition-transform shadow-[0_0_20px_rgba(255,255,255,0.2)]"
                 >
