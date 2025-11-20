@@ -6,8 +6,8 @@ import { refreshToken, getAuthHeaders } from "@/utils/auth";
 import MessageList from "@/components/MessageList";
 import DashboardInfo from "@/components/DashboardInfo";
 import ShareLinkGuideModal from "@/components/ShareLinkGuideModal";
-// ❌ ELIMINADO: import PremiumContractConfig from "@/components/PremiumContractConfig"; 
-
+// 👇 Importamos el nuevo componente
+import TopicConfig from "@/components/TopicConfig"; 
 import PriceConfig from "@/components/PriceConfig";
 
 const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
@@ -22,7 +22,6 @@ const FullPageLoader = () => (
     </div>
 );
 
-
 export default function DashboardPage() {
     const { id } = useParams();
     const router = useRouter();
@@ -30,10 +29,7 @@ export default function DashboardPage() {
     const [loading, setLoading] = useState(true);
     const [showShareGuideModal, setShowShareGuideModal] = useState(false);
 
-    const pageStyles = `
-      /* Tus estilos globales o locales aquí si los necesitas, 
-         aunque generalmente están en globals.css */
-    `;
+    const pageStyles = ``; // Tus estilos aquí
 
     const handleAuthFailure = useCallback(() => {
         localStorage.clear();
@@ -91,7 +87,6 @@ export default function DashboardPage() {
 
     useEffect(() => {
         fetchDashboardData();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const closeShareGuideModal = useCallback(() => {
@@ -128,9 +123,10 @@ export default function DashboardPage() {
                             border: '1px solid var(--border-color-faint)',
                             padding: '20px' 
                         }}>
-                            {/* ❌ ELIMINADO: <PremiumContractConfig /> */}
+                            {/* ✅ AQUI ESTÁ: Configuración de Tema */}
+                            <TopicConfig creator={creator} onChange={setCreator} />
 
-                            {/* Componente de Precio (se mantiene) */}
+                            {/* ✅ AQUI ESTÁ: Configuración de Precio */}
                             <PriceConfig creator={creator} onChange={setCreator} />
                         </div>
 
