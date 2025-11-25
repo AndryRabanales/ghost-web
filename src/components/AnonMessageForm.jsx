@@ -5,25 +5,34 @@ import { useState, useEffect } from "react";
 const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
 const FALLBACK_MIN_PREMIUM_AMOUNT = 100; // Mínimo $100 (PISO FIRME)
 
-// --- COMPONENTE DE URGENCIA (MIMÉTICO) ---
-const ActivityIndicator = () => (
-  <div style={{ 
-    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-    marginBottom: '20px', fontSize: '13px', color: 'var(--success-solid)', fontWeight: '600'
-  }}>
-    <span style={{ 
-      width: '8px', height: '8px', backgroundColor: 'var(--success-solid)', 
-      borderRadius: '50%', boxShadow: '0 0 8px var(--success-solid)',
-      animation: 'pulse-indicator 1.5s infinite' 
-    }}></span>
-    El creador está aceptando mensajes ahora.
-  </div>
-);
+// --- COMPONENTE DE URGENCIA MEJORADO (Muestra cupos reales) ---
+const ActivityIndicator = ({ remaining }) => {
+  // Si quedan pocos (ej. menos de 5), lo ponemos en amarillo/naranja para urgencia
+  const isLow = remaining <= 5;
+  const color = isLow ? '#ffc107' : 'var(--success-solid)';
+
+  return (
+    <div style={{ 
+      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+      marginBottom: '20px', fontSize: '14px', color: color, fontWeight: '700',
+      textTransform: 'uppercase', letterSpacing: '0.5px'
+    }}>
+      <span style={{ 
+        width: '10px', height: '10px', backgroundColor: color, 
+        borderRadius: '50%', boxShadow: `0 0 10px ${color}`,
+        animation: 'pulse-indicator 1.5s infinite' 
+      }}></span>
+      {remaining > 0 
+        ? `⚡ Cupos restantes hoy: ${remaining}` 
+        : `⛔ Cupos agotados por hoy`
+      }
+    </div>
+  );
+};
 
 export default function AnonMessageForm({ 
-  publicId, topicPreference, baseTipAmountCents
+  publicId, topicPreference, baseTipAmountCents, isFull, escasezData 
 }) {
-  // ❌ ELIMINADO: Alias (Via Negativa - Menos es más)
   const [content, setContent] = useState("");
   const [paymentInput, setPaymentInput] = useState(""); 
   const [fanEmail, setFanEmail] = useState(""); 
@@ -35,6 +44,12 @@ export default function AnonMessageForm({
   const basePrice = (baseTipAmountCents || (FALLBACK_MIN_PREMIUM_AMOUNT * 100)) / 100;
   const effectiveBasePrice = Math.max(basePrice, FALLBACK_MIN_PREMIUM_AMOUNT);
   const totalAmount = Number(paymentInput) || 0;
+
+  // CALCULAMOS LOS CUPOS RESTANTES
+  const limit = escasezData?.dailyMsgLimit || 30;
+  const count = escasezData?.msgCountToday || 0;
+  // Evitamos negativos por si acaso
+  const remaining = Math.max(0, limit - count);
 
   useEffect(() => {
     const initialPrice = String(effectiveBasePrice);
@@ -53,13 +68,19 @@ export default function AnonMessageForm({
     e.preventDefault();
     setErrorMsg("");
     
+    if (isFull) {
+        setErrorMsg("Los cupos se han agotado por hoy.");
+        setStatus("error");
+        return;
+    }
+
     if (!content.trim() || content.trim().length < 3) {
       setErrorMsg("Escribe un mensaje válido.");
       setStatus("error");
       return;
     }
     
-    // Email es vital para el polling y la recuperación, lo forzamos sutilmente
+    // Email es vital para el polling y la recuperación
     if (!fanEmail.includes('@')) {
       setErrorMsg("Necesitas un email para recibir tu respuesta.");
       setStatus("error");
@@ -79,7 +100,7 @@ export default function AnonMessageForm({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
-          alias: "Anónimo", // Hardcodeado (Via Negativa)
+          alias: "Anónimo", 
           content,
           tipAmount: totalAmount,
           fanEmail: fanEmail 
@@ -96,15 +117,40 @@ export default function AnonMessageForm({
     }
   };
   
-  const isDisabled = status === "loading" || !content.trim() || totalAmount < effectiveBasePrice;
-  const buttonText = status === "loading" ? "Procesando..." : `Enviar Prioritario ($${(totalAmount || effectiveBasePrice).toFixed(2)})`;
+  // Deshabilitamos si está lleno
+  const isDisabled = status === "loading" || !content.trim() || totalAmount < effectiveBasePrice || isFull;
+  
+  let buttonText;
+  if (status === "loading") {
+    buttonText = "Procesando...";
+  } else if (isFull) {
+    buttonText = "Agotado (Vuelve Mañana)";
+  } else {
+    buttonText = `Enviar Prioritario ($${(totalAmount || effectiveBasePrice).toFixed(2)})`;
+  }
+
   const placeholderText = topicPreference ? `Tema sugerido: "${topicPreference}"...` : "Escribe tu mensaje aquí...";
 
   return (
     <div className={`anon-form-container ${isMounted ? 'mounted' : ''}`}>
       
-      {/* SEÑAL DE ACTIVIDAD (MIMESIS) */}
-      <ActivityIndicator />
+      {/* USAMOS EL NUEVO INDICADOR CON DATOS REALES */}
+      {isFull ? (
+        <div style={{
+            background: 'rgba(255, 193, 7, 0.1)', 
+            border: '1px solid #ffc107', 
+            color: '#ffc107', 
+            padding: '15px', 
+            borderRadius: '12px', 
+            textAlign: 'center',
+            marginBottom: '20px',
+            fontWeight: 'bold'
+        }}>
+            ⛔ Cupo diario lleno. Vuelve mañana.
+        </div>
+      ) : (
+        <ActivityIndicator remaining={remaining} />
+      )}
 
       <form onSubmit={handleSubmit} className="form-element-group">
         
@@ -116,10 +162,11 @@ export default function AnonMessageForm({
             rows="4"
             maxLength="500"
             style={{fontSize: '16px', padding: '15px'}}
+            disabled={isFull}
         ></textarea>
         <div className="char-counter">{charCount} / 500</div>
         
-        {/* INPUT DE EMAIL: Re-enmarcado como BENEFICIO */}
+        {/* INPUT DE EMAIL */}
         <div style={{marginBottom: '15px'}}>
             <input
                 type="email"
@@ -128,6 +175,7 @@ export default function AnonMessageForm({
                 onChange={(e) => setFanEmail(e.target.value)}
                 className="form-input-field"
                 style={{fontSize: '14px'}}
+                disabled={isFull}
             />
         </div>
 
@@ -143,12 +191,22 @@ export default function AnonMessageForm({
                   placeholder={String(basePrice)}
                   className="payment-input" 
                   style={{ color: totalAmount < basePrice ? '#ff7b7b' : 'var(--text-primary)' }}
+                  disabled={isFull}
               />
             </div>
             <p className="payment-priority-text">Ofertas más altas se responden primero.</p>
         </div>
 
-        <button type="submit" disabled={isDisabled} className="submit-button" style={{marginTop: '15px'}}>
+        <button 
+            type="submit" 
+            disabled={isDisabled} 
+            className="submit-button" 
+            style={{
+                marginTop: '15px',
+                background: isFull ? '#3a3a4a' : 'linear-gradient(90deg, #8e2de2, #4a00e0)',
+                cursor: isFull ? 'not-allowed' : 'pointer'
+            }}
+        >
           {buttonText}
         </button>
       </form>
