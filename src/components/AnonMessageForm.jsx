@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 
 const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
-const FALLBACK_MIN_PREMIUM_AMOUNT = 100; // Mínimo $100 (PISO FIRME)
+// 🟢 CAMBIO: Mínimo 20 pesos
+const FALLBACK_MIN_PREMIUM_AMOUNT = 20; 
 
 // --- COMPONENTE DE URGENCIA MEJORADO (Muestra cupos reales) ---
 const ActivityIndicator = ({ remaining }) => {

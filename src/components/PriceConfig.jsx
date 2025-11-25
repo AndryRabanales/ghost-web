@@ -4,7 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { getAuthHeaders, refreshToken } from "@/utils/auth";
 
 const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
-const MIN_PRICE_PESOS = 100;
+// ✅ CAMBIO APLICADO: Mínimo ajustado a 20 pesos
+const MIN_PRICE_PESOS = 20;
 
 // Icono para el input
 const MoneyIcon = () => (
@@ -84,7 +85,7 @@ export default function PriceConfig({ creator, onChange }) {
             </h3>
 
             <p className="contract-guide-text" style={{fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.5, margin: '0 0 15px'}}>
-                Establece el precio mínimo (en pesos) que debe pagar un anónimo para enviarte un mensaje. (Mínimo $100 MXN).
+                Establece el precio mínimo (en pesos) que debe pagar un anónimo para enviarte un mensaje. (Mínimo ${MIN_PRICE_PESOS} MXN).
             </p>
 
             <div className="contract-input-wrapper" style={{display: 'flex', gap: '10px', alignItems: 'center'}}>
@@ -110,7 +111,6 @@ export default function PriceConfig({ creator, onChange }) {
                     style={{flexGrow: 1}}
                 />
 
-                {/* ✅ BOTÓN CON MISMO ESTILO QUE PREMIUM CONTRACT */}
                 <button 
                     onClick={handleSave} 
                     disabled={loading || Number(priceInPesos) < MIN_PRICE_PESOS} 
