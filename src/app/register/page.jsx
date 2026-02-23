@@ -11,7 +11,6 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState(""); 
-  const [inviteCode, setInviteCode] = useState(""); // <--- Nuevo estado para código
   
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -34,11 +33,10 @@ export default function RegisterPage() {
         headers["Authorization"] = `Bearer ${guestToken}`;
       }
 
-      // Enviamos inviteCode en el body
       const res = await fetch(`${API}/auth/register`, {
         method: "POST",
         headers: headers,
-        body: JSON.stringify({ name, email, password, inviteCode }),
+        body: JSON.stringify({ name, email, password }),
       });
 
       const data = await res.json();
@@ -101,23 +99,7 @@ export default function RegisterPage() {
             className="auth-input"
           />
           
-          {/* --- CAMPO DE CÓDIGO DE INVITACIÓN --- */}
-          <input
-            type="text"
-            placeholder="Código de Invitación (Requerido)"
-            value={inviteCode}
-            onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
-            required
-            className="auth-input"
-            style={{
-                borderColor: '#8e2de2', 
-                borderWidth: '2px',
-                textAlign: 'center',
-                fontWeight: 'bold',
-                letterSpacing: '1px'
-            }}
-          />
-          {/* --- FIN CAMPO --- */}
+
 
           <button type="submit" disabled={loading} className="auth-button">
             {loading ? "Creando..." : "Registrarse"}

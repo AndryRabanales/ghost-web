@@ -6,17 +6,15 @@ import { refreshToken, getAuthHeaders } from "@/utils/auth";
 import MessageList from "@/components/MessageList";
 import DashboardInfo from "@/components/DashboardInfo";
 import ShareLinkGuideModal from "@/components/ShareLinkGuideModal";
-// 👇 Importamos el nuevo componente
-import TopicConfig from "@/components/TopicConfig"; 
-import PriceConfig from "@/components/PriceConfig";
+
 
 const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
 
 const FullPageLoader = () => (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', color: 'rgba(255, 255, 255, 0.8)', }}>
         <svg width="48" height="48" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="white">
-             <style>{`.spinner_V8m1{transform-origin:center;animation:spinner_zKoa 2s linear infinite}.spinner_V8m1 circle{stroke-linecap:round;animation:spinner_YpZS 1.5s ease-in-out infinite}@keyframes spinner_zKoa{100%{transform:rotate(360deg)}}@keyframes spinner_YpZS{0%{stroke-dasharray:0 150;stroke-dashoffset:0}47.5%{stroke-dasharray:42 150;stroke-dashoffset:-16}95%,100%{stroke-dasharray:42 150;stroke-dashoffset:-59}}`}</style>
-             <g className="spinner_V8m1"><circle cx="12" cy="12" r="9.5" fill="none" strokeWidth="2" stroke="currentColor"></circle></g>
+            <style>{`.spinner_V8m1{transform-origin:center;animation:spinner_zKoa 2s linear infinite}.spinner_V8m1 circle{stroke-linecap:round;animation:spinner_YpZS 1.5s ease-in-out infinite}@keyframes spinner_zKoa{100%{transform:rotate(360deg)}}@keyframes spinner_YpZS{0%{stroke-dasharray:0 150;stroke-dashoffset:0}47.5%{stroke-dasharray:42 150;stroke-dashoffset:-16}95%,100%{stroke-dasharray:42 150;stroke-dashoffset:-59}}`}</style>
+            <g className="spinner_V8m1"><circle cx="12" cy="12" r="9.5" fill="none" strokeWidth="2" stroke="currentColor"></circle></g>
         </svg>
         <p style={{ marginTop: '20px', fontSize: '18px', letterSpacing: '0.5px' }}>Accediendo a tu Espacio Secreto...</p>
     </div>
@@ -113,21 +111,6 @@ export default function DashboardPage() {
                     <div>
                         <div className="fade-in-up" style={{ animationDelay: '0.1s' }}>
                             <DashboardInfo creator={creator} onChange={setCreator} />
-                        </div>
-
-                        <div className="fade-in-up" style={{ 
-                            animationDelay: '0.2s', 
-                            marginBottom: '25px', 
-                            background: 'var(--background-core)',
-                            borderRadius: '20px',
-                            border: '1px solid var(--border-color-faint)',
-                            padding: '20px' 
-                        }}>
-                            {/* ✅ AQUI ESTÁ: Configuración de Tema */}
-                            <TopicConfig creator={creator} onChange={setCreator} />
-
-                            {/* ✅ AQUI ESTÁ: Configuración de Precio */}
-                            <PriceConfig creator={creator} onChange={setCreator} />
                         </div>
 
                         <div className="fade-in-up" style={{ animationDelay: '0.3s' }}>
