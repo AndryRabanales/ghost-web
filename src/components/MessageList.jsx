@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { refreshToken } from "@/utils/auth";
 import { useRouter } from "next/navigation";
 
-const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
+const API = process.env.NEXT_PUBLIC_API || "https://api.ghostmsg.space";
 
 const IconResponder = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -53,7 +53,7 @@ const ChatItem = ({ chat, onOpenChat, isOnline }) => {
 
           {/* --- INDICADOR EN LÍNEA --- */}
           {isOnline && <span className="online-indicator-dot"></span>}
-          
+
           {chat.anonReplied && <span className="new-reply-indicator">Nuevo mensaje</span>}
         </div>
         <div className="chat-item-content">
@@ -86,7 +86,7 @@ export default function MessageList({ dashboardId }) {
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+
   // Estado para los anónimos en línea
   const [anonStatuses, setAnonStatuses] = useState({});
 
@@ -136,12 +136,12 @@ export default function MessageList({ dashboardId }) {
         headers: getAuthHeaders(),
       });
       const data = await res.json();
-      
+
       if (!res.ok) {
         alert(data.error || "No se pudo abrir el chat");
         return;
       }
-      
+
       router.push(`/dashboard/${dashboardId}/chats/${chatId}`);
     } catch (err) {
       console.error("Error al abrir chat:", err);
@@ -168,7 +168,7 @@ export default function MessageList({ dashboardId }) {
 
       // 1. Manejador de nuevos mensajes
       if (data.type === 'new_message' || data.type === 'message') {
-        fetchData(); 
+        fetchData();
       }
 
       // 2. Manejador de estado del anónimo
@@ -194,7 +194,7 @@ export default function MessageList({ dashboardId }) {
     animationDelay: `${0.1 * index}s`,
     opacity: 0,
   });
-  
+
   return (
     <div>
       <h2 style={{ fontSize: '28px', color: '#fff', borderBottom: '1px solid var(--border-color-faint)', paddingBottom: '15px', marginBottom: '20px', fontWeight: 'bold' }}>

@@ -5,7 +5,7 @@ import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 // Define la URL de la API
-const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
+const API = process.env.NEXT_PUBLIC_API || "https://api.ghostmsg.space";
 
 // Componente SvgSpinner para la carga
 const SvgSpinner = () => (
@@ -43,7 +43,7 @@ function SuccessPageContent() {
           if (res.status === 404 && retryCount < 5) {
             setStatus(`Esperando confirmación del pago... (Intento ${retryCount + 1})`);
             // Espera 2 segundos y vuelve a intentar (disparando el useEffect)
-            setTimeout(() => setRetryCount(prevCount => prevCount + 1), 2000); 
+            setTimeout(() => setRetryCount(prevCount => prevCount + 1), 2000);
           } else {
             // Si falla después de 5 intentos o es otro error
             throw new Error(data.error || "No se pudo recuperar tu chat");
@@ -69,10 +69,10 @@ function SuccessPageContent() {
             };
 
             const storedChats = JSON.parse(localStorage.getItem("myChats") || "[]");
-            
+
             // Evitar duplicados si el usuario refresca la página de éxito
             const isAlreadySaved = storedChats.some(c => c.chatId === chatId);
-            
+
             if (!isAlreadySaved) {
               // Añadir al principio de la lista
               const updatedChats = [newChatEntry, ...storedChats];
@@ -84,7 +84,7 @@ function SuccessPageContent() {
             // No es un error fatal, simplemente continuamos a la redirección
           }
           // --- 👆 FIN DE MODIFICACIÓN 👆 ---
-          
+
           // Redirigir al chat
           router.push(`/chats/${anonToken}/${chatId}`);
         } else {
@@ -99,7 +99,7 @@ function SuccessPageContent() {
     };
 
     fetchChatDetails();
-    
+
     // El 'timer' de reintento se maneja en el bloque 'catch'
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId, router, retryCount]); // Se vuelve a ejecutar cuando retryCount cambia
@@ -145,7 +145,7 @@ function SuccessPageContent() {
 export default function SuccessPage() {
   return (
     <Suspense fallback={
-      <div style={{color: 'white', textAlign: 'center', paddingTop: '100px'}}>
+      <div style={{ color: 'white', textAlign: 'center', paddingTop: '100px' }}>
         Cargando...
       </div>
     }>

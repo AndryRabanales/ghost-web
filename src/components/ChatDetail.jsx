@@ -5,7 +5,7 @@ import { useEffect, useState, useRef } from "react";
 import { refreshToken } from "@/utils/auth";
 import MessageForm from "@/components/MessageForm";
 
-const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
+const API = process.env.NEXT_PUBLIC_API || "https://api.ghostmsg.space";
 
 // --- Componente Message (sin cambios) ---
 const Message = ({ msg, creatorName, anonAlias }) => {
@@ -31,7 +31,7 @@ const Message = ({ msg, creatorName, anonAlias }) => {
 export default function ChatDetail({ dashboardId, chatId, onBack }) {
   const [messages, setMessages] = useState([]);
   const [chatInfo, setChatInfo] = useState(null);
-  
+
   // --- 👇 1. ELIMINADO EL ESTADO 'isAnonOnline' 👇 ---
   // const [isAnonOnline, setIsAnonOnline] = useState(false);
 
@@ -79,7 +79,7 @@ export default function ChatDetail({ dashboardId, chatId, onBack }) {
 
         const data = await res.json();
         setMessages(data.messages || []);
-        setChatInfo(data); 
+        setChatInfo(data);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -114,13 +114,13 @@ export default function ChatDetail({ dashboardId, chatId, onBack }) {
         }
 
         // 2. ELIMINADO: Manejador de estado 'ANON_STATUS_UPDATE'
-        
+
       } catch (e) {
         console.error("Error procesando WS:", e);
       }
     };
     // --- 👆 FIN DE MODIFICACIÓN 👆 ---
-    
+
     ws.onerror = (err) => console.error("Error WS (ChatDetail):", err);
 
     return () => {
@@ -167,7 +167,7 @@ export default function ChatDetail({ dashboardId, chatId, onBack }) {
         <MessageForm
           dashboardId={dashboardId}
           chatId={chatId}
-          onMessageSent={() => {}}
+          onMessageSent={() => { }}
           lastAnonQuestion={lastAnonMessage?.content}
         />
       </div>

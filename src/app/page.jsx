@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
+const API = process.env.NEXT_PUBLIC_API || "https://api.ghostmsg.space";
 
 export default function HomePage() {
   const router = useRouter();
@@ -31,7 +31,7 @@ export default function HomePage() {
 
       localStorage.setItem("token", data.token);
       localStorage.setItem("publicId", data.publicId);
-      
+
       if (data.dashboardId) {
         router.push(`/dashboard/${data.dashboardId}`);
       } else {
@@ -47,9 +47,9 @@ export default function HomePage() {
 
   return (
     // Usamos las clases de 'auth-container' y 'auth-card' que ya existen
-    <div className="auth-container"> 
+    <div className="auth-container">
       <main className="auth-card">
-        
+
         {/* --- INICIO DE LA MODIFICACIÓN --- */}
         {/* Texto de bienvenida centrado */}
         <h1 style={{

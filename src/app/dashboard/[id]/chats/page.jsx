@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { refreshToken } from "@/utils/auth"; // 👈 asegúrate de tener este archivo
 
 const API =
-  process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
+  process.env.NEXT_PUBLIC_API || "https://api.ghostmsg.space";
 
 export default function CreatorChatsPage() {
   const { id } = useParams(); // creatorId (dashboardId)

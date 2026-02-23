@@ -8,7 +8,7 @@ import DashboardInfo from "@/components/DashboardInfo";
 import ShareLinkGuideModal from "@/components/ShareLinkGuideModal";
 
 
-const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
+const API = process.env.NEXT_PUBLIC_API || "https://api.ghostmsg.space";
 
 const FullPageLoader = () => (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', color: 'rgba(255, 255, 255, 0.8)', }}>

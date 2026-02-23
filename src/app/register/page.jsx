@@ -3,15 +3,15 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
+const API = process.env.NEXT_PUBLIC_API || "https://api.ghostmsg.space";
 
 export default function RegisterPage() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState(""); 
-  
+  const [confirmPassword, setConfirmPassword] = useState("");
+
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -44,10 +44,10 @@ export default function RegisterPage() {
         throw new Error(data.error || "Error al crear la cuenta");
       }
 
-      localStorage.clear(); 
+      localStorage.clear();
       localStorage.setItem("token", data.token);
       localStorage.setItem("publicId", data.publicId);
-      
+
       if (data.dashboardId) {
         router.push(`/dashboard/${data.dashboardId}`);
       } else {
@@ -98,7 +98,7 @@ export default function RegisterPage() {
             required
             className="auth-input"
           />
-          
+
 
 
           <button type="submit" disabled={loading} className="auth-button">

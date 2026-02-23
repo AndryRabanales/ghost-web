@@ -4,24 +4,24 @@
 import { useState } from "react";
 import { refreshToken } from "@/utils/auth";
 
-const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
-const MIN_RESPONSE_LENGTH = 40; 
+const API = process.env.NEXT_PUBLIC_API || "https://api.ghostmsg.space";
+const MIN_RESPONSE_LENGTH = 40;
 
 export default function MessageForm({
   dashboardId,
   chatId,
   onMessageSent,
-  lastAnonQuestion 
+  lastAnonQuestion
 }) {
   const [newMsg, setNewMsg] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null); 
+  const [error, setError] = useState(null);
   const charCount = newMsg.length;
 
   // --- 2. CREA UNA INSTANCIA DE AUDIO (reutilizable) ---
   // Usamos useState para asegurarnos de que solo se cree una vez en el cliente.
   const [chachingSound, setChachingSound] = useState(null);
-  
+
   useState(() => {
     // Esto solo se ejecutará en el cliente (client-side)
     if (typeof Audio !== "undefined") {
@@ -38,9 +38,9 @@ export default function MessageForm({
   const handleSend = async (e) => {
     e.preventDefault();
     if (!newMsg.trim() || loading || charCount < MIN_RESPONSE_LENGTH) return;
-    
+
     setLoading(true);
-    setError(null); 
+    setError(null);
 
     try {
       let res = await fetch(
@@ -51,19 +51,19 @@ export default function MessageForm({
           body: JSON.stringify({ content: newMsg }),
         }
       );
-      
+
       if (res.status === 401) {
-          const newToken = await refreshToken(localStorage.getItem("publicId"));
-          if(newToken) {
-              res = await fetch(
-                `${API}/dashboard/${dashboardId}/chats/${chatId}/messages`,
-                {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json", ...getAuthHeaders(newToken) },
-                  body: JSON.stringify({ content: newMsg }),
-                }
-              );
-          }
+        const newToken = await refreshToken(localStorage.getItem("publicId"));
+        if (newToken) {
+          res = await fetch(
+            `${API}/dashboard/${dashboardId}/chats/${chatId}/messages`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json", ...getAuthHeaders(newToken) },
+              body: JSON.stringify({ content: newMsg }),
+            }
+          );
+        }
       }
 
       if (!res.ok) {
@@ -86,7 +86,7 @@ export default function MessageForm({
       if (onMessageSent) onMessageSent(msgData);
     } catch (err) {
       console.error("Error en handleSend:", err);
-      setError(err.message); 
+      setError(err.message);
     } finally {
       setLoading(false);
     }
@@ -103,7 +103,7 @@ export default function MessageForm({
           onChange={(e) => setNewMsg(e.target.value)}
           placeholder="Escribe una respuesta..."
           className="form-input-field reply-input"
-          disabled={loading} 
+          disabled={loading}
         />
         <button
           type="submit"
@@ -113,12 +113,12 @@ export default function MessageForm({
           {loading ? "..." : "Enviar"}
         </button>
       </form>
-      
+
       {/* --- (El resto del componente de error y guía no cambia) --- */}
       {error && (
         <div style={{
           fontSize: '13px',
-          color: '#ff7b7b', 
+          color: '#ff7b7b',
           textAlign: 'center',
           fontWeight: '600',
           marginTop: '10px',
@@ -145,15 +145,15 @@ export default function MessageForm({
           Respondiendo a: "{lastAnonQuestion.length > 80 ? lastAnonQuestion.substring(0, 80) + '...' : lastAnonQuestion}"
         </div>
       )}
-      
+
       {!error && (
         <div style={{
-            fontSize: '12px',
-            color: charCount < MIN_RESPONSE_LENGTH ? '#ff7b7b' : 'var(--text-secondary)',
-            textAlign: 'right',
-            marginTop: '8px'
+          fontSize: '12px',
+          color: charCount < MIN_RESPONSE_LENGTH ? '#ff7b7b' : 'var(--text-secondary)',
+          textAlign: 'right',
+          marginTop: '8px'
         }}>
-            {charCount} / {MIN_RESPONSE_LENGTH} caracteres (Mínimo para garantizar calidad)
+          {charCount} / {MIN_RESPONSE_LENGTH} caracteres (Mínimo para garantizar calidad)
         </div>
       )}
     </>

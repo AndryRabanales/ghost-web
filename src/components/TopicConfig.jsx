@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { getAuthHeaders, refreshToken } from "@/utils/auth";
 
-const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
+const API = process.env.NEXT_PUBLIC_API || "https://api.ghostmsg.space";
 
 const TopicIcon = () => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -68,16 +68,16 @@ export default function TopicConfig({ creator, onChange }) {
     };
 
     return (
-        <div className="premium-contract-config-container" style={{borderBottom: '1px solid var(--border-color-faint)', paddingBottom: '20px', marginBottom: '20px'}}>
-            <h3 style={{fontSize: '1.1em', fontWeight: 700, color: 'var(--text-primary)', marginTop: 0, marginBottom: '10px'}}>
+        <div className="premium-contract-config-container" style={{ borderBottom: '1px solid var(--border-color-faint)', paddingBottom: '20px', marginBottom: '20px' }}>
+            <h3 style={{ fontSize: '1.1em', fontWeight: 700, color: 'var(--text-primary)', marginTop: 0, marginBottom: '10px' }}>
                 🎯 Filtro de IA / Tema
             </h3>
 
-            <p className="contract-guide-text" style={{fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.5, margin: '0 0 15px'}}>
+            <p className="contract-guide-text" style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.5, margin: '0 0 15px' }}>
                 Define qué tipo de mensajes quieres recibir. La IA usará esto para filtrar el spam o mensajes fuera de contexto.
             </p>
 
-            <div className="contract-input-wrapper" style={{display: 'flex', gap: '10px', alignItems: 'center'}}>
+            <div className="contract-input-wrapper" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                 <div className="balance-icon" style={{
                     color: 'var(--glow-accent-crimson)',
                     background: 'rgba(255, 255, 255, 0.05)',
@@ -95,12 +95,12 @@ export default function TopicConfig({ creator, onChange }) {
                     disabled={loading}
                     placeholder="Ej: Solo preguntas sobre tecnología..."
                     className="form-input-field contract-input"
-                    style={{flexGrow: 1}}
+                    style={{ flexGrow: 1 }}
                 />
 
-                <button 
-                    onClick={handleSave} 
-                    disabled={loading || !topic.trim()} 
+                <button
+                    onClick={handleSave}
+                    disabled={loading || !topic.trim()}
                     className="submit-button"
                     style={{
                         minWidth: '100px',
@@ -121,8 +121,8 @@ export default function TopicConfig({ creator, onChange }) {
             </div>
 
             {status && (
-                <p 
-                    className={`contract-status ${status.type === 'error' ? 'auth-error' : 'form-status-message success'}`} 
+                <p
+                    className={`contract-status ${status.type === 'error' ? 'auth-error' : 'form-status-message success'}`}
                     style={{
                         textAlign: 'center',
                         marginTop: '15px',

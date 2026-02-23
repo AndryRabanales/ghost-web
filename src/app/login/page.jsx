@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
+const API = process.env.NEXT_PUBLIC_API || "https://api.ghostmsg.space";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -31,7 +31,7 @@ export default function LoginPage() {
 
       localStorage.setItem("token", data.token);
       localStorage.setItem("publicId", data.publicId);
-      
+
       if (data.dashboardId) {
         router.push(`/dashboard/${data.dashboardId}`);
       } else {

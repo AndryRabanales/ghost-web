@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { getAuthHeaders, refreshToken } from "@/utils/auth";
 
-const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
+const API = process.env.NEXT_PUBLIC_API || "https://api.ghostmsg.space";
 // ✅ CAMBIO APLICADO: Mínimo ajustado a 20 pesos
 const MIN_PRICE_PESOS = 20;
 
@@ -79,16 +79,16 @@ export default function PriceConfig({ creator, onChange }) {
     };
 
     return (
-        <div className="premium-contract-config-container" style={{borderTop: '1px solid var(--border-color-faint)', paddingTop: '20px'}}>
-            <h3 style={{fontSize: '1.1em', fontWeight: 700, color: 'var(--text-primary)', marginTop: 0, marginBottom: '10px'}}>
+        <div className="premium-contract-config-container" style={{ borderTop: '1px solid var(--border-color-faint)', paddingTop: '20px' }}>
+            <h3 style={{ fontSize: '1.1em', fontWeight: 700, color: 'var(--text-primary)', marginTop: 0, marginBottom: '10px' }}>
                 💰 Precio Base por Mensaje
             </h3>
 
-            <p className="contract-guide-text" style={{fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.5, margin: '0 0 15px'}}>
+            <p className="contract-guide-text" style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.5, margin: '0 0 15px' }}>
                 Establece el precio mínimo (en pesos) que debe pagar un anónimo para enviarte un mensaje. (Mínimo ${MIN_PRICE_PESOS} MXN).
             </p>
 
-            <div className="contract-input-wrapper" style={{display: 'flex', gap: '10px', alignItems: 'center'}}>
+            <div className="contract-input-wrapper" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                 <div className="balance-icon" style={{
                     color: 'var(--glow-accent-crimson)',
                     background: 'rgba(255, 255, 255, 0.05)',
@@ -108,12 +108,12 @@ export default function PriceConfig({ creator, onChange }) {
                     disabled={loading}
                     placeholder={`Mínimo ${MIN_PRICE_PESOS}`}
                     className="form-input-field contract-input"
-                    style={{flexGrow: 1}}
+                    style={{ flexGrow: 1 }}
                 />
 
-                <button 
-                    onClick={handleSave} 
-                    disabled={loading || Number(priceInPesos) < MIN_PRICE_PESOS} 
+                <button
+                    onClick={handleSave}
+                    disabled={loading || Number(priceInPesos) < MIN_PRICE_PESOS}
                     className="submit-button"
                     style={{
                         minWidth: '150px',
@@ -148,8 +148,8 @@ export default function PriceConfig({ creator, onChange }) {
             </div>
 
             {status && (
-                <p 
-                    className={`contract-status ${status.type === 'error' ? 'auth-error' : 'form-status-message success'}`} 
+                <p
+                    className={`contract-status ${status.type === 'error' ? 'auth-error' : 'form-status-message success'}`}
                     style={{
                         textAlign: 'center',
                         marginTop: '15px',

@@ -4,10 +4,10 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import AnonMessageForm from "@/components/AnonMessageForm";
 
-const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
+const API = process.env.NEXT_PUBLIC_API || "https://api.ghostmsg.space";
 
 // Asegúrate de que estas constantes estén definidas
-const FALLBACK_MIN_PREMIUM_AMOUNT = 20; 
+const FALLBACK_MIN_PREMIUM_AMOUNT = 20;
 const MAX_PREMIUM_AMOUNT = 100000;
 
 export default function PublicUserPage() {
@@ -77,24 +77,24 @@ export default function PublicUserPage() {
   return (
     <div style={{ maxWidth: '520px', margin: '40px auto', padding: '0 20px' }}>
       <h1 style={{
-          fontSize: '34px',
-          fontWeight: '800',
-          letterSpacing: '-1.5px',
-          background: 'linear-gradient(90deg, #8e2de2, #c9a4ff)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          margin: '0 0 15px',
-          textAlign: 'center'
-        }}>
+        fontSize: '34px',
+        fontWeight: '800',
+        letterSpacing: '-1.5px',
+        background: 'linear-gradient(90deg, #8e2de2, #c9a4ff)',
+        WebkitBackgroundClip: 'text',
+        WebkitTextFillColor: 'transparent',
+        margin: '0 0 15px',
+        textAlign: 'center'
+      }}>
         Enviar a {creatorInfo.creatorName}
       </h1>
-      
+
       <AnonMessageForm
         publicId={publicId}
         onChatCreated={handleChatCreated}
         escasezData={creatorInfo.escasezData}
         isFull={creatorInfo.isFull}
-        topicPreference={creatorInfo.topicPreference} 
+        topicPreference={creatorInfo.topicPreference}
         creatorName={creatorInfo.creatorName}
         baseTipAmountCents={creatorInfo.baseTipAmountCents}
       />

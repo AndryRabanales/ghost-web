@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { useParams } from "next/navigation";
 
-const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
+const API = process.env.NEXT_PUBLIC_API || "https://api.ghostmsg.space";
 
 export default function ReplyPage() {
   const params = useParams();
