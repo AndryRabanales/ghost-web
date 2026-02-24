@@ -6,9 +6,7 @@ import AnonMessageForm from "@/components/AnonMessageForm";
 
 const API = process.env.NEXT_PUBLIC_API || "https://api.ghostmsg.space";
 
-// Asegúrate de que estas constantes estén definidas
-const FALLBACK_MIN_PREMIUM_AMOUNT = 20;
-const MAX_PREMIUM_AMOUNT = 100000;
+// Constants removed
 
 export default function PublicUserPage() {
   const params = useParams();
@@ -92,11 +90,7 @@ export default function PublicUserPage() {
       <AnonMessageForm
         publicId={publicId}
         onChatCreated={handleChatCreated}
-        escasezData={creatorInfo.escasezData}
-        isFull={creatorInfo.isFull}
-        topicPreference={creatorInfo.topicPreference}
         creatorName={creatorInfo.creatorName}
-        baseTipAmountCents={creatorInfo.baseTipAmountCents}
       />
     </div>
   );

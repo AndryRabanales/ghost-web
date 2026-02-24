@@ -5,7 +5,7 @@ import { useState } from "react";
 import { refreshToken } from "@/utils/auth";
 
 const API = process.env.NEXT_PUBLIC_API || "https://api.ghostmsg.space";
-const MIN_RESPONSE_LENGTH = 40;
+
 
 export default function MessageForm({
   dashboardId,
@@ -37,7 +37,7 @@ export default function MessageForm({
 
   const handleSend = async (e) => {
     e.preventDefault();
-    if (!newMsg.trim() || loading || charCount < MIN_RESPONSE_LENGTH) return;
+    if (!newMsg.trim() || loading) return;
 
     setLoading(true);
     setError(null);
@@ -92,7 +92,7 @@ export default function MessageForm({
     }
   };
 
-  const isDisabled = loading || charCount < MIN_RESPONSE_LENGTH;
+  const isDisabled = loading || !newMsg.trim();
 
   return (
     <>
@@ -146,16 +146,7 @@ export default function MessageForm({
         </div>
       )}
 
-      {!error && (
-        <div style={{
-          fontSize: '12px',
-          color: charCount < MIN_RESPONSE_LENGTH ? '#ff7b7b' : 'var(--text-secondary)',
-          textAlign: 'right',
-          marginTop: '8px'
-        }}>
-          {charCount} / {MIN_RESPONSE_LENGTH} caracteres (Mínimo para garantizar calidad)
-        </div>
-      )}
+
     </>
   );
 }
