@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { timeAgo } from "@/utils/timeAgo";
+import AnonChatReplyForm from "@/components/AnonChatReplyForm";
 
 const API = process.env.NEXT_PUBLIC_API || "https://api.ghostmsg.space";
 
@@ -117,18 +118,19 @@ export default function PublicChatPage() {
       try {
         const msg = JSON.parse(event.data);
 
-        if (msg.type === "message" && msg.from === "creator") {
+        if (msg.type === "message") {
           setMessages((prev) => {
             if (prev.some(m => m.id === msg.id)) return prev;
             return [...prev, msg];
           });
 
-          updateLocalStorage((c) => ({ ...c, hasNewReply: true }));
-
-          if (document.visibilityState === 'visible') {
-            markChatAsRead();
+          if (msg.from === "creator") {
+            updateLocalStorage((c) => ({ ...c, hasNewReply: true }));
+            if (document.visibilityState === 'visible') {
+              markChatAsRead();
+            }
+            setCreatorStatus({ status: 'online', lastActiveAt: new Date().toISOString() });
           }
-          setCreatorStatus({ status: 'online', lastActiveAt: new Date().toISOString() });
         }
 
         if (msg.type === 'CREATOR_STATUS_UPDATE') {
@@ -229,18 +231,13 @@ export default function PublicChatPage() {
       </div>
 
       <div className="chat-footer" style={{ paddingTop: '15px', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
-        {isWaitingForReply ? (
-          <div className="waiting-indicator">
-            <span>Esperando respuesta de {creatorName}</span>
-            <div className="waiting-dots">
-              <span>.</span><span>.</span><span>.</span>
-            </div>
-          </div>
-        ) : (
-          <div className="waiting-indicator" style={{ animation: 'none', opacity: 0.7, color: 'var(--success-solid)' }}>
-            <span>¡Respuesta recibida! El chat ha finalizado.</span>
-          </div>
-        )}
+
+        <AnonChatReplyForm
+          anonToken={anonToken}
+          chatId={chatId}
+          onMessageSent={(newMsg) => setMessages(prev => [...prev, newMsg])}
+        />
+
 
         {/* --- 👇 AHORA EL BLOQUE ESTÁ AQUÍ ABAJO 👇 --- */}
         <div style={{
