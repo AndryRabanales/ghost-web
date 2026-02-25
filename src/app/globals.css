@@ -50,12 +50,17 @@ body {
   overflow-x: hidden;
   min-height: 100vh;
   margin: 0;
+
+  /* Fondo fijo, suave y sin cortes */
+  background:
+    radial-gradient(circle at top center, rgba(142, 45, 226, 0.15) 0%, transparent 60%),
+    radial-gradient(circle at bottom right, rgba(87, 3, 255, 0.15) 0%, transparent 60%),
+    linear-gradient(to bottom, var(--background-abyss), #120a1f);
+
   background-attachment: fixed;
   background-repeat: no-repeat;
   background-size: cover;
-  background-image:
-    radial-gradient(circle at 15% 85%, rgba(142, 68, 173, 0.2), transparent 40%),
-    radial-gradient(circle at 85% 20%, rgba(74, 0, 224, 0.2), transparent 40%);
+
   animation: background-pulse 12s ease-in-out infinite;
 }
 
