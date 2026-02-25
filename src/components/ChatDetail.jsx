@@ -22,6 +22,37 @@ const Message = ({ msg, creatorName, anonAlias }) => {
   );
 };
 
+// --- Componente CountdownTimer (Idéntico al de page.jsx) ---
+const CountdownTimer = ({ expiresAt, onExpire }) => {
+  const [timeLeft, setTimeLeft] = useState("");
+
+  useEffect(() => {
+    if (!expiresAt) return;
+    const interval = setInterval(() => {
+      const now = new Date();
+      const diff = new Date(expiresAt) - now;
+      if (diff <= 0) {
+        setTimeLeft("00:00");
+        clearInterval(interval);
+        if (onExpire) onExpire();
+      } else {
+        const minutes = Math.floor(diff / 60000).toString().padStart(2, '0');
+        const seconds = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
+        setTimeLeft(`${minutes}:${seconds}`);
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [expiresAt, onExpire]);
+
+  if (!timeLeft) return null;
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#f87171', fontWeight: 600, fontSize: '0.95rem' }}>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+      {timeLeft}
+    </div>
+  );
+};
 
 /**
  * Componente principal que muestra la vista de un chat.
@@ -139,6 +170,14 @@ export default function ChatDetail({ dashboardId, chatId, onBack }) {
   // --- 👇 3. AÑADIDO: OBTENER LA ÚLTIMA PREGUNTA DEL ANÓNIMO 👇 ---
   const lastAnonMessage = messages.filter(m => m.from === 'anon').pop();
 
+  const handleExpire = () => {
+    setError("El chat ha expirado y ha sido eliminado.");
+    setMessages([]);
+    setTimeout(() => {
+      onBack();
+    }, 3000);
+  };
+
   return (
     <div className="premium-chat-layout">
       <div className="premium-chat-container">
@@ -147,10 +186,15 @@ export default function ChatDetail({ dashboardId, chatId, onBack }) {
           <div>
             <h3>{anonAlias}</h3>
           </div>
-          <button onClick={onBack} style={{ background: 'transparent', border: 'none', color: 'var(--chat-text-muted)', fontSize: '0.9rem', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', fontFamily: 'inherit' }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
-            Volver
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            {chatInfo?.expiresAt && (
+              <CountdownTimer expiresAt={chatInfo.expiresAt} onExpire={handleExpire} />
+            )}
+            <button onClick={onBack} style={{ background: 'transparent', border: 'none', color: 'var(--chat-text-muted)', fontSize: '0.9rem', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', fontFamily: 'inherit' }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
+              Volver
+            </button>
+          </div>
         </div>
 
         <div className="premium-chat-messages">
