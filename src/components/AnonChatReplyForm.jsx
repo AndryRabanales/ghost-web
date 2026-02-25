@@ -13,7 +13,7 @@ export default function AnonChatReplyForm({ anonToken, chatId, onMessageSent }) 
     useState(() => {
         if (typeof Audio !== "undefined") {
             // You can change this to a different sound if you have one, or reuse chaching
-            setSendSound(new Audio('/pop.mp3')); // Or 'chaching.mp3' if pop doesn't exist
+            setSendSound(new Audio('/chaching.mp3')); // Or 'chaching.mp3' if pop doesn't exist
         }
     }, []);
 
@@ -44,7 +44,7 @@ export default function AnonChatReplyForm({ anonToken, chatId, onMessageSent }) 
             }
 
             setNewMsg("");
-            if (onMessageSent) onMessageSent(msgData);
+            // if (onMessageSent) onMessageSent(msgData); // Eliminado para no duplicar con el WebSocket
         } catch (err) {
             console.error("Error en handleSend:", err);
             setError(err.message);
