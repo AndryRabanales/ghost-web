@@ -25,7 +25,7 @@ export default function AnonChatReplyForm({ anonToken, chatId, onMessageSent }) 
         setError(null);
 
         try {
-            const res = await fetch(`${API}/${anonToken}/${chatId}/messages`, {
+            const res = await fetch(`${API}/chats/${anonToken}/${chatId}/messages`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ content: newMsg }),
