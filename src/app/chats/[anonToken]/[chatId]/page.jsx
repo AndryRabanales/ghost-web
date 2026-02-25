@@ -211,15 +211,6 @@ export default function PublicChatPage() {
     return () => clearInterval(interval);
   }, [creatorStatus]);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (creatorStatus.status === 'offline' && creatorStatus.lastActiveAt) {
-        setLastActiveDisplay(timeAgo(creatorStatus.lastActiveAt));
-      }
-    }, 60000);
-    return () => clearInterval(interval);
-  }, [creatorStatus]);
-
   const handleExpire = useCallback(() => {
     setError("Este chat se ha eliminado permanentemente tras 1 hora de su creación por motivos de seguridad.");
     setMessages([]);

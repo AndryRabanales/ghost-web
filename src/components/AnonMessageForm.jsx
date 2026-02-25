@@ -10,6 +10,7 @@ export default function AnonMessageForm({
   creatorName
 }) {
   const [content, setContent] = useState("");
+  const [alias, setAlias] = useState("");
   const [status, setStatus] = useState("idle");
   const [errorMsg, setErrorMsg] = useState("");
   const [charCount, setCharCount] = useState(0);
@@ -31,7 +32,7 @@ export default function AnonMessageForm({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          alias: "Anónimo",
+          alias: alias.trim() ? alias.trim() : "Anónimo",
           content
         }),
       });
@@ -44,6 +45,7 @@ export default function AnonMessageForm({
         const newChat = {
           chatId: data.chatId,
           anonToken: data.anonToken,
+          anonAlias: alias.trim() ? alias.trim() : "Anónimo",
           creatorName: creatorName || "Creador",
           hasNewReply: false,
           timestamp: new Date().toISOString()
@@ -55,6 +57,7 @@ export default function AnonMessageForm({
       }
 
       setContent("");
+      setAlias("");
       setCharCount(0);
 
       if (onChatCreated) {
@@ -118,25 +121,24 @@ export default function AnonMessageForm({
           <div style={{
             display: 'flex',
             justifyContent: 'space-between',
-            alignItems: 'flex-start',
+            alignItems: 'center',
             marginTop: '8px',
             marginBottom: '10px'
           }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              color: '#ef4444',
-              fontSize: '0.85rem',
-              fontWeight: '500',
-              background: 'rgba(239, 68, 68, 0.1)',
-              padding: '6px 10px',
-              borderRadius: '6px',
-              maxWidth: '75%'
-            }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
-              <span>El chat y los mensajes se <b>autodestruirán 1 hora</b> después de ser enviados.</span>
-            </div>
+            <input
+              type="text"
+              placeholder="Tu alias (opcional)"
+              value={alias}
+              onChange={(e) => setAlias(e.target.value)}
+              className="form-input-field"
+              style={{
+                width: '60%',
+                padding: '8px 12px',
+                fontSize: '0.9rem',
+                margin: 0
+              }}
+              maxLength="30"
+            />
             <div className="char-counter">{charCount} / 500</div>
           </div>
 
