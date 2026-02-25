@@ -111,7 +111,11 @@ export default function ChatDetail({ dashboardId, chatId, onBack }) {
           });
         }
 
-        // 2. ELIMINADO: Manejador de estado 'ANON_STATUS_UPDATE'
+        // 2. Manejador de chat abandonado
+        if (msg.type === 'CHAT_ABANDONED' && msg.chatId === chatId) {
+          setError("El usuario anónimo ha abandonado y destruido este chat permanentemente.");
+          setMessages([]);
+        }
 
       } catch (e) {
         console.error("Error procesando WS:", e);

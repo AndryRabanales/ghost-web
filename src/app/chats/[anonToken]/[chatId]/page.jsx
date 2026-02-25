@@ -7,6 +7,37 @@ import AnonChatReplyForm from "@/components/AnonChatReplyForm";
 
 const API = process.env.NEXT_PUBLIC_API || "https://api.ghostmsg.space";
 
+const CountdownTimer = ({ expiresAt, onExpire }) => {
+  const [timeLeft, setTimeLeft] = useState("");
+
+  useEffect(() => {
+    if (!expiresAt) return;
+    const interval = setInterval(() => {
+      const now = new Date();
+      const diff = expiresAt - now;
+      if (diff <= 0) {
+        setTimeLeft("00:00");
+        clearInterval(interval);
+        if (onExpire) onExpire();
+      } else {
+        const minutes = Math.floor(diff / 60000).toString().padStart(2, '0');
+        const seconds = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
+        setTimeLeft(`${minutes}:${seconds}`);
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [expiresAt, onExpire]);
+
+  if (!timeLeft) return null;
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#f87171', fontWeight: 600, fontSize: '0.95rem' }}>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+      {timeLeft}
+    </div>
+  );
+};
+
 export default function PublicChatPage() {
   const params = useParams();
   const { anonToken, chatId } = params;
@@ -23,7 +54,7 @@ export default function PublicChatPage() {
   const [lastActiveDisplay, setLastActiveDisplay] = useState(null);
 
   const [expiresAt, setExpiresAt] = useState(null);
-  const [timeLeft, setTimeLeft] = useState("");
+  const [creatorPublicId, setCreatorPublicId] = useState(null);
 
   const bottomRef = useRef(null);
   const wsRef = useRef(null);
@@ -87,6 +118,10 @@ export default function PublicChatPage() {
           if (data.creatorName) {
             setCreatorName(data.creatorName);
             updateLocalStorage((c) => ({ ...c, creatorName: data.creatorName }));
+          }
+
+          if (data.creatorPublicId) {
+            setCreatorPublicId(data.creatorPublicId);
           }
 
           if (data.expiresAt) {
@@ -177,23 +212,18 @@ export default function PublicChatPage() {
   }, [creatorStatus]);
 
   useEffect(() => {
-    if (!expiresAt) return;
     const interval = setInterval(() => {
-      const now = new Date();
-      const diff = expiresAt - now;
-      if (diff <= 0) {
-        setTimeLeft("00:00");
-        clearInterval(interval);
-        setError("Este chat se ha eliminado permanentemente tras 1 hora de su creación por motivos de seguridad.");
-        setMessages([]);
-      } else {
-        const minutes = Math.floor(diff / 60000).toString().padStart(2, '0');
-        const seconds = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
-        setTimeLeft(`${minutes}:${seconds}`);
+      if (creatorStatus.status === 'offline' && creatorStatus.lastActiveAt) {
+        setLastActiveDisplay(timeAgo(creatorStatus.lastActiveAt));
       }
-    }, 1000);
+    }, 60000);
     return () => clearInterval(interval);
-  }, [expiresAt]);
+  }, [creatorStatus]);
+
+  const handleExpire = useCallback(() => {
+    setError("Este chat se ha eliminado permanentemente tras 1 hora de su creación por motivos de seguridad.");
+    setMessages([]);
+  }, []);
 
   const handleAbandon = async () => {
     if (!confirm("¿Seguro que quieres abandonar este chat? Se borrará PERMANENTEMENTE para ambos.")) return;
@@ -201,7 +231,7 @@ export default function PublicChatPage() {
       setLoading(true);
       await fetch(`${API}/chats/${anonToken}/${chatId}`, { method: 'DELETE' });
       localStorage.removeItem("myChats");
-      window.location.href = "/";
+      window.location.href = creatorPublicId ? `/u/${creatorPublicId}` : "/";
     } catch (e) {
       console.error(e);
       alert("Error al abandonar el chat.");
@@ -261,12 +291,7 @@ export default function PublicChatPage() {
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            {timeLeft && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#f87171', fontWeight: 600, fontSize: '0.95rem' }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
-                {timeLeft}
-              </div>
-            )}
+            <CountdownTimer expiresAt={expiresAt} onExpire={handleExpire} />
             <button onClick={handleAbandon} style={{ background: 'transparent', border: '1px solid #ef4444', color: '#ef4444', borderRadius: '8px', padding: '6px 12px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
               Abandonar
