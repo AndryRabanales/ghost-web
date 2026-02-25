@@ -239,50 +239,7 @@ export default function PublicChatPage() {
         />
 
 
-        {/* --- 👇 AHORA EL BLOQUE ESTÁ AQUÍ ABAJO 👇 --- */}
-        <div style={{
-          background: 'rgba(255, 193, 7, 0.1)',
-          border: '1px solid rgba(255, 193, 7, 0.3)',
-          borderRadius: '12px',
-          padding: '12px',
-          marginTop: '20px', // Añadido margen superior para separar del "Esperando..."
-          marginBottom: '10px',
-          fontSize: '13px',
-          color: '#ffeeba',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '15px',
-          animation: 'fadeInUp 0.5s ease forwards'
-        }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <strong style={{ color: '#ffc107' }}>⚠ Importante:</strong>
-            <span style={{ opacity: 0.9 }}>
-              Esta página fue enviada a tu email. Guarda este enlace, podrías perder el chat.
-            </span>
-          </div>
 
-          <button
-            onClick={copyPageUrl}
-            style={{
-              background: linkCopied ? 'rgba(40, 167, 69, 0.2)' : 'rgba(255, 193, 7, 0.15)',
-              border: `1px solid ${linkCopied ? '#28a745' : 'rgba(255, 193, 7, 0.5)'}`,
-              color: linkCopied ? '#75b798' : '#ffc107',
-              padding: '8px 14px',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '12px',
-              fontWeight: 'bold',
-              whiteSpace: 'nowrap',
-              transition: 'all 0.2s ease',
-              minWidth: '90px',
-              textAlign: 'center'
-            }}
-          >
-            {linkCopied ? "¡Copiado!" : "Copiar Link"}
-          </button>
-        </div>
-        {/* --- 👆 FIN DEL BLOQUE DE SEGURIDAD 👆 --- */}
       </div>
 
     </div>
