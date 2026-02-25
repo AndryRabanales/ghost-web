@@ -109,6 +109,21 @@ export default function AnonMessageForm({
       ) : (
         <form onSubmit={handleSubmit} className="form-element-group">
 
+          <input
+            type="text"
+            placeholder="Tu alias (opcional)"
+            value={alias}
+            onChange={(e) => setAlias(e.target.value)}
+            className="form-input-field"
+            style={{
+              width: '100%',
+              padding: '12px 15px',
+              fontSize: '16px',
+              marginBottom: '12px',
+              boxSizing: 'border-box'
+            }}
+            maxLength="30"
+          />
           <textarea
             placeholder={placeholderText}
             value={content}
@@ -116,29 +131,15 @@ export default function AnonMessageForm({
             className="form-input-field"
             rows="4"
             maxLength="500"
-            style={{ fontSize: '16px', padding: '15px' }}
+            style={{ fontSize: '16px', padding: '15px', boxSizing: 'border-box', width: '100%' }}
           ></textarea>
           <div style={{
             display: 'flex',
-            justifyContent: 'space-between',
+            justifyContent: 'flex-end',
             alignItems: 'center',
             marginTop: '8px',
             marginBottom: '10px'
           }}>
-            <input
-              type="text"
-              placeholder="Tu alias (opcional)"
-              value={alias}
-              onChange={(e) => setAlias(e.target.value)}
-              className="form-input-field"
-              style={{
-                width: '60%',
-                padding: '8px 12px',
-                fontSize: '0.9rem',
-                margin: 0
-              }}
-              maxLength="30"
-            />
             <div className="char-counter">{charCount} / 500</div>
           </div>
 
