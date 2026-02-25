@@ -131,21 +131,6 @@ export default function MessageForm({
         </div>
       )}
 
-      {lastAnonQuestion && !error && (
-        <div style={{
-          fontSize: '12px',
-          color: 'var(--text-secondary)',
-          marginTop: '10px',
-          padding: '8px',
-          background: 'rgba(255, 255, 255, 0.05)',
-          borderRadius: '8px',
-          border: '1px solid var(--border-color-faint)',
-          fontStyle: 'italic'
-        }}>
-          Respondiendo a: "{lastAnonQuestion.length > 80 ? lastAnonQuestion.substring(0, 80) + '...' : lastAnonQuestion}"
-        </div>
-      )}
-
 
     </>
   );
