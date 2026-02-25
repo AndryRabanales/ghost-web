@@ -3049,9 +3049,15 @@ body {
   font-family: 'Outfit', sans-serif;
   background: var(--chat-bg);
   min-height: 100vh;
+  min-height: 100dvh;
   color: var(--chat-text);
   display: flex;
   flex-direction: column;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 100;
 }
 
 .premium-chat-container {
@@ -3061,6 +3067,7 @@ body {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  height: 100dvh;
   position: relative;
   background: radial-gradient(circle at top right, rgba(139, 92, 246, 0.1), transparent 40%);
 }
