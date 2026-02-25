@@ -22,6 +22,9 @@ export default function PublicChatPage() {
   const [creatorStatus, setCreatorStatus] = useState({ status: 'offline', lastActiveAt: null });
   const [lastActiveDisplay, setLastActiveDisplay] = useState(null);
 
+  const [expiresAt, setExpiresAt] = useState(null);
+  const [timeLeft, setTimeLeft] = useState("");
+
   const bottomRef = useRef(null);
   const wsRef = useRef(null);
 
@@ -71,8 +74,10 @@ export default function PublicChatPage() {
   useEffect(() => {
     const fetchMessages = async () => {
       try {
-        setError(null);
         const res = await fetch(`${API}/chats/${anonToken}/${chatId}`);
+        if (res.status === 404) {
+          throw new Error("CHAT_EXPIRED");
+        }
         if (!res.ok) throw new Error("No se pudo cargar el chat");
 
         const data = await res.json();
@@ -82,6 +87,10 @@ export default function PublicChatPage() {
           if (data.creatorName) {
             setCreatorName(data.creatorName);
             updateLocalStorage((c) => ({ ...c, creatorName: data.creatorName }));
+          }
+
+          if (data.expiresAt) {
+            setExpiresAt(new Date(data.expiresAt));
           }
 
           if (data.creatorLastActive) {
@@ -97,7 +106,11 @@ export default function PublicChatPage() {
         }
       } catch (err) {
         console.error(err);
-        setError("⚠️ Error cargando mensajes");
+        if (err.message === "CHAT_EXPIRED") {
+          setError("Este chat se ha eliminado permanentemente tras 1 hora de su creación por motivos de seguridad.");
+        } else {
+          setError("⚠️ Error cargando mensajes");
+        }
         setMessages([]);
       } finally {
         setLoading(false);
@@ -163,6 +176,39 @@ export default function PublicChatPage() {
     return () => clearInterval(interval);
   }, [creatorStatus]);
 
+  useEffect(() => {
+    if (!expiresAt) return;
+    const interval = setInterval(() => {
+      const now = new Date();
+      const diff = expiresAt - now;
+      if (diff <= 0) {
+        setTimeLeft("00:00");
+        clearInterval(interval);
+        setError("Este chat se ha eliminado permanentemente tras 1 hora de su creación por motivos de seguridad.");
+        setMessages([]);
+      } else {
+        const minutes = Math.floor(diff / 60000).toString().padStart(2, '0');
+        const seconds = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
+        setTimeLeft(`${minutes}:${seconds}`);
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [expiresAt]);
+
+  const handleAbandon = async () => {
+    if (!confirm("¿Seguro que quieres abandonar este chat? Se borrará PERMANENTEMENTE para ambos.")) return;
+    try {
+      setLoading(true);
+      await fetch(`${API}/chats/${anonToken}/${chatId}`, { method: 'DELETE' });
+      localStorage.removeItem("myChats");
+      window.location.href = "/";
+    } catch (e) {
+      console.error(e);
+      alert("Error al abandonar el chat.");
+      setLoading(false);
+    }
+  };
+
   const Message = ({ msg, creatorName }) => {
     const isCreator = msg.from === "creator";
     const senderName = isCreator ? creatorName : (anonAlias || "Tú");
@@ -214,10 +260,18 @@ export default function PublicChatPage() {
               )}
             </div>
           </div>
-          <a href="/chats" style={{ color: 'var(--chat-text-muted)', textDecoration: 'none', fontSize: '0.9rem', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
-            Volver
-          </a>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            {timeLeft && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#f87171', fontWeight: 600, fontSize: '0.95rem' }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                {timeLeft}
+              </div>
+            )}
+            <button onClick={handleAbandon} style={{ background: 'transparent', border: '1px solid #ef4444', color: '#ef4444', borderRadius: '8px', padding: '6px 12px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
+              Abandonar
+            </button>
+          </div>
         </div>
 
         <div className="premium-chat-messages">
