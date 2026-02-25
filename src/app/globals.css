@@ -48,6 +48,11 @@ body {
   color: var(--text-primary);
   font-family: var(--font-main);
   overflow-x: hidden;
+  min-height: 100vh;
+  margin: 0;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  background-size: cover;
   background-image:
     radial-gradient(circle at 15% 85%, rgba(142, 68, 173, 0.2), transparent 40%),
     radial-gradient(circle at 85% 20%, rgba(74, 0, 224, 0.2), transparent 40%);
