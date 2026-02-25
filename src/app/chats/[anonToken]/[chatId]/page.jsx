@@ -168,12 +168,10 @@ export default function PublicChatPage() {
     const senderName = isCreator ? creatorName : (anonAlias || "Tú");
 
     return (
-      <div className={`message-bubble-wrapper ${isCreator ? 'anon' : 'creator'}`}>
-        <div>
-          <div className="message-alias">{senderName}</div>
-          <div className={`message-bubble ${isCreator ? 'anon' : 'creator'}`}>
-            {msg.content}
-          </div>
+      <div className={`premium-message-wrapper ${isCreator ? 'received' : 'sent'}`}>
+        <div className="premium-message-sender">{senderName}</div>
+        <div className="premium-message-bubble">
+          {msg.content}
         </div>
       </div>
     );
@@ -197,51 +195,54 @@ export default function PublicChatPage() {
   const isWaitingForReply = !lastMessage || lastMessage.from === 'anon';
 
   return (
-    <div className="public-chat-view" style={{ maxWidth: 600, margin: "40px auto", padding: 20, height: 'auto', maxHeight: 'none' }}>
+    <div className="premium-chat-layout">
+      <div className="premium-chat-container">
 
-      <div className="chat-view-header">
-        <div className="chat-header-info">
-          <h3>Chat con {creatorName}</h3>
-          <div className="chat-header-status">
-            {creatorStatus.status === 'online' ? (
-              <span className="status-online">En línea</span>
-            ) : lastActiveDisplay ? (
-              <span className="status-offline">Activo {lastActiveDisplay}</span>
-            ) : (
-              <span className="status-offline" style={{ opacity: 0.6 }}>...</span>
-            )}
+        <div className="premium-chat-header">
+          <div>
+            <h3>{creatorName}</h3>
+            <div className="premium-chat-header-status">
+              {creatorStatus.status === 'online' ? (
+                <>
+                  <div className="premium-status-dot"></div>
+                  <span style={{ color: '#10b981' }}>En línea</span>
+                </>
+              ) : lastActiveDisplay ? (
+                <span style={{ color: 'var(--chat-text-muted)' }}>Activo {lastActiveDisplay}</span>
+              ) : (
+                <span style={{ color: 'var(--chat-text-muted)' }}>...</span>
+              )}
+            </div>
           </div>
+          <a href="/chats" style={{ color: 'var(--chat-text-muted)', textDecoration: 'none', fontSize: '0.9rem', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
+            Volver
+          </a>
         </div>
-        <a href="/chats" className="back-button" style={{ textDecoration: 'none' }}>← Mis Chats</a>
-      </div>
 
-      {/* EL BLOQUE DE SEGURIDAD YA NO ESTÁ AQUÍ ARRIBA */}
+        <div className="premium-chat-messages">
+          {error && <p style={{ color: "#ef4444", textAlign: 'center', background: 'rgba(239, 68, 68, 0.1)', padding: '10px', borderRadius: '8px' }}>{error}</p>}
+          {messages.length === 0 && !loading && (
+            <div style={{ color: "var(--chat-text-muted)", textAlign: "center", padding: '40px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
+              <span>Envía tu primer mensaje para iniciar el chat animado.</span>
+            </div>
+          )}
+          {messages.map((m) => (
+            <Message key={m.id || Math.random()} msg={m} creatorName={creatorName} />
+          ))}
+          <div ref={bottomRef} />
+        </div>
 
-      <div className="messages-display">
-        {error && <p style={{ color: "red", textAlign: 'center' }}>{error}</p>}
-        {messages.length === 0 && !loading && (
-          <div style={{ color: "#666", textAlign: "center", padding: '20px' }}>
-            Aún no hay mensajes.
-          </div>
-        )}
-        {messages.map((m) => (
-          <Message key={m.id || Math.random()} msg={m} creatorName={creatorName} />
-        ))}
-        <div ref={bottomRef} />
-      </div>
-
-      <div className="chat-footer" style={{ paddingTop: '15px', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
-
-        <AnonChatReplyForm
-          anonToken={anonToken}
-          chatId={chatId}
-          onMessageSent={(newMsg) => setMessages(prev => [...prev, newMsg])}
-        />
-
-
+        <div className="premium-chat-footer">
+          <AnonChatReplyForm
+            anonToken={anonToken}
+            chatId={chatId}
+            onMessageSent={(newMsg) => setMessages(prev => [...prev, newMsg])}
+          />
+        </div>
 
       </div>
-
     </div>
   );
 }

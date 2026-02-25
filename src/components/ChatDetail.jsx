@@ -13,12 +13,10 @@ const Message = ({ msg, creatorName, anonAlias }) => {
   const senderName = isCreator ? creatorName : (msg.alias || anonAlias);
 
   return (
-    <div className={`message-bubble-wrapper ${isCreator ? 'creator' : 'anon'}`}>
-      <div>
-        <div className="message-alias">{senderName}</div>
-        <div className={`message-bubble ${isCreator ? 'creator' : 'anon'}`}>
-          {msg.content}
-        </div>
+    <div className={`premium-message-wrapper ${isCreator ? 'sent' : 'received'}`}>
+      <div className="premium-message-sender">{senderName}</div>
+      <div className="premium-message-bubble">
+        {msg.content}
       </div>
     </div>
   );
@@ -138,38 +136,46 @@ export default function ChatDetail({ dashboardId, chatId, onBack }) {
   const lastAnonMessage = messages.filter(m => m.from === 'anon').pop();
 
   return (
-    <div className="chat-detail-container">
-      {/* --- 👇 4. HEADER MODIFICADO (SIN ESTADO "DESCONECTADO") 👇 --- */}
-      <div className="chat-header">
-        <div className="chat-header-info">
-          <h3>Chat con {anonAlias}</h3>
-          {/* ELIMINADO EL DIV .chat-header-status */}
+    <div className="premium-chat-layout">
+      <div className="premium-chat-container">
+
+        <div className="premium-chat-header">
+          <div>
+            <h3>{anonAlias}</h3>
+          </div>
+          <button onClick={onBack} style={{ background: 'transparent', border: 'none', color: 'var(--chat-text-muted)', fontSize: '0.9rem', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', fontFamily: 'inherit' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
+            Volver
+          </button>
         </div>
-        <button onClick={onBack} className="back-button">← Volver</button>
-      </div>
-      {/* --- 👆 FIN DE HEADER 👆 --- */}
 
+        <div className="premium-chat-messages">
+          {messages.length === 0 && !loading && (
+            <div style={{ color: "var(--chat-text-muted)", textAlign: "center", padding: '40px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
+              <span>Envía una respuesta para iniciar el chat animado.</span>
+            </div>
+          )}
+          {messages.map((m) => (
+            <Message
+              key={m.id || Math.random()}
+              msg={m}
+              creatorName={"Tú"}
+              anonAlias={anonAlias}
+            />
+          ))}
+          <div ref={bottomRef} />
+        </div>
 
-      <div className="chat-messages-container">
-        {messages.map((m) => (
-          <Message
-            key={m.id || Math.random()}
-            msg={m}
-            creatorName={"Tú"}
-            anonAlias={anonAlias}
+        <div className="premium-chat-footer">
+          <MessageForm
+            dashboardId={dashboardId}
+            chatId={chatId}
+            onMessageSent={() => { }}
+            lastAnonQuestion={lastAnonMessage?.content}
           />
-        ))}
-        <div ref={bottomRef} />
-      </div>
+        </div>
 
-      <div className="chat-footer">
-        {/* --- 👇 5. MODIFICADO: Pasar la prop 'lastAnonQuestion' 👇 --- */}
-        <MessageForm
-          dashboardId={dashboardId}
-          chatId={chatId}
-          onMessageSent={() => { }}
-          lastAnonQuestion={lastAnonMessage?.content}
-        />
       </div>
     </div>
   );
