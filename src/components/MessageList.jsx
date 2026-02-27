@@ -57,7 +57,16 @@ const ChatItem = ({ chat, onOpenChat, isOnline }) => {
           {chat.anonReplied && <span className="new-reply-indicator">Nuevo mensaje</span>}
         </div>
         <div className="chat-item-content">
-          {preview ? preview.content : "Chat iniciado, sin mensajes"}
+          {preview ? (
+            <>
+              {preview.imageUrl && (
+                <span style={{ marginRight: '5px', color: '#00ff80' }}>
+                  {preview.mediaType === 'video' ? '🎥 Video' : '📷 Foto'}
+                </span>
+              )}
+              {preview.content}
+            </>
+          ) : "Chat iniciado, sin mensajes"}
         </div>
         <div className="chat-item-date">
           {preview

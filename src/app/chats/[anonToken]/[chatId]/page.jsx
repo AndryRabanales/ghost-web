@@ -20,9 +20,9 @@ const CountdownTimer = ({ expiresAt, onExpire }) => {
         clearInterval(interval);
         if (onExpire) onExpire();
       } else {
-        const minutes = Math.floor(diff / 60000).toString().padStart(2, '0');
+        const totalMinutes = Math.floor(diff / 60000).toString().padStart(2, '0');
         const seconds = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
-        setTimeLeft(`${minutes}:${seconds}`);
+        setTimeLeft(`${totalMinutes}:${seconds}`);
       }
     }, 1000);
     return () => clearInterval(interval);
@@ -142,7 +142,7 @@ export default function PublicChatPage() {
       } catch (err) {
         console.error(err);
         if (err.message === "CHAT_EXPIRED") {
-          setError("Este chat se ha eliminado permanentemente tras 1 hora de su creación por motivos de seguridad.");
+          setError("Este chat se ha eliminado permanentemente tras 24 horas de su creación por motivos de seguridad.");
         } else {
           setError("⚠️ Error cargando mensajes");
         }
@@ -212,7 +212,7 @@ export default function PublicChatPage() {
   }, [creatorStatus]);
 
   const handleExpire = useCallback(() => {
-    setError("Este chat se ha eliminado permanentemente tras 1 hora de su creación por motivos de seguridad.");
+    setError("Este chat se ha eliminado permanentemente tras 24 horas de su creación por motivos de seguridad.");
     setMessages([]);
   }, []);
 
@@ -238,6 +238,19 @@ export default function PublicChatPage() {
       <div className={`premium-message-wrapper ${isCreator ? 'received' : 'sent'}`}>
         <div className="premium-message-sender">{senderName}</div>
         <div className="premium-message-bubble">
+          {msg.mediaType === 'video' && msg.imageUrl ? (
+            <video
+              src={msg.imageUrl}
+              controls
+              style={{ maxWidth: '100%', borderRadius: '8px', marginBottom: '8px', display: 'block', maxHeight: '300px' }}
+            />
+          ) : msg.imageUrl ? (
+            <img
+              src={msg.imageUrl}
+              alt="Adjunto"
+              style={{ maxWidth: '100%', borderRadius: '8px', marginBottom: '8px', display: 'block' }}
+            />
+          ) : null}
           {msg.content}
         </div>
       </div>

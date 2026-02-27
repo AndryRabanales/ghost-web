@@ -14,6 +14,9 @@ export default function AnonMessageForm({
   const [status, setStatus] = useState("idle");
   const [errorMsg, setErrorMsg] = useState("");
   const [charCount, setCharCount] = useState(0);
+  const [imageBase64, setImageBase64] = useState(null);
+  const [mediaType, setMediaType] = useState(null);
+  const [isProcessingImage, setIsProcessingImage] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -33,7 +36,9 @@ export default function AnonMessageForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           alias: alias.trim() ? alias.trim() : "Anónimo",
-          content
+          content,
+          imageUrl: imageBase64 || null,
+          mediaType: mediaType || null
         }),
       });
 
@@ -59,6 +64,8 @@ export default function AnonMessageForm({
       setContent("");
       setAlias("");
       setCharCount(0);
+      setImageBase64(null);
+      setMediaType(null);
 
       if (onChatCreated) {
         onChatCreated(data);
@@ -135,11 +142,98 @@ export default function AnonMessageForm({
           ></textarea>
           <div style={{
             display: 'flex',
-            justifyContent: 'flex-end',
+            justifyContent: 'space-between',
             alignItems: 'center',
             marginTop: '8px',
             marginBottom: '10px'
           }}>
+            <div>
+              <input
+                type="file"
+                accept="image/*,video/mp4,video/webm"
+                id="image-upload"
+                style={{ display: 'none' }}
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (!file) return;
+
+                  if (file.type.startsWith('video/')) {
+                    if (file.size > 15 * 1024 * 1024) { // 15MB limit for videos in Base64 (still risky, but requested)
+                      setErrorMsg("El video no puede pesar más de 15MB.");
+                      return;
+                    }
+                    setIsProcessingImage(true);
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                      setImageBase64(event.target.result);
+                      setMediaType("video");
+                      setIsProcessingImage(false);
+                    };
+                    reader.readAsDataURL(file);
+                  } else if (file.type.startsWith('image/')) {
+                    if (file.size > 5 * 1024 * 1024) {
+                      setErrorMsg("La imagen no puede pesar más de 5MB.");
+                      return;
+                    }
+                    setIsProcessingImage(true);
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                      const img = new Image();
+                      img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        let width = img.width;
+                        let height = img.height;
+                        const maxSize = 800;
+
+                        if (width > height) {
+                          if (width > maxSize) {
+                            height = Math.round((height * maxSize) / width);
+                            width = maxSize;
+                          }
+                        } else {
+                          if (height > maxSize) {
+                            width = Math.round((width * maxSize) / height);
+                            height = maxSize;
+                          }
+                        }
+
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                        setImageBase64(dataUrl);
+                        setMediaType("image");
+                        setIsProcessingImage(false);
+                      };
+                      img.src = event.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                  } else {
+                    setErrorMsg("Formato de archivo no soportado.");
+                  }
+                }}
+              />
+              <label
+                htmlFor="image-upload"
+                style={{
+                  cursor: 'pointer',
+                  color: imageBase64 ? '#00ff80' : '#8e2de2',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                  <circle cx="8.5" cy="8.5" r="1.5" />
+                  <polyline points="21 15 16 10 5 21" />
+                </svg>
+                {isProcessingImage ? 'Procesando...' : imageBase64 ? (mediaType === 'video' ? 'Video adjunto' : 'Foto adjunta') : 'Adjuntar Foto/Video'}
+              </label>
+            </div>
             <div className="char-counter">{charCount} / 500</div>
           </div>
 
